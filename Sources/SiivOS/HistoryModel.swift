@@ -18,9 +18,10 @@ final class HistoryModel: ObservableObject {
 
     init() {
         var startupProblem: String?
-        do {
-            core = try SafetyCore.standard()
-        } catch {
+        switch AppCore.shared {
+        case .success(let sharedCore):
+            core = sharedCore
+        case .failure(let error):
             core = nil
             startupProblem = "SiivOS could not set up its holding area: \(error.localizedDescription)"
         }
@@ -74,8 +75,8 @@ final class HistoryModel: ObservableObject {
         guard let plan = pendingPlan else { return }
         pendingPlan = nil
         run { core in
-            _ = try core.apply(plan)
-            return nil
+            let result = try core.apply(plan)
+            return describe(result.failures, intro: "Some items could not be moved and were left where they are:")
         }
     }
 
@@ -115,11 +116,4 @@ final class HistoryModel: ObservableObject {
             }
         }
     }
-}
-
-/// Turns a list of failures into one message, or `nil` when there were none.
-private func describe(_ failures: [ChangeResult.Failure], intro: String) -> String? {
-    guard !failures.isEmpty else { return nil }
-    let lines = failures.map { "\($0.path): \($0.message)" }
-    return ([intro] + lines).joined(separator: "\n")
 }

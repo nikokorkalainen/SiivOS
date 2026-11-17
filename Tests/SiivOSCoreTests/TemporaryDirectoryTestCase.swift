@@ -39,6 +39,23 @@ class TemporaryDirectoryTestCase: XCTestCase {
         return url
     }
 
+    /// Creates a file of an exact size inside the pretend home folder. Files made with the
+    /// same `fill` have the same contents; `ending` changes only the last byte.
+    @discardableResult
+    func makeFile(_ relativePath: String, bytes: Int, fill: UInt8 = 1, ending: UInt8? = nil) throws -> URL {
+        let url = home.appendingPathComponent(relativePath)
+        try FileManager.default.createDirectory(
+            at: url.deletingLastPathComponent(),
+            withIntermediateDirectories: true
+        )
+        var data = Data(repeating: fill, count: bytes)
+        if let ending, bytes > 0 {
+            data[bytes - 1] = ending
+        }
+        try data.write(to: url)
+        return url
+    }
+
     /// Creates an empty folder inside the pretend home folder.
     @discardableResult
     func makeFolder(_ relativePath: String) throws -> URL {

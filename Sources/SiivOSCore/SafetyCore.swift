@@ -33,7 +33,7 @@ public struct RemovalPlan: Equatable, Identifiable, Sendable {
     }
 }
 
-/// What happened when a recorded change was put back or deleted for good.
+/// What happened when a change was made, put back or deleted for good.
 public struct ChangeResult: Sendable {
     public struct Failure: Equatable, Sendable {
         public let path: String
@@ -42,7 +42,7 @@ public struct ChangeResult: Sendable {
 
     /// The record after the change.
     public let record: ActionRecord
-    /// Items that could not be handled. They stay in the holding area.
+    /// Items that could not be handled. They stay where they were.
     public let failures: [Failure]
 }
 
@@ -176,9 +176,10 @@ public final class SafetyCore: @unchecked Sendable {
 
     /// Carries out a plan: moves its items to the holding area and records the change.
     ///
-    /// It is all or nothing. If any item cannot be moved, the ones already moved are
-    /// put back and the error is thrown.
-    public func apply(_ plan: RemovalPlan) throws -> ActionRecord {
+    /// Items that cannot be moved, for example because macOS protects them, are left
+    /// where they are and listed in the result. If nothing at all could be moved, or
+    /// the change could not be recorded, an error is thrown and nothing stays moved.
+    public func apply(_ plan: RemovalPlan) throws -> ChangeResult {
         lock.lock()
         defer { lock.unlock() }
 
@@ -189,26 +190,40 @@ public final class SafetyCore: @unchecked Sendable {
         var records = try log.load()
 
         var held: [HeldItem] = []
-        do {
-            for item in plan.items {
+        var failures: [ChangeResult.Failure] = []
+        var firstError: Error?
+        for item in plan.items {
+            do {
                 held.append(try holdingArea.hold(item.url))
+            } catch {
+                failures.append(ChangeResult.Failure(path: item.url.path, message: error.localizedDescription))
+                if firstError == nil {
+                    firstError = error
+                }
             }
-            let record = ActionRecord(
-                id: UUID(),
-                date: Self.currentDate(),
-                title: plan.title,
-                explanation: plan.explanation,
-                items: held.map { ActionRecord.Item(held: $0, state: .held) }
-            )
-            records.append(record)
+        }
+        guard !held.isEmpty else {
+            throw firstError ?? SafetyCoreError.nothingToRemove
+        }
+
+        let record = ActionRecord(
+            id: UUID(),
+            date: Self.currentDate(),
+            title: plan.title,
+            explanation: plan.explanation,
+            items: held.map { ActionRecord.Item(held: $0, state: .held) }
+        )
+        records.append(record)
+        do {
             try log.save(records)
-            return record
         } catch {
+            // A change that is not written down could not be undone later, so put everything back.
             for item in held.reversed() {
                 try? holdingArea.restore(item)
             }
             throw error
         }
+        return ChangeResult(record: record, failures: failures)
     }
 
     /// Puts back every item of a recorded change that is still in the holding area.

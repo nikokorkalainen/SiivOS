@@ -58,6 +58,23 @@ public struct ScanReport: Sendable {
     public var findingCount: Int {
         sections.reduce(0) { $0 + $1.findings.count }
     }
+
+    /// The same report without the findings whose items are no longer where they were,
+    /// for use after some of them have been removed. Read-only.
+    public func removingFindingsNoLongerOnDisk(fileManager: FileManager = .default) -> ScanReport {
+        let remaining = sections.map { section in
+            Section(
+                id: section.id,
+                title: section.title,
+                summary: section.summary,
+                findings: section.findings.filter { finding in
+                    (try? fileManager.attributesOfItem(atPath: finding.url.path)) != nil
+                },
+                failure: section.failure
+            )
+        }
+        return ScanReport(sections: remaining)
+    }
 }
 
 /// Runs scanners one after another and collects what they find.
@@ -69,8 +86,11 @@ public struct ScanEngine: Sendable {
     }
 
     /// Runs every scanner. One scanner failing does not stop the others.
-    public func run() -> ScanReport {
+    ///
+    /// - Parameter progress: Called with each scanner's title just before it starts.
+    public func run(progress: ((String) -> Void)? = nil) -> ScanReport {
         let sections = scanners.map { scanner -> ScanReport.Section in
+            progress?(scanner.title)
             do {
                 let findings = try scanner.scan().sorted { $0.sizeBytes > $1.sizeBytes }
                 return ScanReport.Section(
@@ -91,5 +111,21 @@ public struct ScanEngine: Sendable {
             }
         }
         return ScanReport(sections: sections)
+    }
+}
+
+extension ScanEngine {
+    /// The scanners behind the Cleanup screen, in the order they are shown.
+    public static func clutter(
+        homeDirectory: URL = URL(fileURLWithPath: NSHomeDirectory())
+    ) -> ScanEngine {
+        ScanEngine(scanners: [
+            CachesScanner(homeDirectory: homeDirectory),
+            LogsScanner(homeDirectory: homeDirectory),
+            LeftoversScanner(homeDirectory: homeDirectory),
+            OldDownloadsScanner(homeDirectory: homeDirectory),
+            LargeFilesScanner(homeDirectory: homeDirectory),
+            DuplicateFilesScanner(homeDirectory: homeDirectory)
+        ])
     }
 }

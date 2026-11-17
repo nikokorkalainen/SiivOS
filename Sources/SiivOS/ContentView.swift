@@ -2,6 +2,8 @@ import SwiftUI
 
 struct ContentView: View {
     @State private var selection: AppSection? = .overview
+    /// Kept here so that scan results survive a visit to another section.
+    @StateObject private var cleanup = CleanupModel()
 
     var body: some View {
         NavigationSplitView {
@@ -19,6 +21,8 @@ struct ContentView: View {
         switch section {
         case .overview:
             OverviewView()
+        case .cleanup:
+            CleanupView(model: cleanup)
         case .history:
             HistoryView()
         default:

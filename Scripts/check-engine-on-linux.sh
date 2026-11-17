@@ -3,7 +3,7 @@
 #
 # This is for Claude's cloud workspace, which is Linux and cannot build the Mac app.
 # It catches mistakes in the engine before the code reaches a Mac. The SwiftUI app in
-# Sources/SiivOS is not checked here.
+# Sources/SiivOS is only checked for syntax slips such as a missing bracket.
 #
 # The first run downloads the official Swift toolchain (about 900 MB) from
 # download.swift.org and checks its signature. Later runs reuse it.
@@ -73,6 +73,10 @@ let package = Package(
 )
 MANIFEST
 
-cd "${WORK_DIR}"
 swift --version
+
+echo "Checking the app's syntax..."
+swiftc -parse "${PROJECT_DIR}"/Sources/SiivOS/*.swift
+
+cd "${WORK_DIR}"
 swift test

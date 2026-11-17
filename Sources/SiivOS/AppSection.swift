@@ -60,8 +60,7 @@ enum AppSection: String, CaseIterable, Identifiable, Hashable {
     /// The production-plan phase that delivers this section (see PLAN.md).
     var plannedPhase: Int? {
         switch self {
-        case .overview, .history: return nil
-        case .cleanup: return 3
+        case .overview, .cleanup, .history: return nil
         case .apps: return 4
         case .performance: return 5
         case .protection: return 6

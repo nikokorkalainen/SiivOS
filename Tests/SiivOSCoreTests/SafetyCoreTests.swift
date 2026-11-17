@@ -68,8 +68,10 @@ final class SafetyCoreTests: TemporaryDirectoryTestCase {
         let second = try makeFile("Downloads/second.txt", contents: "two")
 
         let plan = core.plan(removing: [first, second], reason: "Test.")
-        let record = try core.apply(plan)
+        let applied = try core.apply(plan)
+        let record = applied.record
 
+        XCTAssertTrue(applied.failures.isEmpty)
         XCTAssertFalse(exists(first))
         XCTAssertFalse(exists(second))
         XCTAssertEqual(record.title, "Removed 2 items")
@@ -91,7 +93,7 @@ final class SafetyCoreTests: TemporaryDirectoryTestCase {
         let core = try makeCore()
         let free = try makeFile("Documents/free.txt", contents: "old free")
         let taken = try makeFile("Documents/taken.txt", contents: "old taken")
-        let record = try core.apply(core.plan(removing: [free, taken], reason: "Test."))
+        let record = try core.apply(core.plan(removing: [free, taken], reason: "Test.")).record
         try makeFile("Documents/taken.txt", contents: "new")
 
         let result = try core.undo(recordID: record.id)
@@ -113,7 +115,7 @@ final class SafetyCoreTests: TemporaryDirectoryTestCase {
     func testDeletingPermanentlyCannotBeUndone() throws {
         let core = try makeCore()
         let file = try makeFile("Documents/old.txt")
-        let record = try core.apply(core.plan(removing: [file], reason: "Test."))
+        let record = try core.apply(core.plan(removing: [file], reason: "Test.")).record
 
         let deleted = try core.deletePermanently(recordID: record.id)
         XCTAssertTrue(deleted.failures.isEmpty)
@@ -127,8 +129,8 @@ final class SafetyCoreTests: TemporaryDirectoryTestCase {
 
     func testHistoryIsNewestFirstAndSurvivesARestart() throws {
         let core = try makeCore()
-        let first = try core.apply(core.plan(removing: [try makeFile("Documents/a.txt")], reason: "Test."))
-        let second = try core.apply(core.plan(removing: [try makeFile("Documents/b.txt")], reason: "Test."))
+        let first = try core.apply(core.plan(removing: [try makeFile("Documents/a.txt")], reason: "Test.")).record
+        let second = try core.apply(core.plan(removing: [try makeFile("Documents/b.txt")], reason: "Test.")).record
 
         let restartedCore = try makeCore()
         XCTAssertEqual(try restartedCore.history(), [second, first])
@@ -142,16 +144,29 @@ final class SafetyCoreTests: TemporaryDirectoryTestCase {
 
     // MARK: - When things go wrong
 
-    func testApplyPutsEverythingBackWhenOneItemCannotBeMoved() throws {
+    func testApplyMovesWhatItCanAndReportsTheRest() throws {
         let core = try makeCore()
-        let first = try makeFile("Documents/first.txt", contents: "one")
+        let first = try makeFile("Documents/first.txt")
         let second = try makeFile("Documents/second.txt")
         let plan = core.plan(removing: [first, second], reason: "Test.")
         try FileManager.default.removeItem(at: second)
 
-        XCTAssertThrowsError(try core.apply(plan))
+        let result = try core.apply(plan)
 
-        XCTAssertEqual(try String(contentsOf: first, encoding: .utf8), "one")
+        XCTAssertFalse(exists(first))
+        XCTAssertEqual(result.record.items.count, 1)
+        XCTAssertEqual(result.failures.count, 1)
+        XCTAssertTrue(result.failures[0].path.hasSuffix("second.txt"))
+        XCTAssertEqual(try core.history(), [result.record])
+    }
+
+    func testApplyFailsWhenNothingCouldBeMoved() throws {
+        let core = try makeCore()
+        let file = try makeFile("Documents/only.txt")
+        let plan = core.plan(removing: [file], reason: "Test.")
+        try FileManager.default.removeItem(at: file)
+
+        XCTAssertThrowsError(try core.apply(plan))
         XCTAssertEqual(try core.history(), [])
     }
 

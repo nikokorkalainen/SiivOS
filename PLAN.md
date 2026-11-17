@@ -23,8 +23,8 @@ These are what should make SiivOS stand out, and every feature is held to them.
 | # | Phase | What it delivers | Status |
 |---|-------|------------------|--------|
 | 1 | Setup | Build tools installed, project skeleton, this plan in the repo | Done. Built and run on macOS 15.8.3 with the Command Line Tools. Tests not yet run on a Mac |
-| 2 | Safety core | Scan engine, action log, undo. Removed items go to a restorable holding area, not straight to deletion | Built. Engine tests pass in Claude's workspace. Awaiting build and test of the app on a Mac |
-| 3 | Clutter cleanup | Caches, logs, old downloads, large and duplicate files, leftovers from removed apps | Not started |
+| 2 | Safety core | Scan engine, action log, undo. Removed items go to a restorable holding area, not straight to deletion | Done. Built and tried out on macOS 15.8.3 |
+| 3 | Clutter cleanup | Caches, logs, old downloads, large and duplicate files, leftovers from removed apps | Built. Engine tests pass in Claude's workspace. Awaiting build and test of the app on a Mac |
 | 4 | App manager | All apps with size and last use, full uninstall including leftovers, login items and background agents | Not started |
 | 5 | Performance | Live view of processor, memory, disk and battery use, with plain-language diagnoses from built-in rules | Not started |
 | 6 | Protection | ClamAV for malware, plus own checks for adware, suspicious background agents, browser extensions and configuration profiles | Not started |
