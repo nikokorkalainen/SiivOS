@@ -129,5 +129,7 @@ alone" with its reasons. Buttons: Cancel, **Move to Holding Area** (default).
 - App icon: green gradient tile (`#1A9E73` top left to `#0B4A39` bottom right), two four-point
   white glints with equal arms, grouped and centred above the name "SiivOS" in Nunito
   ExtraBold, with "OS" in mint `#5EE6A8`.
-- At 32 px and below the name drops out and the glints fill the tile.
-- Icon files for the app (an `.icns` or asset catalog) still need exporting from the canvas.
+- In the 16 pt and 32 pt slots (at every pixel density) the name drops out and the glints fill
+  the tile.
+- Files: `Resources/AppIcon.icns` is what the app uses; `Scripts/make-app.sh` copies it into
+  the bundle. Master artwork and every size are in `design/icon/` (see its README).
