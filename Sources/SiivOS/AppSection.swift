@@ -57,14 +57,4 @@ enum AppSection: String, CaseIterable, Identifiable, Hashable {
             return tr("Everything SiivOS has changed, with a way to put it back.")
         }
     }
-
-    /// The production-plan phase that delivers this section (see PLAN.md).
-    var plannedPhase: Int? {
-        switch self {
-        case .overview, .cleanup, .apps, .history: return nil
-        case .performance: return 5
-        case .protection: return 6
-        case .timeline: return 7
-        }
-    }
 }

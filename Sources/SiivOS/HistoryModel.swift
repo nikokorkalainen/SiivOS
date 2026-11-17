@@ -41,6 +41,7 @@ final class HistoryModel: ObservableObject {
         } catch {
             message = error.localizedDescription
         }
+        HoldingStatus.shared.refresh()
     }
 
     /// Lets the user pick files or folders, then prepares the explanation for removing them.
@@ -63,7 +64,7 @@ final class HistoryModel: ObservableObject {
         isWorking = true
         Task {
             let plan = await Task.detached(priority: .userInitiated) {
-                core.plan(removing: urls, reason: tr("You chose these items yourself."))
+                core.plan(removing: urls)
             }.value
             self.isWorking = false
             self.pendingPlan = plan

@@ -185,6 +185,7 @@ final class AppsModel: ObservableObject {
             self.apps = self.apps.filter { FileManager.default.fileExists(atPath: $0.app.url.path) }
             self.backgroundItems = BackgroundItems.find(in: BackgroundItems.standardDirectories())
             self.isWorking = false
+            HoldingStatus.shared.refresh()
             if let problem {
                 self.message = problem
             }

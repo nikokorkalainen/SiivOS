@@ -262,7 +262,7 @@ private struct BackgroundRow: View {
                 if !item.programExists {
                     Label(tr("Its program is missing. It was probably left behind by an app you removed."), systemImage: "exclamationmark.triangle")
                         .font(.caption)
-                        .foregroundStyle(.orange)
+                        .foregroundStyle(.secondary)
                 }
             }
             Spacer()

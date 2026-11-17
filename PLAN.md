@@ -59,6 +59,7 @@ Ideas taken from the comparison above and from the owner. Each is built as part 
 | Notice and record new background items when they appear | SiivOS's own | Phases 6 and 7 | Not started |
 | Settings window (see below) | Owner | Phase 8, or earlier where a phase needs a setting | Proposed, not yet agreed |
 | Finnish language version. The app follows the Mac's language, with English as the fallback | Owner | Its own step after Phase 4, then kept up to date in every later phase | Built. Engine tests pass in Claude's workspace. Awaiting test on a Mac, and the owner's review of the Finnish wording |
+| Screens redesigned to follow `docs/design.md`: Overview with Check This Mac and a three-part disk bar, Cleanup in two parts with a bottom action bar and Undo, History as one list, app icon | Owner's design notes | Overview, Cleanup, History, sidebar and the confirmation sheet | Built. Awaiting build and test on a Mac |
 
 Decided against: cleaning cloud storage and updating other apps (both need network access, against the privacy principle), clearing browser history, and finding blurry or similar photos (little benefit for the effort).
 
@@ -82,6 +83,7 @@ Kept short on purpose. A setting is only added when people would reasonably want
 
 - The app will need **Full Disk Access** to do its job, so it cannot be distributed through the Mac App Store. It will be distributed directly.
 - A public release needs a paid Apple Developer account for signing and notarisation. Personal use does not.
+- The accent colour from `docs/design.md` is set in code (`Sources/SiivOS/Theme.swift`), not as an `AccentColor` asset, because asset catalogs can only be compiled with Xcode. Buttons and tinted icons use it; the selected sidebar row keeps the Mac's own accent colour until the project is built with Xcode.
 - macOS gives apps no supported way to list the "Open at Login" items in System Settings. SiivOS lists background items from the LaunchAgents and LaunchDaemons folders, and opens System Settings for the rest.
 - Removing background items and apps that belong to all users needs administrator rights, which SiivOS does not ask for yet. It shows those items and leaves them alone.
 
@@ -90,5 +92,7 @@ Kept short on purpose. A setting is only added when people would reasonably want
 - `Sources/SiivOSCore/` is the engine: everything that inspects or changes the Mac. No UI code.
 - `Sources/SiivOS/` is the app: SwiftUI interface only.
 - `Tests/SiivOSCoreTests/` holds tests for the engine.
+- `docs/design.md` describes how the screens should look and behave. The screens follow it.
+- `Resources/AppIcon.icns` is the app icon; its master files are in `design/icon/`.
 - `Scripts/make-app.sh` builds a double-clickable `SiivOS.app`.
 - `Scripts/check-engine-on-linux.sh` compiles and tests the engine in Claude's Linux workspace.

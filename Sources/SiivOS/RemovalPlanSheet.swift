@@ -21,13 +21,15 @@ struct RemovalPlanSheet: View {
                         VStack(alignment: .leading, spacing: 4) {
                             ForEach(plan.items) { item in
                                 HStack {
-                                    Text(item.url.path)
+                                    Text(ReadableNames.name(for: item.url))
                                         .lineLimit(1)
                                         .truncationMode(.middle)
                                     Spacer()
                                     Text(formatBytes(item.sizeBytes))
                                         .foregroundStyle(.secondary)
+                                        .monospacedDigit()
                                 }
+                                .help(item.url.path)
                             }
                         }
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -43,13 +45,14 @@ struct RemovalPlanSheet: View {
                         VStack(alignment: .leading, spacing: 6) {
                             ForEach(plan.refused) { refusal in
                                 VStack(alignment: .leading, spacing: 2) {
-                                    Text(refusal.url.path)
+                                    Text(ReadableNames.name(for: refusal.url))
                                         .lineLimit(1)
                                         .truncationMode(.middle)
                                     Text(refusal.reason)
                                         .font(.caption)
                                         .foregroundStyle(.secondary)
                                 }
+                                .help(refusal.url.path)
                             }
                         }
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -65,6 +68,8 @@ struct RemovalPlanSheet: View {
                     .keyboardShortcut(.cancelAction)
                 if !plan.items.isEmpty {
                     Button(tr("Move to Holding Area"), action: onConfirm)
+                        .buttonStyle(.borderedProminent)
+                        .keyboardShortcut(.defaultAction)
                 }
             }
         }

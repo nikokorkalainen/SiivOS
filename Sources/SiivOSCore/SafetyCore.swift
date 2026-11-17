@@ -114,13 +114,14 @@ public final class SafetyCore: @unchecked Sendable {
     /// - Parameters:
     ///   - urls: The files and folders someone wants removed.
     ///   - title: Short name for the change. Left out, one is made from the items.
-    ///   - reason: One plain sentence on why these items were picked.
+    ///   - reason: One plain sentence to show first, when the change needs introducing
+    ///     (for example what uninstalling an app takes with it). Left out, none is shown.
     ///   - required: Items among `urls` that the change makes no sense without, such as the
     ///     app itself when uninstalling. If one of them may not or cannot be moved, nothing is.
     public func plan(
         removing urls: [URL],
         title: String? = nil,
-        reason: String,
+        reason: String = "",
         required: [URL] = []
     ) -> RemovalPlan {
         var seenPaths = Set<String>()
@@ -187,16 +188,10 @@ public final class SafetyCore: @unchecked Sendable {
             return tr("None of the chosen items can be removed, so nothing will change.")
         }
         let size = ByteCountFormatter.string(fromByteCount: totalBytes, countStyle: .file)
-        if itemCount == 1 {
-            return tr(
-                "%1$@ SiivOS will move 1 item (%2$@) to its holding area. Nothing is deleted yet, and you can put everything back from History. The disk space is freed only when you delete the items permanently from History.",
-                reason, size
-            )
-        }
-        return tr(
-            "%1$@ SiivOS will move %2$@ items (%3$@) to its holding area. Nothing is deleted yet, and you can put everything back from History. The disk space is freed only when you delete the items permanently from History.",
-            reason, "\(itemCount)", size
-        )
+        let whatHappens = itemCount == 1
+            ? tr("SiivOS will move 1 item (%1$@) to the holding area. Nothing is deleted yet. The space is freed when you delete it permanently in History.", size)
+            : tr("SiivOS will move %1$@ items (%2$@) to the holding area. Nothing is deleted yet. The space is freed when you delete them permanently in History.", "\(itemCount)", size)
+        return reason.isEmpty ? whatHappens : reason + " " + whatHappens
     }
 
     // MARK: - Changing things

@@ -6,7 +6,7 @@ public struct OldDownloadsScanner: SystemScanner {
     public var title: String { tr("Old downloads") }
     public var summary: String {
         tr(
-            "Items in your Downloads folder that have not been opened or changed for more than %1$@ days. These are your own files, so check each one before removing it.",
+            "Items in your Downloads folder that have not been opened or changed for more than %1$@ days.",
             "\(olderThanDays)"
         )
     }
@@ -69,7 +69,7 @@ public struct LargeFilesScanner: SystemScanner {
     public var title: String { tr("Large files") }
     public var summary: String {
         tr(
-            "Files of %1$@ or more in your Desktop, Documents, Downloads, Movies, Music and Pictures folders. These are your own files, so check each one before removing it.",
+            "Files of %1$@ or more in your Desktop, Documents, Downloads, Movies, Music and Pictures folders.",
             ByteCountFormatter.string(fromByteCount: minimumBytes, countStyle: .file)
         )
     }

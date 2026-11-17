@@ -2,11 +2,24 @@ import AppKit
 import SiivOSCore
 import SwiftUI
 
-/// Connects the Cleanup screen to the scan engine and the safety core.
+/// What the last removal did, shown in a banner with an Undo button.
+struct RemovalNotice: Equatable, Sendable {
+    let recordID: UUID
+    let itemCount: Int
+    let bytes: Int64
+}
+
+/// Connects the Overview and Cleanup screens to the scan engine and the safety core.
 @MainActor
 final class CleanupModel: ObservableObject {
+    /// The checks whose findings apps and macOS made for themselves. The other checks
+    /// find the user's own files, which are looked at one by one.
+    static let safeSectionIDs: Set<String> = ["caches", "logs", "leftovers"]
+
     /// What the last scan found, or `nil` before the first scan.
     @Published private(set) var report: ScanReport?
+    /// When the last scan finished.
+    @Published private(set) var lastScanDate: Date?
     @Published private(set) var isScanning = false
     /// The check that is running right now, shown while scanning.
     @Published private(set) var scanningTitle = ""
@@ -14,11 +27,15 @@ final class CleanupModel: ObservableObject {
     @Published private(set) var isWorking = false
     /// The items the user has ticked.
     @Published private(set) var selection: Set<URL> = []
+    /// The removal that has just been carried out, until the user hides it or scans again.
+    @Published private(set) var lastRemoval: RemovalNotice?
     /// A removal waiting for the user to read its explanation and confirm.
     @Published var pendingPlan: RemovalPlan?
     /// A problem to show the user.
     @Published var message: String?
 
+    /// The findings as they were before the last removal, so Undo can bring the list back.
+    private var reportBeforeRemoval: ScanReport?
     private let core: SafetyCore?
 
     init() {
@@ -41,6 +58,8 @@ final class CleanupModel: ObservableObject {
         isScanning = true
         scanningTitle = ""
         selection = []
+        lastRemoval = nil
+        reportBeforeRemoval = nil
 
         // The apps that are open now. Their caches and logs are listed but cannot be ticked.
         let openApps = NSWorkspace.shared.runningApplications.compactMap { app -> RunningApp? in
@@ -57,8 +76,34 @@ final class CleanupModel: ObservableObject {
                 }
             }.value
             self.report = newReport
+            self.lastScanDate = Date()
             self.isScanning = false
         }
+    }
+
+    // MARK: - What was found
+
+    /// The groups whose findings apps and macOS made for themselves.
+    var safeSections: [ScanReport.Section] {
+        report?.sections.filter { Self.safeSectionIDs.contains($0.id) } ?? []
+    }
+
+    /// The groups whose findings are the user's own files.
+    var checkFirstSections: [ScanReport.Section] {
+        report?.sections.filter { !Self.safeSectionIDs.contains($0.id) } ?? []
+    }
+
+    /// Combined size of everything in the safe groups that can be removed right now.
+    var safeToRemoveBytes: Int64 {
+        safeSections
+            .flatMap { $0.findings }
+            .filter { $0.heldBackReason == nil }
+            .reduce(0) { $0 + $1.sizeBytes }
+    }
+
+    /// How many of the user's own files were found. A file listed under two headings counts once.
+    var ownFilesCount: Int {
+        Set(checkFirstSections.flatMap { $0.findings }.map { $0.url }).count
     }
 
     // MARK: - Selecting
@@ -102,6 +147,18 @@ final class CleanupModel: ObservableObject {
         return total
     }
 
+    /// What is ticked, in a few words, for the bar at the bottom of the Cleanup screen.
+    var selectionSummary: String {
+        let count = selection.count
+        if count == 0 {
+            return tr("Nothing ticked")
+        }
+        let size = formatBytes(selectedBytes)
+        return count == 1
+            ? tr("1 item ticked, %1$@", size)
+            : tr("%1$@ items ticked, %2$@", "\(count)", size)
+    }
+
     // MARK: - Removing
 
     /// Prepares the explanation for removing the ticked items. Nothing is moved until the user confirms.
@@ -112,7 +169,7 @@ final class CleanupModel: ObservableObject {
         isWorking = true
         Task {
             let plan = await Task.detached(priority: .userInitiated) {
-                core.plan(removing: urls, reason: tr("You selected these items in Cleanup."))
+                core.plan(removing: urls)
             }.value
             self.isWorking = false
             self.pendingPlan = plan
@@ -126,15 +183,21 @@ final class CleanupModel: ObservableObject {
 
         isWorking = true
         Task {
-            let problem = await Task.detached(priority: .userInitiated) { () -> String? in
+            let outcome = await Task.detached(priority: .userInitiated) { () -> ApplyOutcome in
                 do {
                     let result = try core.apply(plan)
-                    return describe(
+                    let notice = RemovalNotice(
+                        recordID: result.record.id,
+                        itemCount: result.record.items.count,
+                        bytes: result.record.totalBytes
+                    )
+                    let problem = describe(
                         result.failures,
                         intro: tr("Some items could not be moved and were left where they are:")
                     )
+                    return ApplyOutcome(notice: notice, problem: problem)
                 } catch {
-                    return error.localizedDescription
+                    return ApplyOutcome(notice: nil, problem: error.localizedDescription)
                 }
             }.value
 
@@ -142,13 +205,63 @@ final class CleanupModel: ObservableObject {
             if let currentReport = self.report {
                 let updated = currentReport.removingFindingsNoLongerOnDisk()
                 let remaining = Set(updated.sections.flatMap { $0.findings }.map { $0.url })
+                if outcome.notice != nil {
+                    self.reportBeforeRemoval = currentReport
+                }
                 self.report = updated
                 self.selection = self.selection.intersection(remaining)
             }
+            if let notice = outcome.notice {
+                self.lastRemoval = notice
+            }
             self.isWorking = false
+            HoldingStatus.shared.refresh()
+            if let problem = outcome.problem {
+                self.message = problem
+            }
+        }
+    }
+
+    /// Puts back what the last removal moved, and brings those items back into the list.
+    func undoLastRemoval() {
+        guard let core, let notice = lastRemoval else { return }
+
+        isWorking = true
+        Task {
+            let problem = await Task.detached(priority: .userInitiated) { () -> String? in
+                do {
+                    let result = try core.undo(recordID: notice.recordID)
+                    return describe(
+                        result.failures,
+                        intro: tr("Some items could not be put back and are still in the holding area:")
+                    )
+                } catch {
+                    return error.localizedDescription
+                }
+            }.value
+
+            if let earlierReport = self.reportBeforeRemoval {
+                self.report = earlierReport.removingFindingsNoLongerOnDisk()
+            }
+            self.reportBeforeRemoval = nil
+            self.lastRemoval = nil
+            self.isWorking = false
+            HoldingStatus.shared.refresh()
             if let problem {
                 self.message = problem
             }
         }
     }
+
+    /// Hides the banner about the last removal. The removal itself stays in History.
+    func dismissRemovalNotice() {
+        lastRemoval = nil
+        reportBeforeRemoval = nil
+    }
+}
+
+/// What applying a plan led to, carried back from the background.
+private struct ApplyOutcome: Sendable {
+    let notice: RemovalNotice?
+    let problem: String?
 }
