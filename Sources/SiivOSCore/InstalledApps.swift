@@ -7,6 +7,8 @@ public struct InstalledApp: Equatable, Sendable {
     public let name: String
     /// The app's unique identifier, for example "com.example.Notes", if it declares one.
     public let bundleIdentifier: String?
+    /// The version shown to users, for example "2.1", if the app declares one.
+    public let version: String?
 }
 
 /// Finds the apps installed on this Mac. Read-only.
@@ -49,28 +51,35 @@ public enum InstalledApps {
     }
 
     private static func app(at url: URL) -> InstalledApp {
-        InstalledApp(
+        let info = infoDictionary(ofAppAt: url)
+        return InstalledApp(
             url: url,
             name: url.deletingPathExtension().lastPathComponent,
-            bundleIdentifier: bundleIdentifier(ofAppAt: url)
+            bundleIdentifier: nonEmptyString(info["CFBundleIdentifier"]),
+            version: nonEmptyString(info["CFBundleShortVersionString"])
         )
     }
 
-    /// Reads the identifier from the app's Info.plist. Mac apps keep it in "Contents";
-    /// iPhone and iPad apps running on a Mac keep it in "WrappedBundle".
-    private static func bundleIdentifier(ofAppAt url: URL) -> String? {
+    /// Reads the app's Info.plist. Mac apps keep it in "Contents"; iPhone and iPad apps
+    /// running on a Mac keep it in "WrappedBundle". An app without one gives an empty result.
+    private static func infoDictionary(ofAppAt url: URL) -> [String: Any] {
         for location in ["Contents/Info.plist", "WrappedBundle/Info.plist"] {
             let file = url.appendingPathComponent(location)
             guard let data = try? Data(contentsOf: file),
                   let plist = try? PropertyListSerialization.propertyList(from: data, options: [], format: nil),
-                  let dictionary = plist as? [String: Any],
-                  let identifier = dictionary["CFBundleIdentifier"] as? String,
-                  !identifier.isEmpty
+                  let dictionary = plist as? [String: Any]
             else {
                 continue
             }
-            return identifier
+            return dictionary
         }
-        return nil
+        return [:]
+    }
+
+    private static func nonEmptyString(_ value: Any?) -> String? {
+        guard let text = value as? String, !text.isEmpty else {
+            return nil
+        }
+        return text
     }
 }

@@ -9,6 +9,8 @@ public struct RemovalPlan: Equatable, Identifiable, Sendable {
     public struct Item: Equatable, Identifiable, Sendable {
         public let url: URL
         public let sizeBytes: Int64
+        /// True when the whole change is called off if this item cannot be moved.
+        public let isRequired: Bool
 
         public var id: URL { url }
     }
@@ -113,7 +115,14 @@ public final class SafetyCore: @unchecked Sendable {
     ///   - urls: The files and folders someone wants removed.
     ///   - title: Short name for the change. Left out, one is made from the items.
     ///   - reason: One plain sentence on why these items were picked.
-    public func plan(removing urls: [URL], title: String? = nil, reason: String) -> RemovalPlan {
+    ///   - required: Items among `urls` that the change makes no sense without, such as the
+    ///     app itself when uninstalling. If one of them may not or cannot be moved, nothing is.
+    public func plan(
+        removing urls: [URL],
+        title: String? = nil,
+        reason: String,
+        required: [URL] = []
+    ) -> RemovalPlan {
         var seenPaths = Set<String>()
         var candidates: [URL] = []
         for url in urls {
@@ -135,14 +144,26 @@ public final class SafetyCore: @unchecked Sendable {
             }
         }
 
+        let requiredPaths = Set(required.map { $0.standardizedFileURL.path })
+        if !requiredPaths.isSubset(of: Set(allowed.map { $0.path })) {
+            // A required item is missing or protected, so the rest is left alone too.
+            allowed = []
+        }
+
         // An item inside a folder that is also being removed moves along with that folder.
-        let items = allowed
+        let unordered = allowed
             .filter { url in
                 !allowed.contains { other in url.path.hasPrefix(other.path + "/") }
             }
             .map { url in
-                RemovalPlan.Item(url: url, sizeBytes: FileSize.onDisk(of: url, fileManager: fileManager))
+                RemovalPlan.Item(
+                    url: url,
+                    sizeBytes: FileSize.onDisk(of: url, fileManager: fileManager),
+                    isRequired: requiredPaths.contains(url.path)
+                )
             }
+        // Required items go first, so that nothing else has moved if one of them fails.
+        let items = unordered.filter { $0.isRequired } + unordered.filter { !$0.isRequired }
 
         let totalBytes = items.reduce(Int64(0)) { $0 + $1.sizeBytes }
         return RemovalPlan(
@@ -177,8 +198,9 @@ public final class SafetyCore: @unchecked Sendable {
     /// Carries out a plan: moves its items to the holding area and records the change.
     ///
     /// Items that cannot be moved, for example because macOS protects them, are left
-    /// where they are and listed in the result. If nothing at all could be moved, or
-    /// the change could not be recorded, an error is thrown and nothing stays moved.
+    /// where they are and listed in the result. If a required item cannot be moved, if
+    /// nothing at all could be moved, or if the change could not be recorded, an error
+    /// is thrown and nothing stays moved.
     public func apply(_ plan: RemovalPlan) throws -> ChangeResult {
         lock.lock()
         defer { lock.unlock() }
@@ -196,6 +218,12 @@ public final class SafetyCore: @unchecked Sendable {
             do {
                 held.append(try holdingArea.hold(item.url))
             } catch {
+                if item.isRequired {
+                    for moved in held.reversed() {
+                        try? holdingArea.restore(moved)
+                    }
+                    throw error
+                }
                 failures.append(ChangeResult.Failure(path: item.url.path, message: error.localizedDescription))
                 if firstError == nil {
                     firstError = error

@@ -4,6 +4,8 @@ struct ContentView: View {
     @State private var selection: AppSection? = .overview
     /// Kept here so that scan results survive a visit to another section.
     @StateObject private var cleanup = CleanupModel()
+    /// Kept here so that the app list is only measured once.
+    @StateObject private var apps = AppsModel()
 
     var body: some View {
         NavigationSplitView {
@@ -23,6 +25,8 @@ struct ContentView: View {
             OverviewView()
         case .cleanup:
             CleanupView(model: cleanup)
+        case .apps:
+            AppsView(model: apps)
         case .history:
             HistoryView()
         default:

@@ -125,24 +125,6 @@ final class ClutterScannerTests: TemporaryDirectoryTestCase {
 
     // MARK: - Installed apps and leftovers
 
-    private var applications: URL {
-        root.appendingPathComponent("Applications", isDirectory: true)
-    }
-
-    private func makeApp(_ relativePath: String, identifier: String?) throws {
-        let app = applications.appendingPathComponent(relativePath, isDirectory: true)
-        let contents = app.appendingPathComponent("Contents", isDirectory: true)
-        try FileManager.default.createDirectory(at: contents, withIntermediateDirectories: true)
-        if let identifier {
-            let plist = try PropertyListSerialization.data(
-                fromPropertyList: ["CFBundleIdentifier": identifier, "CFBundleName": "Test"],
-                format: .xml,
-                options: 0
-            )
-            try plist.write(to: contents.appendingPathComponent("Info.plist"))
-        }
-    }
-
     func testInstalledAppsAreFoundWithTheirIdentifiers() throws {
         try makeApp("Notes.app", identifier: "com.example.Notes")
         try makeApp("Utilities/Disk Tool.app", identifier: "org.sample.DiskTool")
