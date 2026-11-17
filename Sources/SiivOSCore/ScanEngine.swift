@@ -8,12 +8,22 @@ public struct Finding: Equatable, Identifiable, Sendable {
     public let sizeBytes: Int64
     /// Plain-language description of what the item is and why removing it is safe.
     public let explanation: String
+    /// Set when the item should not be removed right now, for example because the app
+    /// it belongs to is open. The item is shown with this reason and cannot be ticked.
+    public let heldBackReason: String?
 
-    public init(id: UUID = UUID(), url: URL, sizeBytes: Int64, explanation: String) {
+    public init(
+        id: UUID = UUID(),
+        url: URL,
+        sizeBytes: Int64,
+        explanation: String,
+        heldBackReason: String? = nil
+    ) {
         self.id = id
         self.url = url
         self.sizeBytes = sizeBytes
         self.explanation = explanation
+        self.heldBackReason = heldBackReason
     }
 }
 
@@ -116,13 +126,16 @@ public struct ScanEngine: Sendable {
 
 extension ScanEngine {
     /// The scanners behind the Cleanup screen, in the order they are shown.
+    ///
+    /// - Parameter runningApps: The apps that are open right now. Their data is held back.
     public static func clutter(
-        homeDirectory: URL = URL(fileURLWithPath: NSHomeDirectory())
+        homeDirectory: URL = URL(fileURLWithPath: NSHomeDirectory()),
+        runningApps: [RunningApp] = []
     ) -> ScanEngine {
         ScanEngine(scanners: [
-            CachesScanner(homeDirectory: homeDirectory),
-            LogsScanner(homeDirectory: homeDirectory),
-            LeftoversScanner(homeDirectory: homeDirectory),
+            CachesScanner(homeDirectory: homeDirectory, runningApps: runningApps),
+            LogsScanner(homeDirectory: homeDirectory, runningApps: runningApps),
+            LeftoversScanner(homeDirectory: homeDirectory, runningApps: runningApps),
             OldDownloadsScanner(homeDirectory: homeDirectory),
             LargeFilesScanner(homeDirectory: homeDirectory),
             DuplicateFilesScanner(homeDirectory: homeDirectory)

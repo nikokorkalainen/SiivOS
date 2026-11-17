@@ -18,6 +18,17 @@ These are what should make SiivOS stand out, and every feature is held to them.
 3. **Honest.** No "RAM booster" style features that don't help. On macOS the real gains come from freeing disk space and taming background items.
 4. **Health timeline.** A health score with local history, showing what changed and when.
 
+## How SiivOS stands out
+
+Looked at on 17 November 2026, from the products' own websites: CleanMyMac (paid, closed source, the broadest feature set), CCleaner for Mac (free and paid, looks behind on macOS support) and Purge (free, open source, storage cleanup only, files go to the Trash first).
+
+Purge already covers "open, private, honest, reversible" for storage cleanup, so those principles alone do not set SiivOS apart. What does:
+
+1. **Undo with a history.** Every change is recorded with the explanation that was shown, and a whole change, such as an uninstall, can be put back in one click. Purge relies on the Trash and CleanMyMac deletes; neither keeps a readable record of what was done and why.
+2. **The health timeline.** Answering "what changed on my Mac, and when?": new background items, apps added or removed, what grew. None of the three does this.
+3. **Diagnosis instead of boosting.** Explaining why the Mac is slow right now, in plain words, with no "free up memory" buttons.
+4. **Breadth with a trust model.** Cleanup, apps, performance and protection in one app, all local and reversible. Purge is trustworthy but narrow; CleanMyMac is broad but paid and closed.
+
 ## Phases
 
 | # | Phase | What it delivers | Status |
@@ -31,6 +42,34 @@ These are what should make SiivOS stand out, and every feature is held to them.
 | 7 | Health timeline | Health score with local history | Not started |
 | 8 | Polish | Menu bar widget, tests, README and licence, ready for an open-source release | Not started |
 | 9 | AI assistant (later) | Added once the rules-based diagnoses work | Not started |
+
+## Planned additions
+
+Ideas taken from the comparison above and from the owner. Each is built as part of the phase it belongs to, or as a follow-up to a finished phase.
+
+| Idea | Inspired by | Belongs to | Status |
+|------|-------------|------------|--------|
+| Never-touch list: Cleanup never lists data of macOS, password managers and sign-in, iCloud and other syncing, or security and device-management software. Passwords, mail and messages cannot be removed at all | Purge | Phase 3 | Built. Engine tests pass in Claude's workspace. Awaiting test on a Mac |
+| Hold back caches and logs of apps that are open, and count an open app as installed wherever it is kept | Purge | Phase 3 | Built. Engine tests pass in Claude's workspace. Awaiting test on a Mac |
+| "Safe to clean" or "Check first" label on every item | Purge | Phase 3 follow-up | Not started |
+| Developer clutter: Xcode data, Homebrew, npm and Docker caches | Purge | Phase 3 follow-up | Not started |
+| Count copies that share disk space once, so sizes are honest | Purge | Phase 3 follow-up | Not started |
+| Visual map of the largest folders on the disk | CleanMyMac | Phase 3 follow-up | Not started |
+| App permissions overview: which apps can use the camera, microphone and files | CleanMyMac | Phase 6 | Not started |
+| Notice and record new background items when they appear | SiivOS's own | Phases 6 and 7 | Not started |
+| Settings window (see below) | Owner | Phase 8, or earlier where a phase needs a setting | Proposed, not yet agreed |
+
+Decided against: cleaning cloud storage and updating other apps (both need network access, against the privacy principle), clearing browser history, and finding blurry or similar photos (little benefit for the effort).
+
+### Proposed settings
+
+Kept short on purpose. A setting is only added when people would reasonably want different behaviour.
+
+- **Cleanup:** how old a download must be to count as old, how big a file must be to count as large, which checks to run, and folders to leave out of every scan.
+- **Holding area:** delete held items automatically after a chosen time (off unless turned on), and warn when the holding area grows past a chosen size.
+- **Permissions:** whether SiivOS has Full Disk Access and App Management, with buttons that open the right page in System Settings.
+- **Privacy:** a plain statement of what SiivOS does and does not send anywhere. Anything that would use the network, such as malware definition updates in Phase 6, is listed here and is off until turned on.
+- **Later, with their phases:** how long the health timeline keeps its history (Phase 7), and the menu bar widget and opening at login (Phase 8).
 
 ## How we work
 

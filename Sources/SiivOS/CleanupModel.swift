@@ -1,3 +1,4 @@
+import AppKit
 import SiivOSCore
 import SwiftUI
 
@@ -41,9 +42,15 @@ final class CleanupModel: ObservableObject {
         scanningTitle = ""
         selection = []
 
+        // The apps that are open now. Their caches and logs are listed but cannot be ticked.
+        let openApps = NSWorkspace.shared.runningApplications.compactMap { app -> RunningApp? in
+            guard let name = app.localizedName else { return nil }
+            return RunningApp(name: name, bundleIdentifier: app.bundleIdentifier)
+        }
+
         Task {
             let newReport = await Task.detached(priority: .userInitiated) {
-                ScanEngine.clutter().run { title in
+                ScanEngine.clutter(runningApps: openApps).run { title in
                     Task { @MainActor in
                         self.scanningTitle = title
                     }
@@ -61,6 +68,8 @@ final class CleanupModel: ObservableObject {
     }
 
     func setSelected(_ finding: Finding, _ isOn: Bool) {
+        // An item that is held back, for example because its app is open, cannot be ticked.
+        guard finding.heldBackReason == nil else { return }
         if isOn {
             selection.insert(finding.url)
         } else {

@@ -8,26 +8,33 @@ public struct CachesScanner: SystemScanner {
 
     private let directory: URL
     private let minimumBytes: Int64
+    private let runningApps: [RunningApp]
 
-    /// - Parameter minimumBytes: Smaller caches are not reported, because removing them frees next to nothing.
+    /// - Parameters:
+    ///   - minimumBytes: Smaller caches are not reported, because removing them frees next to nothing.
+    ///   - runningApps: The apps that are open right now. Their caches are listed but held back.
     public init(
         homeDirectory: URL = URL(fileURLWithPath: NSHomeDirectory()),
-        minimumBytes: Int64 = 1_000_000
+        minimumBytes: Int64 = 1_000_000,
+        runningApps: [RunningApp] = []
     ) {
         self.directory = homeDirectory.appendingPathComponent("Library/Caches", isDirectory: true)
         self.minimumBytes = minimumBytes
+        self.runningApps = runningApps
     }
 
     public func scan() throws -> [Finding] {
         try ScanSupport.children(of: directory, fileManager: .default)
-            // Caches that belong to macOS itself are left to macOS.
-            .filter { !$0.url.lastPathComponent.lowercased().hasPrefix("com.apple.") }
+            .filter { NeverOffer.category(forItemNamed: $0.url.lastPathComponent) == nil }
             .filter { $0.sizeBytes >= minimumBytes }
             .map { child in
-                Finding(
+                let name = child.url.lastPathComponent
+                let openApp = RunningApp.using(itemNamed: name, among: runningApps)
+                return Finding(
                     url: child.url,
                     sizeBytes: child.sizeBytes,
-                    explanation: "Cached data for \(child.url.lastPathComponent)."
+                    explanation: "Cached data for \(name).",
+                    heldBackReason: openApp.map { "\($0.name) is open. Quit it, then scan again to clean its cache." }
                 )
             }
     }
@@ -41,24 +48,33 @@ public struct LogsScanner: SystemScanner {
 
     private let directory: URL
     private let minimumBytes: Int64
+    private let runningApps: [RunningApp]
 
-    /// - Parameter minimumBytes: Smaller logs are not reported, because removing them frees next to nothing.
+    /// - Parameters:
+    ///   - minimumBytes: Smaller logs are not reported, because removing them frees next to nothing.
+    ///   - runningApps: The apps that are open right now. Their logs are listed but held back.
     public init(
         homeDirectory: URL = URL(fileURLWithPath: NSHomeDirectory()),
-        minimumBytes: Int64 = 1_000_000
+        minimumBytes: Int64 = 1_000_000,
+        runningApps: [RunningApp] = []
     ) {
         self.directory = homeDirectory.appendingPathComponent("Library/Logs", isDirectory: true)
         self.minimumBytes = minimumBytes
+        self.runningApps = runningApps
     }
 
     public func scan() throws -> [Finding] {
         try ScanSupport.children(of: directory, fileManager: .default)
+            .filter { NeverOffer.category(forItemNamed: $0.url.lastPathComponent) == nil }
             .filter { $0.sizeBytes >= minimumBytes }
             .map { child in
-                Finding(
+                let name = child.url.lastPathComponent
+                let openApp = RunningApp.using(itemNamed: name, among: runningApps)
+                return Finding(
                     url: child.url,
                     sizeBytes: child.sizeBytes,
-                    explanation: "Logs from \(child.url.lastPathComponent)."
+                    explanation: "Logs from \(name).",
+                    heldBackReason: openApp.map { "\($0.name) is open. Quit it, then scan again to remove its logs." }
                 )
             }
     }

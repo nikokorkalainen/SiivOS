@@ -68,6 +68,8 @@ private struct CleanupResultsView: View {
     @ObservedObject var model: CleanupModel
     let report: ScanReport
 
+    @State private var showsNeverOffered = false
+
     var body: some View {
         Form {
             Section {
@@ -84,6 +86,23 @@ private struct CleanupResultsView: View {
                     .disabled(model.isWorking)
                 }
                 .buttonStyle(.bordered)
+
+                DisclosureGroup("What SiivOS never lists here", isExpanded: $showsNeverOffered) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        ForEach(NeverOffer.Category.allCases, id: \.self) { category in
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(category.title)
+                                    .font(.callout)
+                                    .bold()
+                                Text(category.explanation)
+                                    .font(.callout)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.top, 4)
+                }
             }
 
             ForEach(report.sections) { section in
@@ -115,6 +134,11 @@ private struct CleanupSectionView: View {
         Array(section.findings.prefix(Self.rowLimit))
     }
 
+    /// The shown items that can be ticked. Held-back items are left out.
+    private var tickableFindings: [Finding] {
+        shownFindings.filter { $0.heldBackReason == nil }
+    }
+
     var body: some View {
         Section {
             Text(section.summary)
@@ -127,10 +151,11 @@ private struct CleanupSectionView: View {
                 Text("Nothing found.")
                     .foregroundStyle(.secondary)
             } else {
-                Button(model.areAllSelected(shownFindings) ? "Untick All" : "Tick All") {
-                    model.setAllSelected(shownFindings, !model.areAllSelected(shownFindings))
+                Button(model.areAllSelected(tickableFindings) ? "Untick All" : "Tick All") {
+                    model.setAllSelected(tickableFindings, !model.areAllSelected(tickableFindings))
                 }
                 .buttonStyle(.bordered)
+                .disabled(tickableFindings.isEmpty)
 
                 ForEach(shownFindings) { finding in
                     FindingRow(model: model, finding: finding)
@@ -158,31 +183,50 @@ private struct FindingRow: View {
     let finding: Finding
 
     var body: some View {
-        Toggle(isOn: isTicked) {
-            HStack {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(finding.url.lastPathComponent)
-                        .lineLimit(1)
-                        .truncationMode(.middle)
-                    Text(finding.explanation)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    Text(finding.url.deletingLastPathComponent().path)
-                        .font(.caption2)
-                        .foregroundStyle(.tertiary)
-                        .lineLimit(1)
-                        .truncationMode(.middle)
+        row
+            .contextMenu {
+                Button("Show in Finder") {
+                    NSWorkspace.shared.activateFileViewerSelecting([finding.url])
                 }
-                Spacer()
-                Text(formatBytes(finding.sizeBytes))
-                    .foregroundStyle(.secondary)
             }
+    }
+
+    /// A tick box with the details, or the details alone when the item is held back.
+    @ViewBuilder
+    private var row: some View {
+        if finding.heldBackReason == nil {
+            Toggle(isOn: isTicked) {
+                details
+            }
+            .toggleStyle(.checkbox)
+        } else {
+            details
         }
-        .toggleStyle(.checkbox)
-        .contextMenu {
-            Button("Show in Finder") {
-                NSWorkspace.shared.activateFileViewerSelecting([finding.url])
+    }
+
+    private var details: some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(finding.url.lastPathComponent)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+                Text(finding.explanation)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                if let reason = finding.heldBackReason {
+                    Label(reason, systemImage: "lock")
+                        .font(.caption)
+                        .foregroundStyle(.orange)
+                }
+                Text(finding.url.deletingLastPathComponent().path)
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
             }
+            Spacer()
+            Text(formatBytes(finding.sizeBytes))
+                .foregroundStyle(.secondary)
         }
     }
 

@@ -19,6 +19,9 @@ public struct SafetyRules: Sendable {
         "movies", "music", "pictures", "public", ".trash"
     ]
 
+    /// Folders in the Library whose contents can never be replaced once lost.
+    private static let irreplaceableLibraryFolders: Set<String> = ["keychains", "mail", "messages"]
+
     /// Top-level folders that belong to macOS itself.
     private static let systemFolders: Set<String> = ["system", "bin", "sbin", "etc", "dev"]
 
@@ -47,6 +50,9 @@ public struct SafetyRules: Sendable {
             let inside = Array(item.dropFirst(home.count))
             if inside.count == 1, Self.mainHomeFolders.contains(inside[0]) {
                 return "It is one of the main folders in your home folder."
+            }
+            if inside.count > 2, inside[0] == "library", Self.irreplaceableLibraryFolders.contains(inside[1]) {
+                return "It is part of your saved passwords, mail or messages, which cannot be replaced."
             }
             if inside.count == 2, inside[0] == "library" {
                 return "macOS and your apps rely on this folder. Only items inside it can be removed."

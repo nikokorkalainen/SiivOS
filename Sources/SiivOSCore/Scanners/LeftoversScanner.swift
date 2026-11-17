@@ -25,19 +25,23 @@ public struct LeftoversScanner: SystemScanner {
     private let libraryDirectory: URL
     private let applicationDirectories: [URL]
     private let minimumBytes: Int64
+    private let runningApps: [RunningApp]
 
     /// - Parameters:
     ///   - applicationDirectories: Where to look for installed apps. Left out, the standard folders are used.
     ///   - minimumBytes: Smaller leftovers are not reported, because removing them frees next to nothing.
+    ///   - runningApps: The apps that are open right now. They count as installed wherever they are kept.
     public init(
         homeDirectory: URL = URL(fileURLWithPath: NSHomeDirectory()),
         applicationDirectories: [URL]? = nil,
-        minimumBytes: Int64 = 1_000_000
+        minimumBytes: Int64 = 1_000_000,
+        runningApps: [RunningApp] = []
     ) {
         self.libraryDirectory = homeDirectory.appendingPathComponent("Library", isDirectory: true)
         self.applicationDirectories = applicationDirectories
             ?? InstalledApps.standardDirectories(homeDirectory: homeDirectory)
         self.minimumBytes = minimumBytes
+        self.runningApps = runningApps
     }
 
     public func scan() throws -> [Finding] {
@@ -49,7 +53,7 @@ public struct LeftoversScanner: SystemScanner {
         guard !knownDevelopers.isEmpty else {
             return []
         }
-        knownDevelopers.insert("com.apple")
+        knownDevelopers.formUnion(runningApps.compactMap { $0.bundleIdentifier }.compactMap(Self.developer(of:)))
 
         var findings: [Finding] = []
         for location in Self.locations {
@@ -65,6 +69,7 @@ public struct LeftoversScanner: SystemScanner {
                     identifier.removeLast(location.suffix.count)
                 }
                 guard Self.looksLikeAppIdentifier(identifier),
+                      NeverOffer.category(forItemNamed: identifier) == nil,
                       let developer = Self.developer(of: identifier),
                       !knownDevelopers.contains(developer),
                       child.sizeBytes >= minimumBytes
