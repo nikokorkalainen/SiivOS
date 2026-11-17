@@ -27,20 +27,23 @@ public enum AppRelatedFiles {
         case identifierPrefixedPlist
     }
 
-    private static let locations: [(folder: String, kind: String, match: Match)] = [
-        ("Application Support", "Stored data", .exact(allowsAppName: true)),
-        ("Caches", "Cache", .exact(allowsAppName: true)),
-        ("Logs", "Logs", .exact(allowsAppName: true)),
-        ("Containers", "Stored data", .exact(allowsAppName: false)),
-        ("HTTPStorages", "Web data", .exact(allowsAppName: false)),
-        ("WebKit", "Web data", .exact(allowsAppName: false)),
-        ("Application Scripts", "Scripts", .exact(allowsAppName: false)),
-        ("Preferences", "Settings", .identifierWithSuffix(".plist")),
-        ("Preferences/ByHost", "Settings", .identifierPrefixedPlist),
-        ("Saved Application State", "Saved window state", .identifierWithSuffix(".savedState")),
-        ("Cookies", "Cookies", .identifierWithSuffix(".binarycookies")),
-        ("LaunchAgents", "Background item", .identifierPrefixedPlist)
-    ]
+    /// Where apps keep their data in the Library, what to call each kind, and how items are matched.
+    private static var locations: [(folder: String, kind: String, match: Match)] {
+        [
+            ("Application Support", tr("Stored data"), .exact(allowsAppName: true)),
+            ("Caches", tr("Cache"), .exact(allowsAppName: true)),
+            ("Logs", tr("Logs"), .exact(allowsAppName: true)),
+            ("Containers", tr("Stored data"), .exact(allowsAppName: false)),
+            ("HTTPStorages", tr("Web data"), .exact(allowsAppName: false)),
+            ("WebKit", tr("Web data"), .exact(allowsAppName: false)),
+            ("Application Scripts", tr("Scripts"), .exact(allowsAppName: false)),
+            ("Preferences", tr("Settings"), .identifierWithSuffix(".plist")),
+            ("Preferences/ByHost", tr("Settings"), .identifierPrefixedPlist),
+            ("Saved Application State", tr("Saved window state"), .identifierWithSuffix(".savedState")),
+            ("Cookies", tr("Cookies"), .identifierWithSuffix(".binarycookies")),
+            ("LaunchAgents", tr("Background item"), .identifierPrefixedPlist)
+        ]
+    }
 
     public static func find(
         for app: InstalledApp,
@@ -86,7 +89,7 @@ public enum AppRelatedFiles {
         let insideApp = app.url.standardizedFileURL.path + "/"
         for agent in agents {
             if let program = agent.program, program.hasPrefix(insideApp) {
-                add(agent.url, kind: "Background item")
+                add(agent.url, kind: tr("Background item"))
             }
         }
 

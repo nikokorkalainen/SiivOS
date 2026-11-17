@@ -3,8 +3,10 @@ import Foundation
 /// Finds the caches apps keep in `~/Library/Caches`.
 public struct CachesScanner: SystemScanner {
     public let id = "caches"
-    public let title = "App caches"
-    public let summary = "Temporary files apps keep so they can work faster. Apps create them again when needed, so an app may start a little slower the first time afterwards. Quit an app before removing its cache."
+    public var title: String { tr("App caches") }
+    public var summary: String {
+        tr("Temporary files apps keep so they can work faster. Apps create them again when needed, so an app may start a little slower the first time afterwards. Quit an app before removing its cache.")
+    }
 
     private let directory: URL
     private let minimumBytes: Int64
@@ -33,8 +35,8 @@ public struct CachesScanner: SystemScanner {
                 return Finding(
                     url: child.url,
                     sizeBytes: child.sizeBytes,
-                    explanation: "Cached data for \(name).",
-                    heldBackReason: openApp.map { "\($0.name) is open. Quit it, then scan again to clean its cache." }
+                    explanation: tr("Cached data for %1$@.", name),
+                    heldBackReason: openApp.map { tr("%1$@ is open. Quit it, then scan again to clean its cache.", $0.name) }
                 )
             }
     }
@@ -43,8 +45,10 @@ public struct CachesScanner: SystemScanner {
 /// Finds the log files apps write to `~/Library/Logs`.
 public struct LogsScanner: SystemScanner {
     public let id = "logs"
-    public let title = "Logs"
-    public let summary = "Notes apps write about what they were doing, mainly useful for tracking down problems. Removing them does not change how apps work."
+    public var title: String { tr("Logs") }
+    public var summary: String {
+        tr("Notes apps write about what they were doing, mainly useful for tracking down problems. Removing them does not change how apps work.")
+    }
 
     private let directory: URL
     private let minimumBytes: Int64
@@ -73,8 +77,8 @@ public struct LogsScanner: SystemScanner {
                 return Finding(
                     url: child.url,
                     sizeBytes: child.sizeBytes,
-                    explanation: "Logs from \(name).",
-                    heldBackReason: openApp.map { "\($0.name) is open. Quit it, then scan again to remove its logs." }
+                    explanation: tr("Logs from %1$@.", name),
+                    heldBackReason: openApp.map { tr("%1$@ is open. Quit it, then scan again to remove its logs.", $0.name) }
                 )
             }
     }

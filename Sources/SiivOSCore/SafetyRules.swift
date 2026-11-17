@@ -30,41 +30,41 @@ public struct SafetyRules: Sendable {
         let item = Self.location(of: url)
 
         if item.count <= 2 {
-            return "It is one of the top-level folders of the disk."
+            return tr("It is one of the top-level folders of the disk.")
         }
         if Self.systemFolders.contains(item[1]) {
-            return "It is part of macOS."
+            return tr("It is part of macOS.")
         }
         if item[1] == "usr" && !(item.count > 3 && item[2] == "local") {
-            return "It is part of macOS."
+            return tr("It is part of macOS.")
         }
 
         let home = Self.components(of: homeDirectory.standardizedFileURL.resolvingSymlinksInPath())
         if item == home {
-            return "It is your home folder."
+            return tr("It is your home folder.")
         }
         if home.starts(with: item) {
-            return "It contains your home folder."
+            return tr("It contains your home folder.")
         }
         if item.starts(with: home) {
             let inside = Array(item.dropFirst(home.count))
             if inside.count == 1, Self.mainHomeFolders.contains(inside[0]) {
-                return "It is one of the main folders in your home folder."
+                return tr("It is one of the main folders in your home folder.")
             }
             if inside.count > 2, inside[0] == "library", Self.irreplaceableLibraryFolders.contains(inside[1]) {
-                return "It is part of your saved passwords, mail or messages, which cannot be replaced."
+                return tr("It is part of your saved passwords, mail or messages, which cannot be replaced.")
             }
             if inside.count == 2, inside[0] == "library" {
-                return "macOS and your apps rely on this folder. Only items inside it can be removed."
+                return tr("macOS and your apps rely on this folder. Only items inside it can be removed.")
             }
         }
 
         let holding = Self.components(of: holdingDirectory.standardizedFileURL.resolvingSymlinksInPath())
         if item.starts(with: holding) {
-            return "It is already in the SiivOS holding area."
+            return tr("It is already in the SiivOS holding area.")
         }
         if holding.starts(with: item) {
-            return "It contains SiivOS's own data, including the holding area."
+            return tr("It contains SiivOS's own data, including the holding area.")
         }
 
         return nil

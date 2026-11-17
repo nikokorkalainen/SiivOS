@@ -9,14 +9,14 @@ struct RemovalPlanSheet: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text(plan.items.isEmpty ? "Nothing can be removed" : "Before anything changes")
+            Text(plan.items.isEmpty ? tr("Nothing can be removed") : tr("Before anything changes"))
                 .font(.title2)
                 .bold()
             Text(plan.explanation)
                 .fixedSize(horizontal: false, vertical: true)
 
             if !plan.items.isEmpty {
-                GroupBox("Will be moved to the holding area") {
+                GroupBox(tr("Will be moved to the holding area")) {
                     ScrollView {
                         VStack(alignment: .leading, spacing: 4) {
                             ForEach(plan.items) { item in
@@ -38,7 +38,7 @@ struct RemovalPlanSheet: View {
             }
 
             if !plan.refused.isEmpty {
-                GroupBox("Will be left alone") {
+                GroupBox(tr("Will be left alone")) {
                     ScrollView {
                         VStack(alignment: .leading, spacing: 6) {
                             ForEach(plan.refused) { refusal in
@@ -61,10 +61,10 @@ struct RemovalPlanSheet: View {
 
             HStack {
                 Spacer()
-                Button(plan.items.isEmpty ? "Close" : "Cancel", role: .cancel, action: onCancel)
+                Button(plan.items.isEmpty ? tr("Close") : tr("Cancel"), role: .cancel, action: onCancel)
                     .keyboardShortcut(.cancelAction)
                 if !plan.items.isEmpty {
-                    Button("Move to Holding Area", action: onConfirm)
+                    Button(tr("Move to Holding Area"), action: onConfirm)
                 }
             }
         }

@@ -7,40 +7,40 @@ struct OverviewView: View {
 
     var body: some View {
         Form {
-            Section("Startup disk") {
+            Section(tr("Startup disk")) {
                 if let fraction = snapshot.diskUsedFraction {
                     ProgressView(value: fraction) {
-                        Text("\(percent(fraction)) used")
+                        Text(tr("%1$@ used", percent(fraction)))
                     }
                 }
-                LabeledContent("Size", value: bytes(snapshot.diskTotalBytes))
-                LabeledContent("Used", value: bytes(snapshot.diskUsedBytes))
-                LabeledContent("Available", value: bytes(snapshot.diskAvailableBytes))
+                LabeledContent(tr("Size"), value: bytes(snapshot.diskTotalBytes))
+                LabeledContent(tr("Used"), value: bytes(snapshot.diskUsedBytes))
+                LabeledContent(tr("Available"), value: bytes(snapshot.diskAvailableBytes))
             }
 
-            Section("This Mac") {
+            Section(tr("This Mac")) {
                 LabeledContent("macOS", value: snapshot.osVersion)
-                LabeledContent("Processor cores", value: "\(snapshot.processorCount)")
-                LabeledContent("Memory", value: memory(snapshot.physicalMemoryBytes))
-                LabeledContent("Time since restart", value: uptime(snapshot.uptimeSeconds))
+                LabeledContent(tr("Processor cores"), value: "\(snapshot.processorCount)")
+                LabeledContent(tr("Memory"), value: memory(snapshot.physicalMemoryBytes))
+                LabeledContent(tr("Time since restart"), value: uptime(snapshot.uptimeSeconds))
             }
         }
         .formStyle(.grouped)
-        .navigationTitle("Overview")
+        .navigationTitle(tr("Overview"))
         .toolbar {
             ToolbarItem {
                 Button {
                     snapshot = SystemSnapshot.current()
                 } label: {
-                    Label("Refresh", systemImage: "arrow.clockwise")
+                    Label(tr("Refresh"), systemImage: "arrow.clockwise")
                 }
-                .help("Read the current state of this Mac again")
+                .help(tr("Read the current state of this Mac again"))
             }
         }
     }
 
     private func bytes(_ value: Int64?) -> String {
-        guard let value else { return "Unknown" }
+        guard let value else { return tr("Unknown") }
         return ByteCountFormatter.string(fromByteCount: value, countStyle: .file)
     }
 
@@ -57,6 +57,6 @@ struct OverviewView: View {
         formatter.allowedUnits = [.day, .hour, .minute]
         formatter.unitsStyle = .full
         formatter.maximumUnitCount = 2
-        return formatter.string(from: seconds) ?? "Unknown"
+        return formatter.string(from: seconds) ?? tr("Unknown")
     }
 }

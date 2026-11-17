@@ -14,9 +14,9 @@ struct AppsView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            Picker("View", selection: $tab) {
-                Text("Apps").tag(Tab.apps)
-                Text("Background Items").tag(Tab.background)
+            Picker(tr("View"), selection: $tab) {
+                Text(tr("Apps")).tag(Tab.apps)
+                Text(tr("Background Items")).tag(Tab.background)
             }
             .pickerStyle(.segmented)
             .labelsHidden()
@@ -24,7 +24,7 @@ struct AppsView: View {
 
             content
         }
-        .navigationTitle("Apps")
+        .navigationTitle(tr("Apps"))
         .onAppear {
             if !model.hasLoaded {
                 model.load()
@@ -61,7 +61,7 @@ struct AppsView: View {
     }
 
     private var progressText: String {
-        model.loadingName.isEmpty ? "Looking for apps…" : "Measuring \(model.loadingName)…"
+        model.loadingName.isEmpty ? tr("Looking for apps…") : tr("Measuring %1$@…", model.loadingName)
     }
 
     /// True while a problem is being shown to the user.
@@ -83,15 +83,15 @@ private struct AppListView: View {
     var body: some View {
         VStack(spacing: 0) {
             HStack {
-                TextField("Search apps", text: $model.searchText)
+                TextField(tr("Search apps"), text: $model.searchText)
                     .textFieldStyle(.roundedBorder)
-                Picker("Sort by", selection: $model.sortOrder) {
+                Picker(tr("Sort by"), selection: $model.sortOrder) {
                     ForEach(AppsModel.SortOrder.allCases) { order in
                         Text(order.title).tag(order)
                     }
                 }
                 .frame(width: 260)
-                Button("Refresh") {
+                Button(tr("Refresh")) {
                     model.load()
                 }
             }
@@ -134,19 +134,19 @@ private struct AppRow: View {
                 .monospacedDigit()
 
             if info.isPartOfMacOS {
-                Text("Part of macOS")
+                Text(tr("Part of macOS"))
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .frame(width: 110)
             } else {
-                Button("Uninstall…", action: onUninstall)
+                Button(tr("Uninstall…"), action: onUninstall)
                     .disabled(isWorking)
                     .frame(width: 110)
             }
         }
         .padding(.vertical, 2)
         .contextMenu {
-            Button("Show in Finder") {
+            Button(tr("Show in Finder")) {
                 NSWorkspace.shared.activateFileViewerSelecting([info.app.url])
             }
         }
@@ -155,12 +155,12 @@ private struct AppRow: View {
     private var subtitle: String {
         var parts: [String] = []
         if let version = info.app.version {
-            parts.append("Version \(version)")
+            parts.append(tr("Version %1$@", version))
         }
         if let lastUsed = info.lastUsed {
-            parts.append("Last opened \(lastUsed.formatted(date: .abbreviated, time: .omitted))")
+            parts.append(tr("Last opened %1$@", lastUsed.formatted(date: .abbreviated, time: .omitted)))
         } else {
-            parts.append("No record of it being opened")
+            parts.append(tr("No record of it being opened"))
         }
         return parts.joined(separator: " · ")
     }
@@ -174,9 +174,9 @@ private struct BackgroundItemsView: View {
     var body: some View {
         Form {
             Section {
-                Text("Background items are programs macOS starts by itself, without you opening them. Each one is set up by a small settings file; removing that file stops the program from starting.")
-                Text("Apps that open when you log in are managed by macOS itself. SiivOS cannot list those, but you can review them in System Settings.")
-                Button("Open Login Items Settings") {
+                Text(tr("Background items are programs macOS starts by itself, without you opening them. Each one is set up by a small settings file; removing that file stops the program from starting."))
+                Text(tr("Apps that open when you log in are managed by macOS itself. SiivOS cannot list those, but you can review them in System Settings."))
+                Button(tr("Open Login Items Settings")) {
                     if let url = URL(string: "x-apple.systempreferences:com.apple.LoginItems-Settings.extension") {
                         NSWorkspace.shared.open(url)
                     }
@@ -185,22 +185,22 @@ private struct BackgroundItemsView: View {
 
             BackgroundSection(
                 model: model,
-                title: "For your account",
-                note: "These start when you log in. SiivOS can remove them.",
+                title: tr("For your account"),
+                note: tr("These start when you log in. SiivOS can remove them."),
                 items: model.backgroundItems(in: .user),
                 canRemove: true
             )
             BackgroundSection(
                 model: model,
-                title: "For all users of this Mac",
-                note: "These start when anyone logs in. Removing them needs an administrator, so SiivOS only shows them.",
+                title: tr("For all users of this Mac"),
+                note: tr("These start when anyone logs in. Removing them needs an administrator, so SiivOS only shows them."),
                 items: model.backgroundItems(in: .allUsers),
                 canRemove: false
             )
             BackgroundSection(
                 model: model,
-                title: "For the Mac itself",
-                note: "These start with the Mac, before anyone logs in. Removing them needs an administrator, so SiivOS only shows them.",
+                title: tr("For the Mac itself"),
+                note: tr("These start with the Mac, before anyone logs in. Removing them needs an administrator, so SiivOS only shows them."),
                 items: model.backgroundItems(in: .system),
                 canRemove: false
             )
@@ -222,7 +222,7 @@ private struct BackgroundSection: View {
                 .font(.callout)
                 .foregroundStyle(.secondary)
             if items.isEmpty {
-                Text("None.")
+                Text(tr("None."))
                     .foregroundStyle(.secondary)
             }
             ForEach(items) { item in
@@ -260,17 +260,17 @@ private struct BackgroundRow: View {
                         .truncationMode(.middle)
                 }
                 if !item.programExists {
-                    Label("Its program is missing. It was probably left behind by an app you removed.", systemImage: "exclamationmark.triangle")
+                    Label(tr("Its program is missing. It was probably left behind by an app you removed."), systemImage: "exclamationmark.triangle")
                         .font(.caption)
                         .foregroundStyle(.orange)
                 }
             }
             Spacer()
             if canRemove {
-                Button("Remove…", action: onRemove)
+                Button(tr("Remove…"), action: onRemove)
                     .disabled(isWorking)
             } else {
-                Button("Show in Finder") {
+                Button(tr("Show in Finder")) {
                     NSWorkspace.shared.activateFileViewerSelecting([item.url])
                 }
             }
@@ -281,11 +281,11 @@ private struct BackgroundRow: View {
 
     private var statusText: String {
         if item.isDisabled {
-            return "Turned off"
+            return tr("Turned off")
         }
         if item.startsAutomatically {
-            return item.scope == .system ? "Starts with the Mac" : "Starts at login"
+            return item.scope == .system ? tr("Starts with the Mac") : tr("Starts at login")
         }
-        return "Starts only when something needs it"
+        return tr("Starts only when something needs it")
     }
 }

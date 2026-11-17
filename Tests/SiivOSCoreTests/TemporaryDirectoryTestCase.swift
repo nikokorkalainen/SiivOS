@@ -1,4 +1,5 @@
 import XCTest
+@testable import SiivOSCore
 
 /// Base class for tests that need real files. Each test gets its own empty folder,
 /// with a pretend home folder inside it, and the folder is deleted afterwards.
@@ -17,6 +18,8 @@ class TemporaryDirectoryTestCase: XCTestCase {
 
     override func setUpWithError() throws {
         try super.setUpWithError()
+        // The tests check English wording, so pin the language whatever the machine is set to.
+        L10n.overrideLanguage = .english
         root = FileManager.default.temporaryDirectory
             .appendingPathComponent("SiivOSTests-\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: home, withIntermediateDirectories: true)

@@ -8,8 +8,10 @@ import Foundation
 /// better than suggesting data that an installed app still uses.
 public struct LeftoversScanner: SystemScanner {
     public let id = "leftovers"
-    public let title = "Leftovers from removed apps"
-    public let summary = "Data in your Library folder that belongs to apps which no longer seem to be installed. SiivOS only lists items when it finds no installed app from the same developer in your Applications folders, so check the list if you keep apps somewhere else."
+    public var title: String { tr("Leftovers from removed apps") }
+    public var summary: String {
+        tr("Data in your Library folder that belongs to apps which no longer seem to be installed. SiivOS only lists items when it finds no installed app from the same developer in your Applications folders, so check the list if you keep apps somewhere else.")
+    }
 
     /// Folders inside `~/Library` where apps keep data under their identifier, and the
     /// ending that follows the identifier in each.
@@ -80,7 +82,7 @@ public struct LeftoversScanner: SystemScanner {
                     Finding(
                         url: child.url,
                         sizeBytes: child.sizeBytes,
-                        explanation: "Data stored by \(identifier). No installed app from this developer was found."
+                        explanation: tr("Data stored by %1$@. No installed app from this developer was found.", identifier)
                     )
                 )
             }

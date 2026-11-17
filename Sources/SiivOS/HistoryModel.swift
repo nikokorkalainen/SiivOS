@@ -23,7 +23,7 @@ final class HistoryModel: ObservableObject {
             core = sharedCore
         case .failure(let error):
             core = nil
-            startupProblem = "SiivOS could not set up its holding area: \(error.localizedDescription)"
+            startupProblem = tr("SiivOS could not set up its holding area: %1$@", error.localizedDescription)
         }
         message = startupProblem
         reload()
@@ -49,9 +49,9 @@ final class HistoryModel: ObservableObject {
         guard let core else { return }
 
         let panel = NSOpenPanel()
-        panel.title = "Choose what to remove"
-        panel.message = "Choose files or folders. You will see what happens before anything is moved."
-        panel.prompt = "Continue"
+        panel.title = tr("Choose what to remove")
+        panel.message = tr("Choose files or folders. You will see what happens before anything is moved.")
+        panel.prompt = tr("Continue")
         panel.canChooseFiles = true
         panel.canChooseDirectories = true
         panel.allowsMultipleSelection = true
@@ -63,7 +63,7 @@ final class HistoryModel: ObservableObject {
         isWorking = true
         Task {
             let plan = await Task.detached(priority: .userInitiated) {
-                core.plan(removing: urls, reason: "You chose these items yourself.")
+                core.plan(removing: urls, reason: tr("You chose these items yourself."))
             }.value
             self.isWorking = false
             self.pendingPlan = plan
@@ -76,7 +76,7 @@ final class HistoryModel: ObservableObject {
         pendingPlan = nil
         run { core in
             let result = try core.apply(plan)
-            return describe(result.failures, intro: "Some items could not be moved and were left where they are:")
+            return describe(result.failures, intro: tr("Some items could not be moved and were left where they are:"))
         }
     }
 
@@ -84,7 +84,7 @@ final class HistoryModel: ObservableObject {
         let recordID = record.id
         run { core in
             let result = try core.undo(recordID: recordID)
-            return describe(result.failures, intro: "Some items could not be put back and are still in the holding area:")
+            return describe(result.failures, intro: tr("Some items could not be put back and are still in the holding area:"))
         }
     }
 
@@ -92,7 +92,7 @@ final class HistoryModel: ObservableObject {
         let recordID = record.id
         run { core in
             let result = try core.deletePermanently(recordID: recordID)
-            return describe(result.failures, intro: "Some items could not be deleted and are still in the holding area:")
+            return describe(result.failures, intro: tr("Some items could not be deleted and are still in the holding area:"))
         }
     }
 

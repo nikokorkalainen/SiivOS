@@ -55,9 +55,9 @@ public enum SafetyCoreError: LocalizedError {
     public var errorDescription: String? {
         switch self {
         case .nothingToRemove:
-            return "There is nothing to remove."
+            return tr("There is nothing to remove.")
         case .recordNotFound:
-            return "That change is no longer in the SiivOS history."
+            return tr("That change is no longer in the SiivOS history.")
         }
     }
 }
@@ -136,7 +136,7 @@ public final class SafetyCore: @unchecked Sendable {
         var refused: [RemovalPlan.Refusal] = []
         for url in candidates {
             if !exists(url) {
-                refused.append(RemovalPlan.Refusal(url: url, reason: "It no longer exists."))
+                refused.append(RemovalPlan.Refusal(url: url, reason: tr("It no longer exists.")))
             } else if let refusal = rules.reasonToRefuse(url) {
                 refused.append(RemovalPlan.Refusal(url: url, reason: refusal))
             } else {
@@ -177,20 +177,26 @@ public final class SafetyCore: @unchecked Sendable {
 
     private static func defaultTitle(for items: [RemovalPlan.Item]) -> String {
         if items.count == 1 {
-            return "Removed \(items[0].url.lastPathComponent)"
+            return tr("Removed %1$@", items[0].url.lastPathComponent)
         }
-        return "Removed \(items.count) items"
+        return tr("Removed %1$@ items", "\(items.count)")
     }
 
     private static func explanation(itemCount: Int, totalBytes: Int64, reason: String) -> String {
         guard itemCount > 0 else {
-            return "None of the chosen items can be removed, so nothing will change."
+            return tr("None of the chosen items can be removed, so nothing will change.")
         }
         let size = ByteCountFormatter.string(fromByteCount: totalBytes, countStyle: .file)
-        let what = itemCount == 1 ? "1 item" : "\(itemCount) items"
-        return "\(reason) SiivOS will move \(what) (\(size)) to its holding area. "
-            + "Nothing is deleted yet, and you can put everything back from History. "
-            + "The disk space is freed only when you delete the items permanently from History."
+        if itemCount == 1 {
+            return tr(
+                "%1$@ SiivOS will move 1 item (%2$@) to its holding area. Nothing is deleted yet, and you can put everything back from History. The disk space is freed only when you delete the items permanently from History.",
+                reason, size
+            )
+        }
+        return tr(
+            "%1$@ SiivOS will move %2$@ items (%3$@) to its holding area. Nothing is deleted yet, and you can put everything back from History. The disk space is freed only when you delete the items permanently from History.",
+            reason, "\(itemCount)", size
+        )
     }
 
     // MARK: - Changing things

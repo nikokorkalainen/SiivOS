@@ -14,9 +14,9 @@ final class AppsModel: ObservableObject {
 
         var title: String {
             switch self {
-            case .size: return "Largest first"
-            case .name: return "Name"
-            case .lastUsed: return "Longest unused first"
+            case .size: return tr("Largest first")
+            case .name: return tr("Name")
+            case .lastUsed: return tr("Longest unused first")
             }
         }
     }
@@ -48,7 +48,7 @@ final class AppsModel: ObservableObject {
             core = sharedCore
         case .failure(let error):
             core = nil
-            startupProblem = "SiivOS could not set up its holding area: \(error.localizedDescription)"
+            startupProblem = tr("SiivOS could not set up its holding area: %1$@", error.localizedDescription)
         }
         message = startupProblem
     }
@@ -114,7 +114,7 @@ final class AppsModel: ObservableObject {
 
         if let identifier = app.bundleIdentifier,
            !NSRunningApplication.runningApplications(withBundleIdentifier: identifier).isEmpty {
-            message = "\(app.name) is open. Quit it first, then try again."
+            message = tr("%1$@ is open. Quit it first, then try again.", app.name)
             return
         }
 
@@ -124,8 +124,8 @@ final class AppsModel: ObservableObject {
                 let related = AppRelatedFiles.find(for: app).map { $0.url }
                 return core.plan(
                     removing: [app.url] + related,
-                    title: "Uninstalled \(app.name)",
-                    reason: "This uninstalls \(app.name): the app itself and what it stored in your Library.",
+                    title: tr("Uninstalled %1$@", app.name),
+                    reason: tr("This uninstalls %1$@: the app itself and what it stored in your Library.", app.name),
                     required: [app.url]
                 )
             }.value
@@ -146,8 +146,8 @@ final class AppsModel: ObservableObject {
             let plan = await Task.detached(priority: .userInitiated) {
                 core.plan(
                     removing: [url],
-                    title: "Removed background item \(label)",
-                    reason: "This stops \(label) from starting by itself. It takes effect the next time you log in; if it is running now, it keeps running until then."
+                    title: tr("Removed background item %1$@", label),
+                    reason: tr("This stops %1$@ from starting by itself. It takes effect the next time you log in; if it is running now, it keeps running until then.", label)
                 )
             }.value
             self.isWorking = false
@@ -169,15 +169,15 @@ final class AppsModel: ObservableObject {
                     let result = try core.apply(plan)
                     return describe(
                         result.failures,
-                        intro: "Some items could not be moved and were left where they are:"
+                        intro: tr("Some items could not be moved and were left where they are:")
                     )
                 } catch {
                     guard isUninstall else {
                         return error.localizedDescription
                     }
-                    return "The app could not be moved, so nothing was changed.\n\n"
-                        + error.localizedDescription
-                        + "\n\nmacOS may be stopping SiivOS from changing apps. In System Settings, open Privacy & Security, then App Management, and allow SiivOS. Apps installed for all users may also need an administrator to remove them."
+                    return tr("The app could not be moved, so nothing was changed.")
+                        + "\n\n" + error.localizedDescription + "\n\n"
+                        + tr("macOS may be stopping SiivOS from changing apps. In System Settings, open Privacy & Security, then App Management, and allow SiivOS. Apps installed for all users may also need an administrator to remove them.")
                 }
             }.value
 

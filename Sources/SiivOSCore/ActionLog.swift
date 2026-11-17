@@ -52,8 +52,10 @@ public enum ActionLogError: LocalizedError {
     public var errorDescription: String? {
         switch self {
         case .unreadable(let path, let reason):
-            return "The SiivOS history file at \(path) could not be read (\(reason)). "
-                + "Nothing was changed, to avoid losing track of earlier changes."
+            return tr(
+                "The SiivOS history file at %1$@ could not be read (%2$@). Nothing was changed, to avoid losing track of earlier changes.",
+                path, reason
+            )
         }
     }
 }

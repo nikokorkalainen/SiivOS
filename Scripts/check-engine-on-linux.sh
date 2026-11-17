@@ -78,5 +78,8 @@ swift --version
 echo "Checking the app's syntax..."
 swiftc -parse "${PROJECT_DIR}"/Sources/SiivOS/*.swift
 
+echo "Checking the translations..."
+python3 "${PROJECT_DIR}/Scripts/check-translations.py"
+
 cd "${WORK_DIR}"
 swift test

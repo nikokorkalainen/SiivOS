@@ -8,7 +8,7 @@ struct CleanupView: View {
 
     var body: some View {
         content
-            .navigationTitle("Cleanup")
+            .navigationTitle(tr("Cleanup"))
             .sheet(item: $model.pendingPlan) { plan in
                 RemovalPlanSheet(
                     plan: plan,
@@ -36,12 +36,12 @@ struct CleanupView: View {
             CleanupResultsView(model: model, report: report)
         } else {
             ContentUnavailableView {
-                Label("Cleanup", systemImage: "trash")
+                Label(tr("Cleanup"), systemImage: "trash")
             } description: {
-                Text("SiivOS looks for app caches, logs, leftovers from removed apps, old downloads, large files and duplicate files.")
-                Text("Scanning only looks. Nothing is removed until you tick items and confirm. macOS may ask for permission to look in your Desktop, Documents and Downloads folders.")
+                Text(tr("SiivOS looks for app caches, logs, leftovers from removed apps, old downloads, large files and duplicate files."))
+                Text(tr("Scanning only looks. Nothing is removed until you tick items and confirm. macOS may ask for permission to look in your Desktop, Documents and Downloads folders."))
             } actions: {
-                Button("Scan for Clutter") {
+                Button(tr("Scan for Clutter")) {
                     model.scan()
                 }
             }
@@ -49,7 +49,7 @@ struct CleanupView: View {
     }
 
     private var progressText: String {
-        model.scanningTitle.isEmpty ? "Getting ready…" : "Checking: \(model.scanningTitle)…"
+        model.scanningTitle.isEmpty ? tr("Getting ready…") : tr("Checking: %1$@…", model.scanningTitle)
     }
 
     /// True while a problem is being shown to the user.
@@ -73,21 +73,21 @@ private struct CleanupResultsView: View {
     var body: some View {
         Form {
             Section {
-                Text("Tick what you want to remove. Removed items go to the holding area, and you can put them back from History.")
-                LabeledContent("Ticked", value: selectionText)
+                Text(tr("Tick what you want to remove. Removed items go to the holding area, and you can put them back from History."))
+                LabeledContent(tr("Ticked"), value: selectionText)
                 HStack {
-                    Button("Remove Ticked Items…") {
+                    Button(tr("Remove Ticked Items…")) {
                         model.prepareRemoval()
                     }
                     .disabled(model.selection.isEmpty || model.isWorking)
-                    Button("Scan Again") {
+                    Button(tr("Scan Again")) {
                         model.scan()
                     }
                     .disabled(model.isWorking)
                 }
                 .buttonStyle(.bordered)
 
-                DisclosureGroup("What SiivOS never lists here", isExpanded: $showsNeverOffered) {
+                DisclosureGroup(tr("What SiivOS never lists here"), isExpanded: $showsNeverOffered) {
                     VStack(alignment: .leading, spacing: 8) {
                         ForEach(NeverOffer.Category.allCases, id: \.self) { category in
                             VStack(alignment: .leading, spacing: 2) {
@@ -115,10 +115,10 @@ private struct CleanupResultsView: View {
     private var selectionText: String {
         let count = model.selection.count
         if count == 0 {
-            return "Nothing"
+            return tr("Nothing")
         }
-        let items = count == 1 ? "1 item" : "\(count) items"
-        return "\(items), \(formatBytes(model.selectedBytes))"
+        let size = formatBytes(model.selectedBytes)
+        return count == 1 ? tr("1 item, %1$@", size) : tr("%1$@ items, %2$@", "\(count)", size)
     }
 }
 
@@ -146,12 +146,12 @@ private struct CleanupSectionView: View {
                 .foregroundStyle(.secondary)
 
             if let failure = section.failure {
-                Label("This check could not finish: \(failure)", systemImage: "exclamationmark.triangle")
+                Label(tr("This check could not finish: %1$@", failure), systemImage: "exclamationmark.triangle")
             } else if section.findings.isEmpty {
-                Text("Nothing found.")
+                Text(tr("Nothing found."))
                     .foregroundStyle(.secondary)
             } else {
-                Button(model.areAllSelected(tickableFindings) ? "Untick All" : "Tick All") {
+                Button(model.areAllSelected(tickableFindings) ? tr("Untick All") : tr("Tick All")) {
                     model.setAllSelected(tickableFindings, !model.areAllSelected(tickableFindings))
                 }
                 .buttonStyle(.bordered)
@@ -162,7 +162,7 @@ private struct CleanupSectionView: View {
                 }
 
                 if section.findings.count > Self.rowLimit {
-                    Text("Showing the \(Self.rowLimit) largest of \(section.findings.count) items.")
+                    Text(tr("Showing the %1$@ largest of %2$@ items.", "\(Self.rowLimit)", "\(section.findings.count)"))
                         .font(.callout)
                         .foregroundStyle(.secondary)
                 }
@@ -185,7 +185,7 @@ private struct FindingRow: View {
     var body: some View {
         row
             .contextMenu {
-                Button("Show in Finder") {
+                Button(tr("Show in Finder")) {
                     NSWorkspace.shared.activateFileViewerSelecting([finding.url])
                 }
             }

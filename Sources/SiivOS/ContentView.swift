@@ -1,3 +1,4 @@
+import SiivOSCore
 import SwiftUI
 
 struct ContentView: View {
@@ -45,7 +46,7 @@ struct ComingSoonView: View {
         } description: {
             Text(section.summary)
             if let phase = section.plannedPhase {
-                Text("Planned for phase \(phase).")
+                Text(tr("Planned for phase %1$@.", "\(phase)"))
             }
         }
         .navigationTitle(section.title)

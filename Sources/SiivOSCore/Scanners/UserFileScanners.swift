@@ -3,8 +3,13 @@ import Foundation
 /// Finds items in the Downloads folder that have not been touched for a long time.
 public struct OldDownloadsScanner: SystemScanner {
     public let id = "old-downloads"
-    public let title = "Old downloads"
-    public let summary: String
+    public var title: String { tr("Old downloads") }
+    public var summary: String {
+        tr(
+            "Items in your Downloads folder that have not been opened or changed for more than %1$@ days. These are your own files, so check each one before removing it.",
+            "\(olderThanDays)"
+        )
+    }
 
     private let directory: URL
     private let olderThanDays: Int
@@ -21,7 +26,6 @@ public struct OldDownloadsScanner: SystemScanner {
         self.directory = homeDirectory.appendingPathComponent("Downloads", isDirectory: true)
         self.olderThanDays = olderThanDays
         self.now = now
-        self.summary = "Items in your Downloads folder that have not been opened or changed for more than \(olderThanDays) days. These are your own files, so check each one before removing it."
     }
 
     public func scan() throws -> [Finding] {
@@ -33,7 +37,7 @@ public struct OldDownloadsScanner: SystemScanner {
             return Finding(
                 url: child.url,
                 sizeBytes: child.sizeBytes,
-                explanation: "Not opened or changed since \(ScanSupport.describe(lastTouched))."
+                explanation: tr("Not opened or changed since %1$@.", ScanSupport.describe(lastTouched))
             )
         }
     }
@@ -62,8 +66,13 @@ public struct OldDownloadsScanner: SystemScanner {
 /// Finds big files in the folders where people keep their own files.
 public struct LargeFilesScanner: SystemScanner {
     public let id = "large-files"
-    public let title = "Large files"
-    public let summary: String
+    public var title: String { tr("Large files") }
+    public var summary: String {
+        tr(
+            "Files of %1$@ or more in your Desktop, Documents, Downloads, Movies, Music and Pictures folders. These are your own files, so check each one before removing it.",
+            ByteCountFormatter.string(fromByteCount: minimumBytes, countStyle: .file)
+        )
+    }
 
     private let roots: [URL]
     private let minimumBytes: Int64
@@ -74,13 +83,11 @@ public struct LargeFilesScanner: SystemScanner {
     ) {
         self.roots = ScanSupport.userFolders(inHome: homeDirectory)
         self.minimumBytes = minimumBytes
-        let size = ByteCountFormatter.string(fromByteCount: minimumBytes, countStyle: .file)
-        self.summary = "Files of \(size) or more in your Desktop, Documents, Downloads, Movies, Music and Pictures folders. These are your own files, so check each one before removing it."
     }
 
     public func scan() throws -> [Finding] {
         ScanSupport.regularFiles(in: roots, atLeast: minimumBytes, fileManager: .default).map { file in
-            let changed = file.modified.map { "Last changed \(ScanSupport.describe($0))." } ?? "A large file."
+            let changed = file.modified.map { tr("Last changed %1$@.", ScanSupport.describe($0)) } ?? tr("A large file.")
             return Finding(url: file.url, sizeBytes: file.diskBytes, explanation: changed)
         }
     }
@@ -89,8 +96,10 @@ public struct LargeFilesScanner: SystemScanner {
 /// Finds files whose contents are exactly the same as another file's.
 public struct DuplicateFilesScanner: SystemScanner {
     public let id = "duplicates"
-    public let title = "Duplicate files"
-    public let summary: String
+    public var title: String { tr("Duplicate files") }
+    public var summary: String {
+        tr("Extra copies of files with exactly the same contents, in your Desktop, Documents, Downloads, Movies, Music and Pictures folders. One copy of each is always kept and is not listed here. If the copies were made on this Mac they may share disk space, so less may be freed than shown.")
+    }
 
     private let roots: [URL]
     private let minimumBytes: Int64
@@ -102,7 +111,6 @@ public struct DuplicateFilesScanner: SystemScanner {
     ) {
         self.roots = ScanSupport.userFolders(inHome: homeDirectory)
         self.minimumBytes = minimumBytes
-        self.summary = "Extra copies of files with exactly the same contents, in your Desktop, Documents, Downloads, Movies, Music and Pictures folders. One copy of each is always kept and is not listed here. If the copies were made on this Mac they may share disk space, so less may be freed than shown."
     }
 
     public func scan() throws -> [Finding] {
@@ -122,7 +130,7 @@ public struct DuplicateFilesScanner: SystemScanner {
                             Finding(
                                 url: extra.url,
                                 sizeBytes: extra.diskBytes,
-                                explanation: "Identical to \(kept.url.path), which is kept."
+                                explanation: tr("Identical to %1$@, which is kept.", kept.url.path)
                             )
                         )
                     }

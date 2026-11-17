@@ -26,11 +26,11 @@ public enum HoldingAreaError: LocalizedError, Equatable {
     public var errorDescription: String? {
         switch self {
         case .itemMissing(let path):
-            return "\(path) no longer exists, so it could not be moved."
+            return tr("%1$@ no longer exists, so it could not be moved.", path)
         case .heldCopyMissing(let path):
-            return "The held copy of \(path) is missing from the holding area."
+            return tr("The held copy of %1$@ is missing from the holding area.", path)
         case .originalLocationOccupied(let path):
-            return "Something else now exists at \(path). Move or rename it, then try again."
+            return tr("Something else now exists at %1$@. Move or rename it, then try again.", path)
         }
     }
 }

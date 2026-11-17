@@ -8,19 +8,19 @@ struct HistoryView: View {
 
     var body: some View {
         Form {
-            Section("Holding area") {
-                Text("SiivOS never deletes anything straight away. Removed items are moved to a holding area, and you can put them back from here.")
-                LabeledContent("Waiting in the holding area", value: formatBytes(model.heldBytes))
-                Button("Remove a File or Folder…") {
+            Section(tr("Holding area")) {
+                Text(tr("SiivOS never deletes anything straight away. Removed items are moved to a holding area, and you can put them back from here."))
+                LabeledContent(tr("Waiting in the holding area"), value: formatBytes(model.heldBytes))
+                Button(tr("Remove a File or Folder…")) {
                     model.chooseItemsToRemove()
                 }
                 .disabled(model.isWorking)
-                .help("Choose something to move to the holding area. You will see an explanation first.")
+                .help(tr("Choose something to move to the holding area. You will see an explanation first."))
             }
 
-            Section("Changes") {
+            Section(tr("Changes")) {
                 if model.records.isEmpty {
-                    Text("SiivOS has not changed anything yet.")
+                    Text(tr("SiivOS has not changed anything yet."))
                         .foregroundStyle(.secondary)
                 }
                 ForEach(model.records) { record in
@@ -34,7 +34,7 @@ struct HistoryView: View {
             }
         }
         .formStyle(.grouped)
-        .navigationTitle("History")
+        .navigationTitle(tr("History"))
         .sheet(item: $model.pendingPlan) { plan in
             RemovalPlanSheet(
                 plan: plan,
@@ -43,17 +43,17 @@ struct HistoryView: View {
             )
         }
         .confirmationDialog(
-            "Delete permanently?",
+            tr("Delete permanently?"),
             isPresented: isConfirmingDeletion,
             titleVisibility: .visible,
             presenting: recordToDelete
         ) { record in
-            Button("Delete Permanently", role: .destructive) {
+            Button(tr("Delete Permanently"), role: .destructive) {
                 model.deletePermanently(record)
             }
-            Button("Cancel", role: .cancel) {}
+            Button(tr("Cancel"), role: .cancel) {}
         } message: { record in
-            Text("This deletes the held items from “\(record.title)” for good and frees \(formatBytes(record.heldBytes)). It cannot be undone.")
+            Text(tr("This deletes the held items from “%1$@” for good and frees %2$@. It cannot be undone.", record.title, formatBytes(record.heldBytes)))
         }
         .alert(
             "SiivOS",
@@ -104,7 +104,7 @@ private struct RecordRow: View {
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
 
-            DisclosureGroup("Details", isExpanded: $showsDetails) {
+            DisclosureGroup(tr("Details"), isExpanded: $showsDetails) {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(record.explanation)
                     ForEach(record.items) { item in
@@ -120,8 +120,8 @@ private struct RecordRow: View {
 
             if record.canUndo {
                 HStack {
-                    Button("Put Back", action: onPutBack)
-                    Button("Delete Permanently…", role: .destructive, action: onDelete)
+                    Button(tr("Put Back"), action: onPutBack)
+                    Button(tr("Delete Permanently…"), role: .destructive, action: onDelete)
                 }
                 .buttonStyle(.bordered)
                 .disabled(isWorking)
@@ -142,22 +142,22 @@ private struct RecordRow: View {
         let restored = record.count(of: .restored)
         let deleted = record.count(of: .deleted)
 
-        if held == total { return "In the holding area" }
-        if restored == total { return "Put back" }
-        if deleted == total { return "Deleted permanently" }
+        if held == total { return tr("In the holding area") }
+        if restored == total { return tr("Put back") }
+        if deleted == total { return tr("Deleted permanently") }
 
         var parts: [String] = []
-        if held > 0 { parts.append("\(held) in the holding area") }
-        if restored > 0 { parts.append("\(restored) put back") }
-        if deleted > 0 { parts.append("\(deleted) deleted") }
+        if held > 0 { parts.append(tr("%1$@ in the holding area", "\(held)")) }
+        if restored > 0 { parts.append(tr("%1$@ put back", "\(restored)")) }
+        if deleted > 0 { parts.append(tr("%1$@ deleted", "\(deleted)")) }
         return parts.joined(separator: ", ")
     }
 
     private func stateText(_ state: ActionRecord.ItemState) -> String {
         switch state {
-        case .held: return "in the holding area"
-        case .restored: return "put back"
-        case .deleted: return "deleted permanently"
+        case .held: return tr("in the holding area")
+        case .restored: return tr("put back")
+        case .deleted: return tr("deleted permanently")
         }
     }
 }

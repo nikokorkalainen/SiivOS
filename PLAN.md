@@ -36,7 +36,7 @@ Purge already covers "open, private, honest, reversible" for storage cleanup, so
 | 1 | Setup | Build tools installed, project skeleton, this plan in the repo | Done. Built and run on macOS 15.8.3 with the Command Line Tools. Tests not yet run on a Mac |
 | 2 | Safety core | Scan engine, action log, undo. Removed items go to a restorable holding area, not straight to deletion | Done. Built and tried out on macOS 15.8.3 |
 | 3 | Clutter cleanup | Caches, logs, old downloads, large and duplicate files, leftovers from removed apps | Done. Built and tried out on macOS 15.8.3 |
-| 4 | App manager | All apps with size and last use, full uninstall including leftovers, login items and background agents | Built. Engine tests pass in Claude's workspace. Awaiting build and test of the app on a Mac. Login items are not listed, only linked to in System Settings (see Known constraints) |
+| 4 | App manager | All apps with size and last use, full uninstall including leftovers, login items and background agents | Done. Built and tried out on macOS 15.8.3. Login items are not listed, only linked to in System Settings (see Known constraints) |
 | 5 | Performance | Live view of processor, memory, disk and battery use, with plain-language diagnoses from built-in rules | Not started |
 | 6 | Protection | ClamAV for malware, plus own checks for adware, suspicious background agents, browser extensions and configuration profiles | Not started |
 | 7 | Health timeline | Health score with local history | Not started |
@@ -49,8 +49,8 @@ Ideas taken from the comparison above and from the owner. Each is built as part 
 
 | Idea | Inspired by | Belongs to | Status |
 |------|-------------|------------|--------|
-| Never-touch list: Cleanup never lists data of macOS, password managers and sign-in, iCloud and other syncing, or security and device-management software. Passwords, mail and messages cannot be removed at all | Purge | Phase 3 | Built. Engine tests pass in Claude's workspace. Awaiting test on a Mac |
-| Hold back caches and logs of apps that are open, and count an open app as installed wherever it is kept | Purge | Phase 3 | Built. Engine tests pass in Claude's workspace. Awaiting test on a Mac |
+| Never-touch list: Cleanup never lists data of macOS, password managers and sign-in, iCloud and other syncing, or security and device-management software. Passwords, mail and messages cannot be removed at all | Purge | Phase 3 | Done. Built and tried out on macOS 15.8.3 |
+| Hold back caches and logs of apps that are open, and count an open app as installed wherever it is kept | Purge | Phase 3 | Done. Built and tried out on macOS 15.8.3 |
 | "Safe to clean" or "Check first" label on every item | Purge | Phase 3 follow-up | Not started |
 | Developer clutter: Xcode data, Homebrew, npm and Docker caches | Purge | Phase 3 follow-up | Not started |
 | Count copies that share disk space once, so sizes are honest | Purge | Phase 3 follow-up | Not started |
@@ -58,7 +58,7 @@ Ideas taken from the comparison above and from the owner. Each is built as part 
 | App permissions overview: which apps can use the camera, microphone and files | CleanMyMac | Phase 6 | Not started |
 | Notice and record new background items when they appear | SiivOS's own | Phases 6 and 7 | Not started |
 | Settings window (see below) | Owner | Phase 8, or earlier where a phase needs a setting | Proposed, not yet agreed |
-| Finnish language version. The app follows the Mac's language, with English as the fallback | Owner | Its own step after Phase 4 is confirmed (recommended), then kept up to date in every later phase | Not started |
+| Finnish language version. The app follows the Mac's language, with English as the fallback | Owner | Its own step after Phase 4, then kept up to date in every later phase | Built. Engine tests pass in Claude's workspace. Awaiting test on a Mac, and the owner's review of the Finnish wording |
 
 Decided against: cleaning cloud storage and updating other apps (both need network access, against the privacy principle), clearing browser history, and finding blurry or similar photos (little benefit for the effort).
 

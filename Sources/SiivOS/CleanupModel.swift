@@ -28,7 +28,7 @@ final class CleanupModel: ObservableObject {
             core = sharedCore
         case .failure(let error):
             core = nil
-            startupProblem = "SiivOS could not set up its holding area: \(error.localizedDescription)"
+            startupProblem = tr("SiivOS could not set up its holding area: %1$@", error.localizedDescription)
         }
         message = startupProblem
     }
@@ -112,7 +112,7 @@ final class CleanupModel: ObservableObject {
         isWorking = true
         Task {
             let plan = await Task.detached(priority: .userInitiated) {
-                core.plan(removing: urls, reason: "You selected these items in Cleanup.")
+                core.plan(removing: urls, reason: tr("You selected these items in Cleanup."))
             }.value
             self.isWorking = false
             self.pendingPlan = plan
@@ -131,7 +131,7 @@ final class CleanupModel: ObservableObject {
                     let result = try core.apply(plan)
                     return describe(
                         result.failures,
-                        intro: "Some items could not be moved and were left where they are:"
+                        intro: tr("Some items could not be moved and were left where they are:")
                     )
                 } catch {
                     return error.localizedDescription

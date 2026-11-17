@@ -17,10 +17,10 @@ public enum NeverOffer {
 
         public var title: String {
             switch self {
-            case .macOS: return "macOS itself"
-            case .signIn: return "Sign-in, passwords and payment"
-            case .sync: return "iCloud and other syncing"
-            case .security: return "Security and device management"
+            case .macOS: return tr("macOS itself")
+            case .signIn: return tr("Sign-in, passwords and payment")
+            case .sync: return tr("iCloud and other syncing")
+            case .security: return tr("Security and device management")
             }
         }
 
@@ -28,13 +28,13 @@ public enum NeverOffer {
         public var explanation: String {
             switch self {
             case .macOS:
-                return "Data that belongs to macOS and Apple's own apps. macOS looks after it, and clearing it while it is in use can leave parts of the system blank until you log out."
+                return tr("Data that belongs to macOS and Apple's own apps. macOS looks after it, and clearing it while it is in use can leave parts of the system blank until you log out.")
             case .signIn:
-                return "Data from password managers, authenticators and the parts of macOS that keep you signed in. Clearing it can sign you out everywhere, and it takes almost no space."
+                return tr("Data from password managers, authenticators and the parts of macOS that keep you signed in. Clearing it can sign you out everywhere, and it takes almost no space.")
             case .sync:
-                return "The records that iCloud and other syncing services use to know what is already up to date. Clearing them can make everything sync again from the start."
+                return tr("The records that iCloud and other syncing services use to know what is already up to date. Clearing them can make everything sync again from the start.")
             case .security:
-                return "Data from antivirus, security and device-management software. On a Mac managed by an employer, touching it can look like someone tampering with the machine."
+                return tr("Data from antivirus, security and device-management software. On a Mac managed by an employer, touching it can look like someone tampering with the machine.")
             }
         }
     }
