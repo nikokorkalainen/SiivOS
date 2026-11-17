@@ -19,6 +19,8 @@ struct ContentView: View {
         switch section {
         case .overview:
             OverviewView()
+        case .history:
+            HistoryView()
         default:
             ComingSoonView(section: section)
         }

@@ -22,8 +22,8 @@ These are what should make SiivOS stand out, and every feature is held to them.
 
 | # | Phase | What it delivers | Status |
 |---|-------|------------------|--------|
-| 1 | Setup | Xcode installed, project skeleton, this plan in the repo | Built, awaiting first build on a Mac |
-| 2 | Safety core | Scan engine, action log, undo. Removed items go to a restorable holding area, not straight to deletion | Not started |
+| 1 | Setup | Build tools installed, project skeleton, this plan in the repo | Done. Built and run on macOS 15.8.3 with the Command Line Tools. Tests not yet run on a Mac |
+| 2 | Safety core | Scan engine, action log, undo. Removed items go to a restorable holding area, not straight to deletion | Built, awaiting build and test on a Mac |
 | 3 | Clutter cleanup | Caches, logs, old downloads, large and duplicate files, leftovers from removed apps | Not started |
 | 4 | App manager | All apps with size and last use, full uninstall including leftovers, login items and background agents | Not started |
 | 5 | Performance | Live view of processor, memory, disk and battery use, with plain-language diagnoses from built-in rules | Not started |
@@ -35,7 +35,7 @@ These are what should make SiivOS stand out, and every feature is held to them.
 ## How we work
 
 - Claude writes the code and commits it to this repository. Claude's workspace cannot compile Mac apps.
-- At the end of each phase, Niko builds and runs the app in Xcode and reports what works and what breaks.
+- At the end of each phase, Niko builds and runs the app and reports what works and what breaks. For now this is done with the Command Line Tools (`bash Scripts/make-app.sh`), because Xcode is not installed yet.
 - Problems are fixed before the next phase starts.
 
 ## Known constraints

@@ -8,6 +8,7 @@ enum AppSection: String, CaseIterable, Identifiable, Hashable {
     case performance
     case protection
     case timeline
+    case history
 
     var id: AppSection { self }
 
@@ -19,6 +20,7 @@ enum AppSection: String, CaseIterable, Identifiable, Hashable {
         case .performance: return "Performance"
         case .protection: return "Protection"
         case .timeline: return "Health Timeline"
+        case .history: return "History"
         }
     }
 
@@ -31,6 +33,7 @@ enum AppSection: String, CaseIterable, Identifiable, Hashable {
         case .performance: return "speedometer"
         case .protection: return "shield"
         case .timeline: return "clock.arrow.circlepath"
+        case .history: return "arrow.uturn.backward.circle"
         }
     }
 
@@ -49,13 +52,15 @@ enum AppSection: String, CaseIterable, Identifiable, Hashable {
             return "Scan for malware, adware, and suspicious background items and browser extensions."
         case .timeline:
             return "A health score with history, showing what changed on this Mac and when."
+        case .history:
+            return "Everything SiivOS has changed, with a way to put it back."
         }
     }
 
     /// The production-plan phase that delivers this section (see PLAN.md).
     var plannedPhase: Int? {
         switch self {
-        case .overview: return nil
+        case .overview, .history: return nil
         case .cleanup: return 3
         case .apps: return 4
         case .performance: return 5
