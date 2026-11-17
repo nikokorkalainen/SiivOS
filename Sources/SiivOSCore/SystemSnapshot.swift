@@ -65,6 +65,7 @@ public struct SystemSnapshot: Equatable, Sendable {
 
     private static func readStartupDisk() -> (total: Int64?, available: Int64?) {
         let home = URL(fileURLWithPath: NSHomeDirectory())
+        #if os(macOS)
         let keys: Set<URLResourceKey> = [
             .volumeTotalCapacityKey,
             .volumeAvailableCapacityForImportantUsageKey
@@ -75,5 +76,16 @@ public struct SystemSnapshot: Equatable, Sendable {
         let total = values.volumeTotalCapacity.map { Int64($0) }
         let available = values.volumeAvailableCapacityForImportantUsage
         return (total, available)
+        #else
+        // Not a Mac. This branch exists only so the engine's tests can also run on
+        // Linux (see Scripts/check-engine-on-linux.sh); the app itself is Mac-only.
+        let keys: Set<URLResourceKey> = [.volumeTotalCapacityKey, .volumeAvailableCapacityKey]
+        guard let values = try? home.resourceValues(forKeys: keys) else {
+            return (nil, nil)
+        }
+        let total = values.volumeTotalCapacity.map { Int64($0) }
+        let available = values.volumeAvailableCapacity.map { Int64($0) }
+        return (total, available)
+        #endif
     }
 }

@@ -4,7 +4,8 @@ SiivOS is a macOS optimizer app. Read `PLAN.md` first: it holds the approved pla
 
 ## Constraints
 
-- Claude's cloud workspace has no Swift toolchain, so code here is never compiled before it is committed. Prefer well-established APIs and re-read new Swift carefully. The owner builds on a Mac and reports errors.
+- Claude's cloud workspace is Linux. Run `./Scripts/check-engine-on-linux.sh` before committing engine changes: it installs Swift from download.swift.org (allowed in the owner's environment) and compiles and tests `SiivOSCore`. Keep `SiivOSCore` compiling on Linux; put Mac-only calls behind `#if os(macOS)`.
+- The SwiftUI app in `Sources/SiivOS` cannot be compiled here, so it is never compiled before it is committed. Prefer well-established APIs and re-read new SwiftUI carefully. The owner builds on a Mac and reports errors.
 - The owner's Mac runs macOS 15.8.3 with the Command Line Tools (Swift 6.1.2) and no Xcode yet. They build with `bash Scripts/make-app.sh` from a ZIP download of the repository. `swift test` may not work without Xcode.
 - Target macOS 14+, Swift tools 5.9 (Swift 5 language mode). Do not raise these without asking.
 - The owner is new to Xcode and Terminal. Keep build and test instructions step by step, in plain language.
