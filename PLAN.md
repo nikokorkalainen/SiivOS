@@ -58,6 +58,7 @@ Ideas taken from the comparison above and from the owner. Each is built as part 
 | App permissions overview: which apps can use the camera, microphone and files | CleanMyMac | Phase 6 | Not started |
 | Notice and record new background items when they appear | SiivOS's own | Phases 6 and 7 | Not started |
 | Settings window (see below) | Owner | Phase 8, or earlier where a phase needs a setting | Proposed, not yet agreed |
+| Finnish language version. The app follows the Mac's language, with English as the fallback | Owner | Its own step after Phase 4 is confirmed (recommended), then kept up to date in every later phase | Not started |
 
 Decided against: cleaning cloud storage and updating other apps (both need network access, against the privacy principle), clearing browser history, and finding blurry or similar photos (little benefit for the effort).
 
