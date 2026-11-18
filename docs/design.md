@@ -46,10 +46,11 @@ The app follows the Mac's appearance setting. Colours and backgrounds are in
 
 ## Sidebar
 
-**Logo at the top:** `SiivOSSidebarHeader()` (app icon 32 pt next to the name, 16 pt tall),
-above the sections, for example with `.safeAreaInset(edge: .top)` on the sidebar `List`. The
-name is drawn from outlines (`SiivOSWordmark`), so it needs no font installed. In dark mode it is
-soft white with mint "OS"; in light mode deep green with jade "OS".
+**Logo at the top:** `SiivOSSidebarHeader()`, the text logo (`SiivOSLogo`, 28 pt tall): the
+name with the two glints off the top-left corner of the S, and no app icon. Put it above the
+sections, for example with `.safeAreaInset(edge: .top)` on the sidebar `List`. It is drawn from
+outlines, so it needs no font installed. Dark mode: soft white with mint "OS"; light mode: deep
+green with jade "OS". The big glint takes the colour of "Siiv", the small one the colour of "OS".
 
 Order: Overview, Cleanup, Apps, Performance, Protection, Health Timeline, History.
 History shows the size waiting in the holding area as a small trailing label, only when it is
@@ -185,6 +186,9 @@ How to wire them in:
 - App icon: green gradient tile (`#1A9E73` top left to `#0B4A39` bottom right) with two
   four-point glints with equal arms, the big one white and the small one mint `#5EE6A8`,
   centred as a group. No name in the icon, at any size: the Dock shows the name on hover.
+- Text logo: the name with the two glints off the top-left corner of the S, no tile. Used in the
+  app's interface and anywhere a plain logo fits (README, website). Files in `design/logo/`, one
+  for dark backgrounds and one for light.
 - Logo tile: the same tile with the glints above the name "SiivOS" in Nunito ExtraBold, "OS" in
   mint. For GitHub, social posts and the website only.
 - Files: `Resources/AppIcon.icns` is what the app uses; `Scripts/make-app.sh` copies it into
