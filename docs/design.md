@@ -34,6 +34,10 @@ the written version so the app code can follow it. Written against the code on t
 Order: Overview, Cleanup, Apps, Performance, Protection, Health Timeline, History.
 History shows the size waiting in the holding area as a small trailing label, only when it is
 not empty. No other badges.
+Icons are the large sidebar size (about 22 pt, rows about 44 pt tall). In SwiftUI, set
+`.environment(\.sidebarRowSize, .large)` on the sidebar `List` (macOS 14 and later); if that
+does not give the larger look, use `.imageScale(.large)` on the row labels. The Overview's area
+cards use matching icons: 24 pt for the Cleanup card, 22 pt for the others.
 
 ## Overview
 
