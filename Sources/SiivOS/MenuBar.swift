@@ -34,7 +34,7 @@ enum MainWindow {
     static let defaultSize = CGSize(width: 1_200, height: 800)
 
     /// The name under which the window's size and place are remembered.
-    private static let frameName = "SiivOSMainWindow"
+    private static let frameName = "SiivOSMainWindowFrame"
 
     /// Gives the window the size and place it had when it was last used, if any.
     /// macOS keeps the window on the screen if the screens have changed since.
