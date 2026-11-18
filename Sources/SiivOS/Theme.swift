@@ -27,6 +27,30 @@ extension View {
     }
 }
 
+/// The background of a bar pinned to the bottom of a screen. It has to be solid, so that
+/// what scrolls underneath does not show through, and it should look like the window
+/// continuing. In dark mode it is the bottom edge of the window's green gradient, which
+/// runs from #0B3A2E on the left to #072519 on the right; in light mode it is the normal
+/// window colour.
+struct BottomBarBackground: View {
+    @Environment(\.colorScheme) private var colorScheme
+
+    var body: some View {
+        if colorScheme == .dark {
+            LinearGradient(
+                colors: [
+                    Color(red: 11.0 / 255.0, green: 58.0 / 255.0, blue: 46.0 / 255.0),
+                    Color(red: 7.0 / 255.0, green: 37.0 / 255.0, blue: 25.0 / 255.0)
+                ],
+                startPoint: .leading,
+                endPoint: .trailing
+            )
+        } else {
+            Color(nsColor: .windowBackgroundColor)
+        }
+    }
+}
+
 /// A thin line between rows inside a panel, in the theme's divider colour.
 struct ThemedDivider: View {
     var body: some View {

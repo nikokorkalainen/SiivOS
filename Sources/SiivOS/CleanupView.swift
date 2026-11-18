@@ -406,6 +406,8 @@ private struct FindingRow: View {
             Text(formatBytes(finding.sizeBytes))
                 .foregroundStyle(.secondary)
                 .monospacedDigit()
+                // The same width on every row, so the labels line up in a column.
+                .frame(minWidth: 76, alignment: .trailing)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
@@ -496,7 +498,8 @@ private struct CleanupActionBar: View {
         }
         .padding(.horizontal, 24)
         .padding(.vertical, 12)
-        .background(.bar)
+        // The window's own green, not the Mac's grey bar material.
+        .background(BottomBarBackground())
         .overlay(alignment: .top) {
             ThemedDivider()
         }
