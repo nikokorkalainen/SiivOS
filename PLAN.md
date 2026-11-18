@@ -38,7 +38,7 @@ Purge already covers "open, private, honest, reversible" for storage cleanup, so
 | 3 | Clutter cleanup | Caches, logs, old downloads, large and duplicate files, leftovers from removed apps | Done. Built and tried out on macOS 15.8.3 |
 | 4 | App manager | All apps with size and last use, full uninstall including leftovers, login items and background agents | Done. Built and tried out on macOS 15.8.3. Login items are not listed, only linked to in System Settings (see Known constraints) |
 | 5 | Performance | Live view of processor, memory, disk and battery use, with plain-language diagnoses from built-in rules | Done. Built and tried out on macOS 15.8.3 |
-| 6 | Protection | ClamAV for malware, plus own checks for adware, suspicious background agents, browser extensions and configuration profiles | Own checks built: engine tests pass in Claude's workspace, awaiting build and test on a Mac. ClamAV not started: waiting for the owner to choose how it is obtained and whether it may download virus definitions |
+| 6 | Protection | ClamAV for malware, plus own checks for adware, suspicious background agents, browser extensions and configuration profiles | Built: SiivOS's own checks, and malware scanning with a ClamAV the user installs themselves. Engine tests pass in Claude's workspace. Awaiting build and test on a Mac |
 | 7 | Health timeline | Health score with local history | Not started |
 | 8 | Polish | Menu bar widget, tests, README and licence, ready for an open-source release | Not started |
 | 9 | AI assistant (later) | Added once the rules-based diagnoses work | Not started |
@@ -86,6 +86,7 @@ Kept short on purpose. A setting is only added when people would reasonably want
 - The app will need **Full Disk Access** to do its job, so it cannot be distributed through the Mac App Store. It will be distributed directly.
 - A public release needs a paid Apple Developer account for signing and notarisation. Personal use does not.
 - The accent colour from `docs/design.md` is an asset (`Resources/Assets.xcassets`) that `Scripts/make-app.sh` compiles with Xcode's asset tool. On a Mac without Xcode the script skips it and the app uses the Mac's own accent colour. It also does not apply when the app is run straight from Xcode, because that run has no app bundle.
+- ClamAV (decided by the owner on 18 November 2026): SiivOS uses a ClamAV that the user installs themselves, for example with Homebrew, and bundles no part of it. Virus definitions are kept in SiivOS's own folder and downloaded from database.clamav.net only when the user clicks the button for it. That download is the only network use in SiivOS. Bundling ClamAV is to be reconsidered at Phase 8.
 - macOS gives apps no supported way to list the "Open at Login" items in System Settings. SiivOS lists background items from the LaunchAgents and LaunchDaemons folders, and opens System Settings for the rest.
 - Removing background items and apps that belong to all users needs administrator rights, which SiivOS does not ask for yet. It shows those items and leaves them alone.
 

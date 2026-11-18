@@ -11,6 +11,9 @@ struct ProtectionView: View {
     var body: some View {
         content
             .navigationTitle(tr("Protection"))
+            .onAppear {
+                model.refreshScanner()
+            }
             .sheet(item: $model.pendingPlan) { plan in
                 RemovalPlanSheet(
                     plan: plan,
@@ -101,6 +104,8 @@ private struct ProtectionResultsView: View {
 
                 summary
 
+                MalwareScanPanel(model: model)
+
                 ForEach(report.sections) { section in
                     ProtectionSectionView(model: model, section: section)
                 }
@@ -119,10 +124,6 @@ private struct ProtectionResultsView: View {
                     Text(summaryTitle)
                         .font(.headline)
                     Text(summaryText)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                    Text(tr("SiivOS does not scan files for viruses here. macOS's built-in protection does that in the background."))
-                        .font(.callout)
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
@@ -156,6 +157,197 @@ private struct ProtectionResultsView: View {
             return tr("%1$@ things are worth knowing about. They are often perfectly normal.", "\(notes)")
         }
         return tr("SiivOS looked at everything listed below and none of it stands out.")
+    }
+}
+
+/// Scanning files for malware with a ClamAV the user installed themselves. Says plainly
+/// when ClamAV is missing, when it needs to download something, and what a scan found.
+private struct MalwareScanPanel: View {
+    @ObservedObject var model: ProtectionModel
+
+    var body: some View {
+        Card {
+            VStack(alignment: .leading, spacing: 12) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(tr("Malware scan"))
+                        .font(.headline)
+                    Text(tr("Scans files for known malware with ClamAV, free software that you install yourself. macOS's own protection keeps working either way; this is a second opinion."))
+                        .font(.callout)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                ThemedDivider()
+
+                if !model.hasLookedForScanner {
+                    Text(tr("Looking for ClamAV…"))
+                        .foregroundStyle(.secondary)
+                } else if let scanner = model.scanner {
+                    installed(scanner)
+                } else {
+                    notInstalled
+                }
+
+                if let result = model.lastScan, model.scannerActivity == .idle {
+                    ThemedDivider()
+                    scanResult(result)
+                }
+            }
+        }
+    }
+
+    // MARK: Not installed
+
+    private var notInstalled: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(tr("ClamAV is not installed on this Mac. To add it:"))
+            Text(tr("1. Install Homebrew, a free tool for installing software, from brew.sh."))
+            Text(tr("2. Open Terminal and run: brew install clamav"))
+            Text(tr("3. Come back here and click Look Again."))
+            HStack {
+                Button(tr("Open brew.sh")) {
+                    if let url = URL(string: "https://brew.sh") {
+                        NSWorkspace.shared.open(url)
+                    }
+                }
+                Button(tr("Copy the Command")) {
+                    NSPasteboard.general.clearContents()
+                    NSPasteboard.general.setString("brew install clamav", forType: .string)
+                }
+                Button(tr("Look Again")) {
+                    model.refreshScanner()
+                }
+            }
+            .buttonStyle(SiivOSButtonStyle(.small))
+            .padding(.top, 4)
+        }
+        .fixedSize(horizontal: false, vertical: true)
+    }
+
+    // MARK: Installed
+
+    @ViewBuilder
+    private func installed(_ scanner: ClamAVStatus) -> some View {
+        Text(tr("ClamAV %1$@ is installed.", scanner.engineVersion ?? ""))
+
+        switch model.scannerActivity {
+        case .updating:
+            busy(tr("Downloading definitions. This can take a few minutes…"))
+        case .scanning(let place):
+            busy(tr("Scanning %1$@. ClamAV first loads its definitions, which takes about half a minute, and a large folder can take much longer.", place))
+        case .idle:
+            if scanner.hasDefinitions {
+                Text(definitionsText(scanner))
+                    .fixedSize(horizontal: false, vertical: true)
+                HStack {
+                    Button(tr("Scan Downloads")) {
+                        model.scanDownloads()
+                    }
+                    Button(tr("Scan a Folder…")) {
+                        model.chooseFolderAndScan()
+                    }
+                    Button(tr("Update Definitions")) {
+                        model.updateDefinitions()
+                    }
+                    .disabled(scanner.updaterPath == nil)
+                }
+                .buttonStyle(SiivOSButtonStyle(.small))
+            } else {
+                Text(tr("Before it can scan, ClamAV needs its list of known malware."))
+                Button(tr("Download Definitions")) {
+                    model.updateDefinitions()
+                }
+                .buttonStyle(SiivOSButtonStyle(.small))
+                .disabled(scanner.updaterPath == nil)
+            }
+            Text(tr("Downloading or updating definitions connects to ClamAV's servers (database.clamav.net) and stores a few hundred megabytes in SiivOS's own folder. SiivOS uses the network for nothing else."))
+                .font(.callout)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
+    /// A line of progress with the small loading animation and a way to stop.
+    private func busy(_ text: String) -> some View {
+        HStack(alignment: .center, spacing: 10) {
+            GlintLoader(size: 20)
+            Text(text)
+                .fixedSize(horizontal: false, vertical: true)
+            Spacer()
+            Button(tr("Stop")) {
+                model.stopScanner()
+            }
+            .buttonStyle(SiivOSButtonStyle(.small))
+        }
+    }
+
+    private func definitionsText(_ scanner: ClamAVStatus) -> String {
+        guard let date = scanner.definitionsDate else {
+            return tr("Its definitions are downloaded.")
+        }
+        let when = date.formatted(date: .abbreviated, time: .omitted)
+        let days = Calendar.current.dateComponents([.day], from: date, to: Date()).day ?? 0
+        if days > 7 {
+            return tr("Its definitions are from %1$@, %2$@ days ago. Update them before scanning, so that newer malware is recognised.", when, "\(days)")
+        }
+        return tr("Its definitions are from %1$@.", when)
+    }
+
+    // MARK: Result
+
+    @ViewBuilder
+    private func scanResult(_ result: MalwareScanResult) -> some View {
+        if result.wasCancelled {
+            Text(tr("The scan was stopped before it finished."))
+                .foregroundStyle(.secondary)
+        } else if let problem = result.problem {
+            Text(problem)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+        } else if result.detections.isEmpty {
+            HStack(alignment: .top, spacing: 12) {
+                SiivOSIconView(.good, size: 24)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(tr("Nothing found in %1$@.", model.lastScanPlace))
+                    if let count = result.scannedFiles {
+                        Text(tr("%1$@ files were scanned.", "\(count)"))
+                            .font(.callout)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
+        } else {
+            ForEach(result.detections) { detection in
+                HStack(alignment: .top, spacing: 12) {
+                    SiivOSIconView(.attention, size: 24)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(detection.url.lastPathComponent)
+                            .lineLimit(1)
+                            .truncationMode(.middle)
+                        Text(tr("ClamAV identifies this as %1$@. Detections are sometimes wrong, so SiivOS moves the file to the holding area instead of deleting it, and you can put it back.", detection.name))
+                            .font(.callout)
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                        Text(detection.path)
+                            .font(.caption)
+                            .foregroundStyle(.tertiary)
+                            .lineLimit(1)
+                            .truncationMode(.middle)
+                            .textSelection(.enabled)
+                    }
+                    Spacer()
+                    Button(tr("Remove…")) {
+                        model.prepareRemoval(of: detection)
+                    }
+                    .buttonStyle(SiivOSButtonStyle(.small))
+                    .disabled(model.isWorking)
+                }
+                .contextMenu {
+                    Button(tr("Show in Finder")) {
+                        NSWorkspace.shared.activateFileViewerSelecting([detection.url])
+                    }
+                }
+            }
+        }
     }
 }
 

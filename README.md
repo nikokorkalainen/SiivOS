@@ -60,3 +60,14 @@ Everything stays on your Mac, in `~/Library/Application Support/SiivOS`:
 
 - `HoldingArea` holds the items SiivOS has removed, until you put them back or delete them permanently from the History screen.
 - `action-log.json` is the list of changes SiivOS has made. It is a plain text file you can open and read.
+- `ClamAV` holds virus definitions, if you have chosen to download them (see below).
+
+## Malware scanning (optional)
+
+SiivOS can scan files for malware with ClamAV, free software that you install yourself. SiivOS does not include it. To add it, install Homebrew from `https://brew.sh`, then run this in Terminal:
+
+```
+brew install clamav
+```
+
+In SiivOS, open Protection and click **Download Definitions**. That download, from ClamAV's servers, is the only time SiivOS uses the network, and it only happens when you click the button.
