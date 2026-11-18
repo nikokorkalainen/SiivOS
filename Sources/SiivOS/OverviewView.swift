@@ -5,6 +5,8 @@ import SwiftUI
 /// Nothing on this screen removes anything.
 struct OverviewView: View {
     @ObservedObject var cleanup: CleanupModel
+    /// The health score and the readings of free space over time.
+    @ObservedObject var timeline: TimelineModel
     /// Opens another section of the app.
     let open: (AppSection) -> Void
 
@@ -24,6 +26,7 @@ struct OverviewView: View {
 
                 diskSection
                 foundSection
+                spaceOverTimeSection
                 macSection
             }
             .padding(24)
@@ -98,6 +101,54 @@ struct OverviewView: View {
                 linkCard(.apps, text: tr("See your apps, their size and what starts in the background."))
                 linkCard(.performance, text: tr("See what is using the processor, memory, disk and battery right now."))
                 linkCard(.protection, text: tr("Check the Mac's built-in protection, what starts by itself, browser extensions and profiles."))
+                timelineCard
+            }
+        }
+    }
+
+    /// The health score, once there is one, and a way to the reasons behind it.
+    private var timelineCard: some View {
+        Card {
+            VStack(alignment: .leading, spacing: 8) {
+                CardTitle(section: .timeline)
+                if let total = timeline.latestTotal {
+                    HStack(alignment: .firstTextBaseline, spacing: 6) {
+                        Text("\(total)")
+                            .font(.system(size: 34, weight: .semibold))
+                            .monospacedDigit()
+                        Text(tr("of 100"))
+                            .foregroundStyle(.secondary)
+                    }
+                    .accessibilityElement(children: .combine)
+                    Text(tr("The health score. See the reasons behind it and what has changed on this Mac."))
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                } else {
+                    Text(tr("A health score with its reasons, and what has changed on this Mac and when."))
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                Button(tr("Open")) {
+                    open(.timeline)
+                }
+                .buttonStyle(SiivOSButtonStyle(.small))
+            }
+        }
+    }
+
+    // MARK: - Free space over time
+
+    /// Shown once there are at least two readings to draw a line between.
+    @ViewBuilder
+    private var spaceOverTimeSection: some View {
+        if timeline.freeSpacePoints.count > 1 {
+            VStack(alignment: .leading, spacing: 12) {
+                Text(tr("Free space over time"))
+                    .font(.title3)
+                    .bold()
+                Card {
+                    FreeSpaceTrend(readings: timeline.freeSpacePoints, diskTotalBytes: timeline.diskTotalBytes)
+                }
             }
         }
     }

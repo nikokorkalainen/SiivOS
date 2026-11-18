@@ -37,24 +37,4 @@ enum AppSection: String, CaseIterable, Identifiable, Hashable {
         case .history: return .history
         }
     }
-
-    /// What the section will do once it is built. Shown on placeholder screens.
-    var summary: String {
-        switch self {
-        case .overview:
-            return tr("A quick look at this Mac.")
-        case .cleanup:
-            return tr("Find caches, logs, old downloads, large and duplicate files, and leftovers from removed apps.")
-        case .apps:
-            return tr("See every app with its size and last use, uninstall completely, and control what starts in the background.")
-        case .performance:
-            return tr("See what is using the processor, memory, disk and battery, explained in plain language.")
-        case .protection:
-            return tr("Scan for malware, adware, and suspicious background items and browser extensions.")
-        case .timeline:
-            return tr("A health score with history, showing what changed on this Mac and when.")
-        case .history:
-            return tr("Everything SiivOS has changed, with a way to put it back.")
-        }
-    }
 }

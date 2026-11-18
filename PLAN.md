@@ -39,7 +39,7 @@ Purge already covers "open, private, honest, reversible" for storage cleanup, so
 | 4 | App manager | All apps with size and last use, full uninstall including leftovers, login items and background agents | Done. Built and tried out on macOS 15.8.3. Login items are not listed, only linked to in System Settings (see Known constraints) |
 | 5 | Performance | Live view of processor, memory, disk and battery use, with plain-language diagnoses from built-in rules | Done. Built and tried out on macOS 15.8.3 |
 | 6 | Protection | ClamAV for malware, plus own checks for adware, suspicious background agents, browser extensions and configuration profiles | Done. Built and tried out on macOS 15.8.3, including a real ClamAV 1.5.4: definitions downloaded and Downloads scanned |
-| 7 | Health timeline | Health score with local history | Not started |
+| 7 | Health timeline | Health score with local history | Built, waiting for the owner to build and try it on the Mac. A score out of 100 that shows its reasons, a reading when the app opens (at most every six hours) kept in `health-history.json`, charts of the score and free space over time, and a list of what has changed: apps, background items, browser extensions, profiles, macOS's protections, free space, and SiivOS's own changes |
 | 8 | Polish | Menu bar widget, tests, README and licence, ready for an open-source release | Not started |
 | 9 | AI assistant (later) | Added once the rules-based diagnoses work | Not started |
 
@@ -56,7 +56,7 @@ Ideas taken from the comparison above and from the owner. Each is built as part 
 | Count copies that share disk space once, so sizes are honest | Purge | Phase 3 follow-up | Not started |
 | Visual map of the largest folders on the disk | CleanMyMac | Phase 3 follow-up | Not started |
 | App permissions overview: which apps can use the camera, microphone and files | CleanMyMac | Phase 6 | Done with Phase 6. It needs Full Disk Access to show anything |
-| Notice and record new background items when they appear | SiivOS's own | Phase 7, where the history of readings is built | Not started |
+| Notice and record new background items when they appear | SiivOS's own | Phase 7, where the history of readings is built | Built with Phase 7. SiivOS notices them when it takes a reading, not at the moment they appear; a notification while the app is closed would need the menu bar widget of Phase 8 |
 | Green look, SiivOS icon set, sidebar logo and the app-drawn sidebar from `docs/design.md` | Owner's design notes | All screens | Done. Built and tried out on macOS 15.8.3 in dark and light mode |
 | Sidebar cannot be hidden; its own button collapses it to slightly larger icons only. The app lays out the sidebar and content itself, without the standard split view, and the window has no title bar strip. Collapsing is animated, and the collapsed sidebar shows the two glints in place of the logo | Owner | Sidebar and window | Done. Built and tried out on macOS 15.8.3 |
 | Settings window (see below) | Owner | Phase 8, or earlier where a phase needs a setting | Proposed, not yet agreed |

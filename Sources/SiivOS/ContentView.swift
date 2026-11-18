@@ -13,6 +13,9 @@ struct ContentView: View {
     @StateObject private var performance = PerformanceModel()
     /// Kept here so that the results of a protection check survive a visit elsewhere.
     @StateObject private var protection = ProtectionModel()
+    /// Kept here so that a reading is taken when the app opens, and so that the Overview
+    /// and the Health Timeline show the same score.
+    @StateObject private var timeline = TimelineModel()
     @ObservedObject private var holding = HoldingStatus.shared
     /// Whether the sidebar shows icons only. Kept in view state so that changing it can
     /// animate, and saved so that it is remembered between launches.
@@ -45,6 +48,8 @@ struct ContentView: View {
         }
         .onAppear {
             holding.refresh()
+            // Takes a reading in the background unless there is a recent one. Only reads.
+            timeline.updateIfDue()
         }
     }
 
@@ -52,7 +57,7 @@ struct ContentView: View {
     private func detail(for section: AppSection) -> some View {
         switch section {
         case .overview:
-            OverviewView(cleanup: cleanup, open: { selection = $0 })
+            OverviewView(cleanup: cleanup, timeline: timeline, open: { selection = $0 })
         case .cleanup:
             CleanupView(model: cleanup)
         case .apps:
@@ -61,10 +66,10 @@ struct ContentView: View {
             PerformanceView(model: performance, cleanup: cleanup, open: { selection = $0 })
         case .protection:
             ProtectionView(model: protection)
+        case .timeline:
+            HealthTimelineView(model: timeline, open: { selection = $0 })
         case .history:
             HistoryView()
-        default:
-            ComingSoonView(section: section)
         }
     }
 }
@@ -277,30 +282,5 @@ private struct SidebarRow: View {
             return Color.clear
         }
         return colorScheme == .dark ? Color.white.opacity(0.14) : Self.moss
-    }
-}
-
-// MARK: - Sections that are not built yet
-
-/// Placeholder for sections that a later phase of the plan will build: the section's
-/// icon, its name and what it will do, in the open layout with nothing behind it.
-struct ComingSoonView: View {
-    let section: AppSection
-
-    var body: some View {
-        CenteredScreen {
-            SiivOSIconView(section.icon, size: 72)
-            Text(section.title)
-                .font(.system(size: 22, weight: .semibold))
-            Text(section.summary)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-                .frame(maxWidth: 500)
-                .fixedSize(horizontal: false, vertical: true)
-            Text(tr("Coming in a later update"))
-                .font(.callout)
-                .foregroundStyle(.secondary)
-        }
-        .navigationTitle(section.title)
     }
 }
