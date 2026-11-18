@@ -417,6 +417,9 @@ struct SettingsView: View {
     @State private var agentDoorIsOn = AgentDoorSwitch.standard().isOn
     /// Why the agent door could not be switched, if it could not.
     @State private var agentDoorProblem: String?
+    /// Whether macOS lets SiivOS see every folder. Looked up when Settings is shown and
+    /// when SiivOS comes forward again, for example after a visit to System Settings.
+    @State private var hasFullDiskAccess = Permissions.hasFullDiskAccess()
 
     var body: some View {
         Form {
@@ -426,6 +429,28 @@ struct SettingsView: View {
                     .font(.callout)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
+            }
+            Section(tr("Permissions")) {
+                HStack {
+                    Text(tr("Full Disk Access"))
+                    Spacer()
+                    Text(hasFullDiskAccess ? tr("On") : tr("Off"))
+                        .foregroundStyle(.secondary)
+                }
+                Text(
+                    hasFullDiskAccess
+                        ? tr("macOS lets SiivOS see every folder, so it does not ask folder by folder.")
+                        : tr("Without it, macOS asks about one folder at a time, and some lists in SiivOS stay empty. Full Disk Access covers everything in one go. macOS only lets you turn it on yourself: open the page below and switch SiivOS on in the list. If SiivOS is not in the list, add it with the + button. macOS may then ask you to quit and reopen SiivOS.")
+                )
+                .font(.callout)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+                Button(tr("Open Full Disk Access Settings")) {
+                    if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_AllFiles") {
+                        NSWorkspace.shared.open(url)
+                    }
+                }
+                .buttonStyle(SiivOSButtonStyle(.small))
             }
             Section(tr("AI agents")) {
                 Toggle(tr("Let AI agents ask SiivOS questions"), isOn: agentDoor)
@@ -477,6 +502,12 @@ struct SettingsView: View {
         .tint(SiivOSTheme.prominent)
         .frame(width: 520)
         .fixedSize(horizontal: false, vertical: true)
+        .onAppear {
+            hasFullDiskAccess = Permissions.hasFullDiskAccess()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
+            hasFullDiskAccess = Permissions.hasFullDiskAccess()
+        }
     }
 
     /// Switches the agent door, and keeps the switch where it was if that fails.

@@ -74,3 +74,12 @@ final class SafetyRulesTests: TemporaryDirectoryTestCase {
         XCTAssertNotNil(rules.reasonToRefuse(baseDirectory))
     }
 }
+
+final class PermissionsTests: TemporaryDirectoryTestCase {
+    func testFullDiskAccessIsJudgedByWhetherTheProtectedFileCanBeOpened() throws {
+        XCTAssertFalse(Permissions.hasFullDiskAccess(homeDirectory: home), "Nothing to open means no access")
+
+        try makeFile("Library/Application Support/com.apple.TCC/TCC.db")
+        XCTAssertTrue(Permissions.hasFullDiskAccess(homeDirectory: home))
+    }
+}
