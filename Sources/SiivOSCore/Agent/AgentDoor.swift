@@ -101,7 +101,8 @@ public struct AgentDoor: Sendable {
             Sources(
                 snapshot: { SystemSnapshot.current() },
                 scan: {
-                    ScanEngine.clutter(homeDirectory: homeDirectory).run { title in
+                    // Caches and logs of apps that are open are held back, as in the app.
+                    ScanEngine.clutter(homeDirectory: homeDirectory, runningApps: RunningApp.current()).run { title in
                         progress?(tr("Checking: %1$@…", title))
                     }
                 },
@@ -453,6 +454,9 @@ public struct AgentDoor: Sendable {
             let label: String
             let labelReason: String
             let explanation: String
+            /// Set when the item should not be removed right now, for example because
+            /// the app it belongs to is open. Such items are not counted as safe to remove.
+            let heldBack: String?
         }
         struct Group: Encodable {
             let id: String
@@ -492,7 +496,8 @@ public struct AgentDoor: Sendable {
                             size: Self.readable(finding.sizeBytes),
                             label: finding.safety.rawValue,
                             labelReason: finding.safetyReason,
-                            explanation: finding.explanation
+                            explanation: finding.explanation,
+                            heldBack: finding.heldBackReason
                         )
                     },
                     couldNotFinish: section.failure

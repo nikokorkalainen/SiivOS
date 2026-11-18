@@ -19,10 +19,23 @@ enum ScanSupport {
         }
     }
 
+    /// Folders that are really one thing an app looks after, named by their ending:
+    /// photo, video and music libraries, catalogues, projects and disk images. macOS
+    /// only treats such a folder as a single item while the app that owns it is
+    /// installed, so SiivOS knows the endings itself. Taking a file out of one of
+    /// these can break the whole library.
+    static let libraryEndings: Set<String> = [
+        "photoslibrary", "photolibrary", "migratedphotolibrary", "aplibrary",
+        "lrlibrary", "lrdata", "lrcat-data",
+        "fcpbundle", "imovielibrary", "tvlibrary", "musiclibrary", "theater",
+        "logicx", "band", "sparsebundle", "backupdb",
+        "app", "framework", "bundle", "xcodeproj", "xcworkspace", "playground"
+    ]
+
     /// Every regular file of at least the given size inside the given folders.
     ///
-    /// Hidden files are skipped, and so is the inside of packages such as apps and photo
-    /// libraries, which look like single files in Finder and must not be picked apart.
+    /// Hidden files are skipped, and so is the inside of packages and libraries such as
+    /// apps and photo libraries, which must not be picked apart.
     static func regularFiles(
         in roots: [URL],
         atLeast minimumBytes: Int64,
@@ -30,6 +43,7 @@ enum ScanSupport {
     ) -> [WalkedFile] {
         let keys: [URLResourceKey] = [
             .isRegularFileKey,
+            .isDirectoryKey,
             .fileSizeKey,
             .totalFileAllocatedSizeKey,
             .contentModificationDateKey
@@ -45,6 +59,11 @@ enum ScanSupport {
                 continue
             }
             for case let url as URL in enumerator {
+                if libraryEndings.contains(url.pathExtension.lowercased()),
+                   (try? url.resourceValues(forKeys: [.isDirectoryKey]))?.isDirectory == true {
+                    enumerator.skipDescendants()
+                    continue
+                }
                 guard let values = try? url.resourceValues(forKeys: Set(keys)),
                       values.isRegularFile == true,
                       let size = values.fileSize,

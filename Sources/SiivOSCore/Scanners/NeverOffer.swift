@@ -1,4 +1,7 @@
 import Foundation
+#if os(macOS)
+import AppKit
+#endif
 
 /// The kinds of data SiivOS never offers for cleanup, however much space they take.
 ///
@@ -87,8 +90,8 @@ public enum NeverOffer {
     }
 }
 
-/// An app that is open right now. The app's screens gather these and hand them to the
-/// scanners, which then hold back that app's data.
+/// An app that is open right now. These are gathered and handed to the scanners, which
+/// then hold back that app's data.
 public struct RunningApp: Equatable, Sendable {
     public let name: String
     public let bundleIdentifier: String?
@@ -96,6 +99,21 @@ public struct RunningApp: Equatable, Sendable {
     public init(name: String, bundleIdentifier: String?) {
         self.name = name
         self.bundleIdentifier = bundleIdentifier
+    }
+
+    /// The apps that are open on this Mac right now. Only reads. Empty where that
+    /// cannot be found out.
+    public static func current() -> [RunningApp] {
+        #if os(macOS)
+        return NSWorkspace.shared.runningApplications.compactMap { app in
+            guard let name = app.localizedName else {
+                return nil
+            }
+            return RunningApp(name: name, bundleIdentifier: app.bundleIdentifier)
+        }
+        #else
+        return []
+        #endif
     }
 
     /// The open app that an item with this name belongs to, if any.

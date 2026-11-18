@@ -135,6 +135,23 @@ final class ClutterScannerTests: TemporaryDirectoryTestCase {
         XCTAssertEqual(names(findings), ["archive.zip", "holiday.mov"])
     }
 
+    func testFilesInsideLibrariesAreNeverPickedOut() throws {
+        // A photo that is also inside a photo library, and a big film inside a video
+        // library. The libraries are plain folders here, as they are on a Mac where
+        // the app that owns them is not installed.
+        try makeFile("Desktop/photo.cr2", bytes: 50_000, fill: 7)
+        try makeFile("Pictures/Lightroom Library.lrlibrary/originals/2022/photo.cr2", bytes: 50_000, fill: 7)
+        try makeFile("Pictures/Photos Library.photoslibrary/originals/A/photo.heic", bytes: 50_000, fill: 7)
+        try makeFile("Movies/Film.fcpbundle/Original Media/clip.mov", bytes: 60_000)
+
+        let duplicates = try DuplicateFilesScanner(homeDirectory: home, minimumBytes: 1_000).scan()
+        let large = try LargeFilesScanner(homeDirectory: home, minimumBytes: 40_000).scan()
+
+        XCTAssertEqual(duplicates, [], "A copy inside a library is not offered, and neither is the loose one")
+        XCTAssertEqual(names(large), ["photo.cr2"])
+        XCTAssertEqual(large.first?.url.deletingLastPathComponent().lastPathComponent, "Desktop")
+    }
+
     // MARK: - Duplicates
 
     func testDuplicateScannerKeepsOneCopyAndReportsTheOthers() throws {

@@ -21,7 +21,13 @@ final class AgentDoorTests: TemporaryDirectoryTestCase {
                     diskAvailableBytes: 125_000_000_000
                 )
             },
-            scan: { ScanEngine.clutter(homeDirectory: home).run() },
+            scan: {
+                // Pretend one app is open, so that its cache is held back.
+                ScanEngine.clutter(
+                    homeDirectory: home,
+                    runningApps: [RunningApp(name: "Browser", bundleIdentifier: "com.example.Browser")]
+                ).run()
+            },
             protection: {
                 ProtectionReport(sections: [
                     ProtectionSection(id: "macos", title: "Protection built into macOS", summary: "", findings: [
@@ -194,6 +200,17 @@ final class AgentDoorTests: TemporaryDirectoryTestCase {
         try makeFile("Library/Caches/com.example.Editor/data.bin", bytes: 6_000_000)
         let door = try makeDoor()
 
+        let everything = try object(door.answer(["cleanup"]))
+        let allItems = try XCTUnwrap((everything["groups"] as? [[String: Any]])?.first?["items"] as? [[String: Any]])
+        XCTAssertEqual(allItems.count, 2)
+        XCTAssertNil(allItems[0]["heldBack"], "The editor is not open")
+        XCTAssertTrue((allItems[1]["heldBack"] as? String)?.contains("Browser is open") ?? false)
+        XCTAssertEqual(
+            everything["safeToRemoveBytes"] as? Int,
+            allItems[0]["sizeBytes"] as? Int,
+            "Only the editor's cache counts as safe to remove; the open app's cache does not"
+        )
+
         let cleanup = try object(door.answer(["cleanup", "--limit", "1"]))
 
         let groups = try XCTUnwrap(cleanup["groups"] as? [[String: Any]])
@@ -205,7 +222,6 @@ final class AgentDoorTests: TemporaryDirectoryTestCase {
         XCTAssertTrue((items[0]["path"] as? String)?.hasSuffix("com.example.Editor") ?? false)
         XCTAssertEqual(items[0]["label"] as? String, "safeToRemove")
         XCTAssertFalse((items[0]["labelReason"] as? String ?? "").isEmpty)
-        XCTAssertGreaterThanOrEqual(cleanup["safeToRemoveBytes"] as? Int ?? 0, 9_000_000)
         XCTAssertTrue((cleanup["note"] as? String)?.contains("only reads") ?? false)
     }
 
