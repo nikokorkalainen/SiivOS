@@ -11,14 +11,19 @@ APP_NAME="SiivOS"
 BUNDLE_ID="io.github.nikokorkalainen.SiivOS"
 VERSION="0.1.0"
 APP_DIR="dist/${APP_NAME}.app"
+CLI_NAME="siivos-cli"
 
 echo "Building ${APP_NAME}..."
 swift build -c release --product "${APP_NAME}"
+# The agent door: a read-only command-line tool for AI agents, kept inside the app.
+swift build -c release --product "${CLI_NAME}"
 BIN_DIR="$(swift build -c release --show-bin-path)"
 
 rm -rf "${APP_DIR}"
 mkdir -p "${APP_DIR}/Contents/MacOS" "${APP_DIR}/Contents/Resources"
 cp "${BIN_DIR}/${APP_NAME}" "${APP_DIR}/Contents/MacOS/${APP_NAME}"
+mkdir -p "${APP_DIR}/Contents/Helpers"
+cp "${BIN_DIR}/${CLI_NAME}" "${APP_DIR}/Contents/Helpers/${CLI_NAME}"
 cp "Resources/AppIcon.icns" "${APP_DIR}/Contents/Resources/AppIcon.icns"
 
 # Compile the accent colour (moss green), which macOS uses for the selected sidebar row,
@@ -87,6 +92,7 @@ cat > "${APP_DIR}/Contents/Info.plist" <<PLIST
 PLIST
 
 # Sign for this Mac only ("ad hoc"). A public release needs a Developer ID instead.
+codesign --force --sign - "${APP_DIR}/Contents/Helpers/${CLI_NAME}"
 codesign --force --sign - "${APP_DIR}"
 
 echo "Done: ${APP_DIR}"

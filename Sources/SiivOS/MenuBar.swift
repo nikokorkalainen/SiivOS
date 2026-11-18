@@ -412,6 +412,11 @@ struct MenuBarPanel: View {
 /// The Settings window, opened from the SiivOS menu or with Command-comma.
 struct SettingsView: View {
     @AppStorage(AppSettings.showsMenuBarKey) private var showsMenuBar = true
+    /// Whether the agent door is on. Kept in a file, not in the app's own settings,
+    /// because the command-line tool is a separate program that has to read it too.
+    @State private var agentDoorIsOn = AgentDoorSwitch.standard().isOn
+    /// Why the agent door could not be switched, if it could not.
+    @State private var agentDoorProblem: String?
 
     var body: some View {
         Form {
@@ -422,6 +427,47 @@ struct SettingsView: View {
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
+            Section(tr("AI agents")) {
+                Toggle(tr("Let AI agents ask SiivOS questions"), isOn: agentDoor)
+                Text(tr("With this on, the command-line tool that comes with SiivOS answers questions from an AI agent you use, such as what is taking space or what has changed lately. The tool only reads. It cannot remove or change anything."))
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                Text(tr("SiivOS itself sends nothing anywhere. An agent that runs on the internet, though, sends what it reads to its own service, including the names of your files and apps."))
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                if let agentDoorProblem {
+                    Text(agentDoorProblem)
+                        .font(.callout)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                if let path = toolPath {
+                    HStack(spacing: 10) {
+                        Text(path)
+                            .font(.system(.callout, design: .monospaced))
+                            .lineLimit(1)
+                            .truncationMode(.middle)
+                            .textSelection(.enabled)
+                            .help(path)
+                        Spacer()
+                        Button(tr("Copy Path")) {
+                            NSPasteboard.general.clearContents()
+                            NSPasteboard.general.setString(path, forType: .string)
+                        }
+                        .buttonStyle(SiivOSButtonStyle(.small))
+                    }
+                    Text(tr("This is where the tool is. Give the path to your agent, or try it in Terminal by typing the word help after it."))
+                        .font(.callout)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                } else {
+                    Text(tr("The tool is put inside the app when SiivOS is built with Scripts/make-app.sh. This copy of SiivOS was started another way, so the tool is not in it."))
+                        .font(.callout)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
             Section(tr("Privacy")) {
                 Text(tr("Everything SiivOS does happens on this Mac. It collects nothing and sends nothing anywhere. The one time it uses the network is when you ask it, in Protection, to download ClamAV's virus definitions."))
                     .fixedSize(horizontal: false, vertical: true)
@@ -429,7 +475,37 @@ struct SettingsView: View {
         }
         .formStyle(.grouped)
         .tint(SiivOSTheme.prominent)
-        .frame(width: 480)
+        .frame(width: 520)
         .fixedSize(horizontal: false, vertical: true)
+    }
+
+    /// Switches the agent door, and keeps the switch where it was if that fails.
+    private var agentDoor: Binding<Bool> {
+        Binding(
+            get: { agentDoorIsOn },
+            set: { isOn in
+                do {
+                    try AgentDoorSwitch.standard().set(isOn)
+                    agentDoorIsOn = isOn
+                    agentDoorProblem = nil
+                } catch {
+                    agentDoorProblem = tr("The setting could not be saved: %1$@", error.localizedDescription)
+                }
+            }
+        )
+    }
+
+    /// Where the command-line tool is: inside the app, or next to it when SiivOS was
+    /// built without an app around it. `nil` when it is in neither place.
+    private var toolPath: String? {
+        let name = AgentDoor.toolName
+        let places: [URL?] = [
+            Bundle.main.bundleURL.appendingPathComponent("Contents/Helpers/" + name),
+            Bundle.main.executableURL?.deletingLastPathComponent().appendingPathComponent(name)
+        ]
+        return places
+            .compactMap { $0 }
+            .first { FileManager.default.isExecutableFile(atPath: $0.path) }?
+            .path
     }
 }

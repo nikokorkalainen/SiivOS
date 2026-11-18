@@ -59,6 +59,7 @@ WORK_DIR="$(mktemp -d)"
 trap 'rm -rf "${WORK_DIR}" "${DOWNLOAD_DIR:-}"' EXIT
 mkdir -p "${WORK_DIR}/Sources"
 cp -R "${PROJECT_DIR}/Sources/SiivOSCore" "${WORK_DIR}/Sources/SiivOSCore"
+cp -R "${PROJECT_DIR}/Sources/SiivOSCLI" "${WORK_DIR}/Sources/SiivOSCLI"
 cp -R "${PROJECT_DIR}/Tests" "${WORK_DIR}/Tests"
 cat > "${WORK_DIR}/Package.swift" <<'MANIFEST'
 // swift-tools-version: 5.9
@@ -68,6 +69,7 @@ let package = Package(
     name: "SiivOS",
     targets: [
         .target(name: "SiivOSCore"),
+        .executableTarget(name: "SiivOSCLI", dependencies: ["SiivOSCore"]),
         .testTarget(name: "SiivOSCoreTests", dependencies: ["SiivOSCore"])
     ]
 )
@@ -83,3 +85,6 @@ python3 "${PROJECT_DIR}/Scripts/check-translations.py"
 
 cd "${WORK_DIR}"
 swift test
+
+echo "Trying the command-line tool..."
+swift run SiivOSCLI help

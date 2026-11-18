@@ -94,6 +94,40 @@ brew install clamav
 
 In SiivOS, open Protection and click **Download Definitions**. That download, from ClamAV's servers, is the only time SiivOS uses the network, and it only happens when you click the button.
 
+## For AI agents (optional)
+
+If you use an AI agent, such as Claude, it can ask SiivOS what it has found instead of digging through your Mac itself. SiivOS comes with a small command-line tool for this, `siivos-cli`. It is off until you turn it on.
+
+- **It only reads.** It can say what is taking space, what has changed lately, why the Mac is slow and what Protection flagged, in the same words the app uses. It cannot remove, move or change anything. Removing stays in the app, where you read the explanation and confirm.
+- **SiivOS still sends nothing anywhere.** The tool prints its answer and stops. But an agent that runs on the internet sends what it reads to its own service, including the names of your files and apps. Turn the tool on only if you are comfortable with that.
+- **The switch is a courtesy, not a lock.** It controls what SiivOS's own tool will answer. It cannot stop other programs you run from looking at your Mac.
+
+To use it:
+
+1. Build the app with `bash Scripts/make-app.sh`. The tool is put inside the app.
+2. In SiivOS, choose **Settings** from the SiivOS menu and turn on **Let AI agents ask SiivOS questions**.
+3. Click **Copy Path** there and give the path to your agent, with a sentence such as "use this tool to look at my Mac; run it with the word help first".
+
+You can try it yourself in Terminal from the project folder:
+
+```
+swift run siivos-cli help
+```
+
+| Question | What it answers |
+|----------|-----------------|
+| `status` | Whether the tool is switched on, and where SiivOS keeps its data. |
+| `overview` | Disk space, memory, the health score and what waits in the holding area. |
+| `health` | The health score with the reason for every point, and recent readings. |
+| `changes` | What has changed on the Mac lately. `--days 7` sets how far back. |
+| `cleanup` | What could be removed, each item labelled Safe to remove or Check first. |
+| `performance` | Processor, memory and battery right now, with what SiivOS makes of them. |
+| `protection` | macOS's own protection, background items, browser extensions and profiles. |
+| `apps` | Installed apps with their size and last use, largest first. |
+| `history` | What SiivOS itself has changed, and what can still be put back. |
+
+Answers are in JSON and in English. The tool sees what the program that runs it is allowed to see: started from Terminal, it has Terminal's permissions, not SiivOS's.
+
 ## Where SiivOS keeps its data
 
 Everything stays on your Mac, in `~/Library/Application Support/SiivOS`:
@@ -102,6 +136,7 @@ Everything stays on your Mac, in `~/Library/Application Support/SiivOS`:
 - `action-log.json` is the list of changes SiivOS has made. It is a plain text file you can open and read.
 - `health-history.json` is the Health Timeline: the health score and free space each time SiivOS looked, and what had changed on the Mac. It is a plain text file too, and deleting it only starts the timeline again.
 - `ClamAV` holds virus definitions, if you have chosen to download them.
+- `agent-door.json` remembers whether the tool for AI agents is switched on.
 
 To remove SiivOS completely, first put back or delete what is in History, then quit SiivOS and delete the app and that folder.
 
@@ -111,6 +146,7 @@ SiivOS is a Swift package with no third-party dependencies.
 
 - `Sources/SiivOSCore/` is the engine: everything that inspects or changes the Mac. It has no interface code, is covered by tests, and also compiles on Linux.
 - `Sources/SiivOS/` is the app: the SwiftUI interface only. It calls into the engine.
+- `Sources/SiivOSCLI/` is the `siivos-cli` tool for AI agents: a few lines that pass the question to the engine.
 - `Tests/SiivOSCoreTests/` holds the engine's tests.
 - `docs/design.md` describes how the screens look and behave.
 - `PLAN.md` holds the plan, the principles and what is done.
