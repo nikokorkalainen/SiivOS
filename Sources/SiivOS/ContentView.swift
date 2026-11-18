@@ -12,8 +12,11 @@ struct ContentView: View {
     /// Kept here so that the charts keep their history during a short visit elsewhere.
     @StateObject private var performance = PerformanceModel()
     @ObservedObject private var holding = HoldingStatus.shared
-    /// Whether the sidebar shows icons only. Remembered between launches.
-    @AppStorage("sidebarShowsIconsOnly") private var sidebarIsCompact = false
+    /// Whether the sidebar shows icons only. Kept in view state so that changing it can
+    /// animate, and saved so that it is remembered between launches.
+    @State private var sidebarIsCompact = UserDefaults.standard.bool(forKey: ContentView.compactSidebarKey)
+
+    private static let compactSidebarKey = "sidebarShowsIconsOnly"
 
     var body: some View {
         // The app lays the two columns out itself. The standard split view ignores a new
@@ -22,6 +25,7 @@ struct ContentView: View {
         HStack(spacing: 0) {
             SidebarView(selection: $selection, heldBytes: holding.heldBytes, isCompact: $sidebarIsCompact)
                 .frame(width: sidebarIsCompact ? SidebarView.compactWidth : SidebarView.fullWidth)
+                .clipped()
 
             Rectangle()
                 .fill(SiivOSTheme.divider)
@@ -35,6 +39,9 @@ struct ContentView: View {
                 .background(SiivOSWindowBackground())
         }
         .tint(SiivOSTheme.prominent)
+        .onChange(of: sidebarIsCompact) { _, isCompact in
+            UserDefaults.standard.set(isCompact, forKey: Self.compactSidebarKey)
+        }
         .onAppear {
             holding.refresh()
         }
@@ -97,12 +104,19 @@ private struct SidebarView: View {
             .padding(.bottom, 10)
         }
         .safeAreaInset(edge: .top, spacing: 0) {
-            // The logo is wider than the collapsed sidebar, so it is left out there.
+            // The full logo is wider than the collapsed sidebar, so there the two glints
+            // stand in for it, like the app icon. Both take the same height, so the rows
+            // below stay where they are.
             if isCompact {
-                Color.clear
-                    .frame(height: 8)
+                SiivOSGlintMark()
+                    .frame(height: 39)
+                    .frame(maxWidth: .infinity)
+                    .padding(.top, 10)
+                    .padding(.bottom, 14)
+                    .transition(.opacity)
             } else {
                 SiivOSSidebarHeader()
+                    .transition(.opacity)
             }
         }
         .safeAreaInset(edge: .bottom, spacing: 0) {
@@ -129,7 +143,7 @@ private struct SidebarView: View {
     /// Switches between names with icons and icons only.
     private var collapseButton: some View {
         Button {
-            withAnimation(.easeInOut(duration: 0.2)) {
+            withAnimation(.easeInOut(duration: 0.28)) {
                 isCompact.toggle()
             }
         } label: {
@@ -213,14 +227,22 @@ private struct SidebarRow: View {
             HStack(spacing: 10) {
                 SiivOSIconView(section.icon, size: isCompact ? 34 : 30, isSelected: isOnMoss)
                 if !isCompact {
+                    // Names keep their full width and fade, so they do not squash or
+                    // shorten to "…" while the sidebar narrows.
                     Text(section.title)
                         .foregroundStyle(isOnMoss ? Color.white : Color.primary)
+                        .lineLimit(1)
+                        .fixedSize(horizontal: true, vertical: false)
+                        .transition(.opacity)
                     Spacer(minLength: 8)
                     if let trailingText {
                         Text(trailingText)
                             .font(.callout)
                             .monospacedDigit()
                             .foregroundStyle(isOnMoss ? Color.white.opacity(0.85) : Color.secondary)
+                            .lineLimit(1)
+                            .fixedSize(horizontal: true, vertical: false)
+                            .transition(.opacity)
                     }
                 }
             }

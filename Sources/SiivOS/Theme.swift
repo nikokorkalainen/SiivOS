@@ -224,6 +224,52 @@ struct LoadingView: View {
     }
 }
 
+/// The two glints from the logo without the name, for places too narrow for the full logo,
+/// such as the collapsed sidebar. The big glint takes the colour of "Siiv" and the small one
+/// the colour of "OS", as in the logo.
+struct SiivOSGlintMark: View {
+    var body: some View {
+        Canvas { graphics, canvasSize in
+            // The glints as they sit in the logo and the loading animation, on a
+            // 120 x 120 grid. Together they cover x 18 to 102 and y 21 to 99.
+            let box = CGRect(x: 18, y: 21, width: 84, height: 78)
+            let scale = min(canvasSize.width / box.width, canvasSize.height / box.height)
+            graphics.translateBy(
+                x: (canvasSize.width - box.width * scale) / 2,
+                y: (canvasSize.height - box.height * scale) / 2
+            )
+            graphics.scaleBy(x: scale, y: scale)
+            graphics.translateBy(x: -box.minX, y: -box.minY)
+            graphics.fill(
+                Self.glint(center: CGPoint(x: 68, y: 55), arm: 34),
+                with: .color(SiivOSLogoPaths.siivColor)
+            )
+            graphics.fill(
+                Self.glint(center: CGPoint(x: 34, y: 83), arm: 16),
+                with: .color(SiivOSLogoPaths.osColor)
+            )
+        }
+        .aspectRatio(84.0 / 78.0, contentMode: .fit)
+        .accessibilityElement()
+        .accessibilityLabel("SiivOS")
+    }
+
+    /// The SiivOS glint: four points joined by soft curves, with control points at 12 %
+    /// and 45.4 % of the arm, as the design notes define it.
+    private static func glint(center c: CGPoint, arm: CGFloat) -> Path {
+        let k1 = arm * 0.12
+        let k2 = arm * 0.454
+        var path = Path()
+        path.move(to: CGPoint(x: c.x, y: c.y - arm))
+        path.addCurve(to: CGPoint(x: c.x + arm, y: c.y), control1: CGPoint(x: c.x + k1, y: c.y - k2), control2: CGPoint(x: c.x + k2, y: c.y - k1))
+        path.addCurve(to: CGPoint(x: c.x, y: c.y + arm), control1: CGPoint(x: c.x + k2, y: c.y + k1), control2: CGPoint(x: c.x + k1, y: c.y + k2))
+        path.addCurve(to: CGPoint(x: c.x - arm, y: c.y), control1: CGPoint(x: c.x - k1, y: c.y + k2), control2: CGPoint(x: c.x - k2, y: c.y + k1))
+        path.addCurve(to: CGPoint(x: c.x, y: c.y - arm), control1: CGPoint(x: c.x - k2, y: c.y - k1), control2: CGPoint(x: c.x - k1, y: c.y - k2))
+        path.closeSubpath()
+        return path
+    }
+}
+
 /// Lays a start screen out in the open: its content centred in the content column, with
 /// nothing behind it. If the window is too small, the content scrolls.
 struct CenteredScreen<Content: View>: View {
