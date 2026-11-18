@@ -193,7 +193,9 @@ struct PageHeader<Trailing: View>: View {
     }
 
     var body: some View {
-        HStack(alignment: .top) {
+        // Lined up on the title's baseline, so the button's text sits on the same line
+        // as the title instead of a little above it.
+        HStack(alignment: .firstTextBaseline) {
             VStack(alignment: .leading, spacing: 4) {
                 Text(title)
                     .font(.largeTitle)
