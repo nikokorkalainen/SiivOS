@@ -46,6 +46,11 @@ The app follows the Mac's appearance setting. Colours and backgrounds are in
 
 ## Sidebar
 
+**Logo at the top:** `SiivOSSidebarHeader()` (app icon 32 pt next to the name, 16 pt tall),
+above the sections, for example with `.safeAreaInset(edge: .top)` on the sidebar `List`. The
+name is drawn from outlines (`SiivOSWordmark`), so it needs no font installed. In dark mode it is
+soft white with mint "OS"; in light mode deep green with jade "OS".
+
 Order: Overview, Cleanup, Apps, Performance, Protection, Health Timeline, History.
 History shows the size waiting in the holding area as a small trailing label, only when it is
 not empty. No other badges.

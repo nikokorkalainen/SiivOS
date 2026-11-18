@@ -11,6 +11,9 @@ The name is drawn as outlines from Nunito ExtraBold, so the tile does not need t
 installed. Nunito is by The Nunito Project Authors and licensed under the SIL Open Font License
 1.1 (https://github.com/googlefonts/nunito).
 
+- `make_wordmark.py`: writes `Sources/SiivOS/SiivOSWordmark.swift`, the name as SwiftUI shapes for
+  the sidebar logo: `python3 design/icon/make_wordmark.py path/to/Nunito[wght].ttf Sources/SiivOS/SiivOSWordmark.swift`
+
 ## Making the files again
 
 On Linux (needs `rsvg-convert`, Python with fontTools and Pillow, and the Nunito variable font):
