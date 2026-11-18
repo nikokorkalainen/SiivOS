@@ -58,7 +58,7 @@ Ideas taken from the comparison above and from the owner. Each is built as part 
 | App permissions overview: which apps can use the camera, microphone and files | CleanMyMac | Phase 6 | Not started |
 | Notice and record new background items when they appear | SiivOS's own | Phases 6 and 7 | Not started |
 | Green look, SiivOS icon set, sidebar logo and the app-drawn sidebar from `docs/design.md` | Owner's design notes | All screens | Done. Built and tried out on macOS 15.8.3 in dark and light mode |
-| Sidebar cannot be hidden; its own button collapses it to slightly larger icons only | Owner | Sidebar | Built. Awaiting build and test on a Mac |
+| Sidebar cannot be hidden; its own button collapses it to slightly larger icons only. The app lays out the sidebar and content itself, without the standard split view, and the window has no title bar strip | Owner | Sidebar and window | Built. Awaiting build and test on a Mac |
 | Settings window (see below) | Owner | Phase 8, or earlier where a phase needs a setting | Proposed, not yet agreed |
 | Finnish language version. The app follows the Mac's language, with English as the fallback | Owner | Its own step after Phase 4, then kept up to date in every later phase | Done. Built and tried out on macOS 15.8.3. The owner chose "sovellus", "terveys" and "Terveystiedot" |
 | Screens redesigned to follow `docs/design.md`: Overview with Check This Mac and a three-part disk bar, Cleanup in two parts with a bottom action bar and Undo, History as one list, app icon | Owner's design notes | Overview, Cleanup, History, sidebar and the confirmation sheet | Done. Built and tried out on macOS 15.8.3, including the glint loading animation |

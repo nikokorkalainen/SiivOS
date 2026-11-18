@@ -144,32 +144,6 @@ private struct ProminentButtonBody<Content: View>: View {
     }
 }
 
-/// In dark mode, gives the window's title bar the same green as the top of the content,
-/// so there is no grey strip above the green look. Light mode keeps the standard bar.
-struct ThemedToolbar: ViewModifier {
-    @Environment(\.colorScheme) private var colorScheme
-
-    func body(content: Content) -> some View {
-        if colorScheme == .dark {
-            content
-                .toolbarBackground(
-                    LinearGradient(
-                        colors: [
-                            Color(red: 19.0 / 255.0, green: 86.0 / 255.0, blue: 63.0 / 255.0),
-                            Color(red: 11.0 / 255.0, green: 58.0 / 255.0, blue: 46.0 / 255.0)
-                        ],
-                        startPoint: .leading,
-                        endPoint: .trailing
-                    ),
-                    for: .windowToolbar
-                )
-                .toolbarBackground(.visible, for: .windowToolbar)
-        } else {
-            content
-        }
-    }
-}
-
 /// A fact with its value at the far end of the row.
 struct FactRow: View {
     let label: String

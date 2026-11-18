@@ -8,8 +8,11 @@ struct SiivOSApp: App {
     var body: some Scene {
         WindowGroup("SiivOS") {
             ContentView()
-                .frame(minWidth: 760, minHeight: 480)
+                .frame(minWidth: 820, minHeight: 520)
         }
+        // No title bar strip: the sidebar and the content run to the top of the window,
+        // with the window buttons over the sidebar. Each screen shows its own title.
+        .windowStyle(.hiddenTitleBar)
     }
 }
 

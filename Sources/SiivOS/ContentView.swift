@@ -1,3 +1,4 @@
+import AppKit
 import SiivOSCore
 import SwiftUI
 
@@ -15,23 +16,23 @@ struct ContentView: View {
     @AppStorage("sidebarShowsIconsOnly") private var sidebarIsCompact = false
 
     var body: some View {
-        // The sidebar can be collapsed to icons with its own button, but never hidden:
-        // the column is kept visible and the standard hide button is removed.
-        NavigationSplitView(columnVisibility: .constant(.all)) {
+        // The app lays the two columns out itself. The standard split view ignores a new
+        // sidebar width once it is open, so it could not collapse the sidebar to icons,
+        // and it offers a way to hide the sidebar, which SiivOS does not want.
+        HStack(spacing: 0) {
             SidebarView(selection: $selection, heldBytes: holding.heldBytes, isCompact: $sidebarIsCompact)
-                .navigationSplitViewColumnWidth(
-                    min: sidebarIsCompact ? SidebarView.compactWidth : 210,
-                    ideal: sidebarIsCompact ? SidebarView.compactWidth : 240,
-                    max: sidebarIsCompact ? SidebarView.compactWidth : 320
-                )
-                .toolbar(removing: .sidebarToggle)
-        } detail: {
+                .frame(width: sidebarIsCompact ? SidebarView.compactWidth : SidebarView.fullWidth)
+
+            Rectangle()
+                .fill(SiivOSTheme.divider)
+                .frame(width: 1)
+                .ignoresSafeArea()
+
             // Fill the whole column first, so the background covers it even when the
             // screen itself is small, such as a start screen.
             detail(for: selection)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .background(SiivOSWindowBackground())
-                .modifier(ThemedToolbar())
         }
         .tint(SiivOSTheme.prominent)
         .onAppear {
@@ -63,6 +64,8 @@ struct ContentView: View {
 /// The sidebar, drawn by the app itself. A standard list would draw the selected row in
 /// the accent colour chosen in System Settings, which the app cannot change.
 private struct SidebarView: View {
+    /// Width of the sidebar with names.
+    static let fullWidth: CGFloat = 240
     /// Width of the sidebar when it shows icons only: room for the window buttons above
     /// and one 34 pt icon per row.
     static let compactWidth: CGFloat = 86
@@ -105,7 +108,15 @@ private struct SidebarView: View {
         .safeAreaInset(edge: .bottom, spacing: 0) {
             collapseButton
         }
-        .background(SiivOSSidebarBackground())
+        .background {
+            // Light mode keeps the Mac's standard translucent sidebar; in dark mode the
+            // deep green is drawn over it.
+            ZStack {
+                SidebarMaterial()
+                SiivOSSidebarBackground()
+            }
+            .ignoresSafeArea()
+        }
         // The arrow keys move through the sections once the sidebar has been clicked.
         .focusable()
         .focused($hasFocus)
@@ -118,7 +129,9 @@ private struct SidebarView: View {
     /// Switches between names with icons and icons only.
     private var collapseButton: some View {
         Button {
-            isCompact.toggle()
+            withAnimation(.easeInOut(duration: 0.2)) {
+                isCompact.toggle()
+            }
         } label: {
             Image(systemName: isCompact ? "chevron.right.2" : "chevron.left.2")
                 .font(.system(size: 13, weight: .semibold))
@@ -160,6 +173,19 @@ private struct SidebarView: View {
             break
         }
     }
+}
+
+/// The Mac's standard sidebar material, which lets a little of the desktop show through.
+private struct SidebarMaterial: NSViewRepresentable {
+    func makeNSView(context: Context) -> NSVisualEffectView {
+        let view = NSVisualEffectView()
+        view.material = .sidebar
+        view.blendingMode = .behindWindow
+        view.state = .followsWindowActiveState
+        return view
+    }
+
+    func updateNSView(_ nsView: NSVisualEffectView, context: Context) {}
 }
 
 /// One section in the sidebar. The selected row is a soft white panel in dark mode and
