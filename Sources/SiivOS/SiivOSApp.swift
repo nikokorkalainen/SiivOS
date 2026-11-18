@@ -15,6 +15,8 @@ struct SiivOSApp: App {
         // No title bar strip: the sidebar and the content run to the top of the window,
         // with the window buttons over the sidebar. Each screen shows its own title.
         .windowStyle(.hiddenTitleBar)
+        // The size of a first window. After that the window remembers how it was left.
+        .defaultSize(MainWindow.defaultSize)
 
         // The glints in the menu bar, with a small panel under them.
         MenuBarExtra(isInserted: $showsMenuBar) {

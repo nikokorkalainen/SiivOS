@@ -27,9 +27,32 @@ enum MainWindow {
     static let sceneID = "main"
 
     static weak var current: NSWindow?
+
+    /// The size the window opens in the first time, before it has been resized.
+    static let defaultSize = CGSize(width: 1_200, height: 800)
+
+    /// The name under which the window's size and place are remembered.
+    private static let frameName = "SiivOSMainWindow"
+
+    /// Gives the window the size and place it had when it was last used, if any.
+    /// macOS keeps the window on the screen if the screens have changed since.
+    static func restoreFrame(of window: NSWindow) {
+        window.setFrameUsingName(frameName)
+    }
+
+    /// Remembers the window's size and place for the next time it opens.
+    static func saveFrame(of window: NSWindow) {
+        // A window that fills the screen has no size of its own worth remembering.
+        guard !window.styleMask.contains(.fullScreen) else {
+            return
+        }
+        window.saveFrame(usingName: frameName)
+    }
 }
 
 /// Sits invisibly in the window's content and tells `MainWindow` which window that is.
+/// It also makes the window remember its size and place: a window that is closed and
+/// opened again, or the app quit and started again, comes back the way it was left.
 struct MainWindowTracker: NSViewRepresentable {
     func makeNSView(context: Context) -> NSView {
         TrackingView()
@@ -40,8 +63,39 @@ struct MainWindowTracker: NSViewRepresentable {
     private final class TrackingView: NSView {
         override func viewDidMoveToWindow() {
             super.viewDidMoveToWindow()
+            NotificationCenter.default.removeObserver(self)
+            guard let window = self.window else {
+                return
+            }
+            MainWindow.current = window
+
+            // A moment later, so that this comes after the size and place the window is
+            // given while it is being set up. Only then start remembering changes, or
+            // that first set-up would be remembered in place of what the user chose.
+            Task { @MainActor [weak self] in
+                guard let self, self.window === window else {
+                    return
+                }
+                MainWindow.restoreFrame(of: window)
+
+                let center = NotificationCenter.default
+                center.addObserver(self, selector: #selector(self.windowChanged(_:)), name: NSWindow.didEndLiveResizeNotification, object: window)
+                center.addObserver(self, selector: #selector(self.windowChanged(_:)), name: NSWindow.didMoveNotification, object: window)
+                center.addObserver(self, selector: #selector(self.windowChanged(_:)), name: NSWindow.willCloseNotification, object: window)
+                // Quitting does not close the window first, so remember it then too.
+                center.addObserver(self, selector: #selector(self.appWillQuit(_:)), name: NSApplication.willTerminateNotification, object: nil)
+            }
+        }
+
+        @objc private func windowChanged(_ notification: Notification) {
+            if let window = notification.object as? NSWindow {
+                MainWindow.saveFrame(of: window)
+            }
+        }
+
+        @objc private func appWillQuit(_ notification: Notification) {
             if let window = self.window {
-                MainWindow.current = window
+                MainWindow.saveFrame(of: window)
             }
         }
     }
