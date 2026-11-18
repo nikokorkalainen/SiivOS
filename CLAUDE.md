@@ -13,7 +13,7 @@ SiivOS is a macOS optimizer app. Read `PLAN.md` first: it holds the approved pla
 ## Architecture rules
 
 - `Sources/SiivOSCore/`: all logic that inspects or changes the system. No SwiftUI or AppKit UI code. Covered by tests.
-- `Sources/SiivOS/`: SwiftUI interface only. It calls into SiivOSCore. Its look and wording follow `docs/design.md`; shared colours and building blocks are in `Sources/SiivOS/Theme.swift`.
+- `Sources/SiivOS/`: SwiftUI interface only. It calls into SiivOSCore. Its look and wording follow `docs/design.md`. Colours are in `SiivOSTheme.swift`, section icons in `SiivOSIcons.swift`, and shared building blocks (panels, buttons, bars) in `Theme.swift`. `SiivOSTheme.swift`, `SiivOSIcons.swift`, `SiivOSWordmark.swift`, `SiivOSSidebarHeader.swift` and `GlintLoader.swift` come from the `claude/design-notes` branch, where the design work happens; run the syntax check after merging it, since that branch has shipped a file that did not compile.
 - No third-party dependencies and no network calls unless the owner approves them (privacy-first principle).
 - Nothing destructive without an explanation shown first and an undo path. Removed items go to a restorable holding area.
 

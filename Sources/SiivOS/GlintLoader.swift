@@ -91,7 +91,6 @@ struct GlintLoader: View {
         path.closeSubpath()
         return path
     }
-    }
 
     /// Near-white in dark mode, deep green (#145C47) in light mode.
     private static let bigGlintColor = adaptiveColor(

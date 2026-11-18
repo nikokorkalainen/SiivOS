@@ -14,11 +14,10 @@ struct OverviewView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 28) {
                 PageHeader(title: tr("Overview"), subtitle: lastCheckedText) {
-                    Button(tr("Check This Mac")) {
+                    ProminentButton(tr("Check This Mac"), systemImage: "sparkle.magnifyingglass") {
                         snapshot = SystemSnapshot.current()
                         cleanup.scan()
                     }
-                    .buttonStyle(.borderedProminent)
                     .controlSize(.large)
                     .disabled(cleanup.isScanning)
                     .help(tr("Look for things that can be removed. Checking only looks; nothing is changed."))
@@ -42,9 +41,9 @@ struct OverviewView: View {
                 .font(.title2)
             DiskBar(usedFraction: usedFraction, safeFraction: safeFraction)
             HStack(spacing: 16) {
-                LegendItem(color: Color.siivosMoss, text: tr("Used"))
-                LegendItem(color: Color.siivosLichen, text: tr("Safe to remove"))
-                LegendItem(color: Color(nsColor: .separatorColor), text: tr("Free"))
+                LegendItem(color: Color.siivosTint, text: tr("Used"))
+                LegendItem(color: Color.siivosTint.opacity(0.45), text: tr("Safe to remove"))
+                LegendItem(color: SiivOSTheme.divider, text: tr("Free"))
             }
         }
     }
@@ -107,7 +106,7 @@ struct OverviewView: View {
     private var cleanupCard: some View {
         Card {
             VStack(alignment: .leading, spacing: 8) {
-                CardTitle(section: .cleanup)
+                CardTitle(section: .cleanup, iconSize: 34)
                 if cleanup.isScanning {
                     LoadingView(text: tr("Checking now…"))
                         .frame(maxWidth: .infinity)
@@ -168,11 +167,11 @@ struct OverviewView: View {
             Card {
                 VStack(alignment: .leading, spacing: 8) {
                     LabeledContent("macOS", value: snapshot.osVersion)
-                    Divider()
+                    ThemedDivider()
                     LabeledContent(tr("Processor cores"), value: "\(snapshot.processorCount)")
-                    Divider()
+                    ThemedDivider()
                     LabeledContent(tr("Memory"), value: memory(snapshot.physicalMemoryBytes))
-                    Divider()
+                    ThemedDivider()
                     LabeledContent(tr("Time since restart"), value: uptime(snapshot.uptimeSeconds))
                 }
             }
@@ -201,13 +200,13 @@ private struct DiskBar: View {
         GeometryReader { proxy in
             HStack(spacing: 0) {
                 Rectangle()
-                    .fill(Color.siivosMoss)
+                    .fill(Color.siivosTint)
                     .frame(width: proxy.size.width * usedFraction)
                 Rectangle()
-                    .fill(Color.siivosLichen)
+                    .fill(Color.siivosTint.opacity(0.45))
                     .frame(width: proxy.size.width * safeFraction)
                 Rectangle()
-                    .fill(Color(nsColor: .separatorColor))
+                    .fill(SiivOSTheme.divider)
             }
         }
         .frame(height: 14)
@@ -231,18 +230,18 @@ private struct LegendItem: View {
     }
 }
 
-/// The name of a section with its symbol, as the heading of a card.
+/// The name of a section with its icon, as the heading of a card.
 private struct CardTitle: View {
     let section: AppSection
+    /// 34 pt for the Cleanup card, 30 pt for the others.
+    var iconSize: CGFloat = 30
 
     var body: some View {
-        Label {
+        HStack(spacing: 10) {
+            SiivOSIconView(section.icon, size: iconSize)
             Text(section.title)
-        } icon: {
-            Image(systemName: section.symbol)
-                .foregroundStyle(Color.siivosTint)
+                .font(.headline)
         }
-        .font(.headline)
     }
 }
 

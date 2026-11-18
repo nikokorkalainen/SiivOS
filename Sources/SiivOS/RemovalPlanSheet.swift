@@ -67,8 +67,7 @@ struct RemovalPlanSheet: View {
                 Button(plan.items.isEmpty ? tr("Close") : tr("Cancel"), role: .cancel, action: onCancel)
                     .keyboardShortcut(.cancelAction)
                 if !plan.items.isEmpty {
-                    Button(tr("Move to Holding Area"), action: onConfirm)
-                        .buttonStyle(.borderedProminent)
+                    ProminentButton(tr("Move to Holding Area"), action: onConfirm)
                         .keyboardShortcut(.defaultAction)
                 }
             }

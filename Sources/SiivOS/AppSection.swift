@@ -25,16 +25,16 @@ enum AppSection: String, CaseIterable, Identifiable, Hashable {
         }
     }
 
-    /// Name of the SF Symbol shown next to the title.
-    var symbol: String {
+    /// The section's icon from the SiivOS icon set.
+    var icon: SiivOSIcon {
         switch self {
-        case .overview: return "house"
-        case .cleanup: return "trash"
-        case .apps: return "square.grid.2x2"
-        case .performance: return "speedometer"
-        case .protection: return "shield"
-        case .timeline: return "clock.arrow.circlepath"
-        case .history: return "arrow.uturn.backward.circle"
+        case .overview: return .overview
+        case .cleanup: return .cleanup
+        case .apps: return .apps
+        case .performance: return .performance
+        case .protection: return .protection
+        case .timeline: return .timeline
+        case .history: return .history
         }
     }
 

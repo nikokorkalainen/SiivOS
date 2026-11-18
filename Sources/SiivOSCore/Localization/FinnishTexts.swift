@@ -266,5 +266,6 @@ enum FinnishTexts {
         "Duplicate files": "Tiedostojen kaksoiskappaleet",
         "Extra copies of files with exactly the same contents, in your Desktop, Documents, Downloads, Movies, Music and Pictures folders. One copy of each is always kept and is not listed here. If the copies were made on this Mac they may share disk space, so less may be freed than shown.": "Ylimääräisiä kopioita tiedostoista, joiden sisältö on täsmälleen sama, Työpöytä-, Dokumentit-, Lataukset-, Elokuvat-, Musiikki- ja Kuvat-kansioissasi. Jokaisesta säilytetään aina yksi kopio, eikä sitä näytetä tässä. Jos kopiot on tehty tällä Macilla, ne voivat jakaa levytilaa, jolloin tilaa voi vapautua näytettyä vähemmän.",
         "Identical to %1$@, which is kept.": "Sama sisältö kuin tiedostolla %1$@, joka säilytetään.",
+        "Cleanup found %1$@ that is safe to remove.": "Siivous löysi %1$@, jonka voi turvallisesti poistaa.",
     ]
 }

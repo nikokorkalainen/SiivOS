@@ -3,9 +3,12 @@ import SiivOSCore
 import SwiftUI
 
 /// A live look at the processor, memory, disk and battery, with what SiivOS makes of it.
-/// Nothing on this screen changes anything.
+/// Nothing on this screen changes anything. Its look follows the Performance section of
+/// docs/design.md.
 struct PerformanceView: View {
     @ObservedObject var model: PerformanceModel
+    /// The last Cleanup check, so the disk panel can say what is safe to remove.
+    @ObservedObject var cleanup: CleanupModel
     /// Opens another section of the app.
     let open: (AppSection) -> Void
 
@@ -24,7 +27,7 @@ struct PerformanceView: View {
 
                 if let sample = model.latest {
                     noticed
-                    gauges(sample)
+                    panels(sample)
                 } else {
                     LoadingView(text: tr("Taking the first readings…"))
                         .frame(maxWidth: .infinity)
@@ -48,14 +51,15 @@ struct PerformanceView: View {
                 .font(.title3)
                 .bold()
             ForEach(model.diagnoses) { diagnosis in
-                DiagnosisCard(diagnosis: diagnosis, open: open)
+                DiagnosisPanel(diagnosis: diagnosis, open: open)
             }
         }
     }
 
-    // MARK: - Gauges
+    // MARK: - Right now
 
-    private func gauges(_ sample: PerformanceSample) -> some View {
+    /// Four panels, two across on a normal window and one on a narrow one.
+    private func panels(_ sample: PerformanceSample) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             Text(tr("Right now"))
                 .font(.title3)
@@ -65,35 +69,38 @@ struct PerformanceView: View {
                 alignment: .leading,
                 spacing: 16
             ) {
-                ProcessorCard(sample: sample, history: model.samples.map { $0.cpuUsedFraction ?? 0 })
+                ProcessorPanel(sample: sample, history: model.samples.map { $0.cpuUsedFraction ?? 0 })
                 if let memory = sample.memory {
-                    MemoryCard(
+                    MemoryPanel(
                         sample: sample,
                         memory: memory,
                         history: model.samples.map { $0.memory?.usedFraction ?? 0 }
                     )
                 }
-                DiskCard(sample: sample)
+                DiskPanel(sample: sample, safeToRemoveBytes: cleanup.safeToRemoveBytes, open: open)
                 if let battery = sample.battery {
-                    BatteryCard(battery: battery)
+                    BatteryPanel(battery: battery)
                 }
             }
         }
     }
 }
 
-/// One thing SiivOS noticed, in calm wording, with a way to act on it where there is one.
-private struct DiagnosisCard: View {
+/// One thing SiivOS noticed: a round icon, the title, and the explanation in calm wording.
+/// The all-clear message uses the same panel.
+private struct DiagnosisPanel: View {
     let diagnosis: Diagnosis
     let open: (AppSection) -> Void
 
     var body: some View {
         Card {
-            HStack(alignment: .top, spacing: 12) {
+            HStack(alignment: .top, spacing: 14) {
                 Image(systemName: symbol)
-                    .font(.title2)
-                    .foregroundStyle(Color.siivosTint)
-                    .frame(width: 28)
+                    .resizable()
+                    .symbolRenderingMode(.palette)
+                    .foregroundStyle(Color.white, Color.siivosTint)
+                    .frame(width: 34, height: 34)
+                    .accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: 4) {
                     Text(diagnosis.title)
                         .font(.headline)
@@ -116,34 +123,35 @@ private struct DiagnosisCard: View {
         }
     }
 
+    /// A check for good news, an "i" for a note, an exclamation mark when something is
+    /// slowing the Mac down. All in the same calm tint.
     private var symbol: String {
         switch diagnosis.level {
-        case .good: return "checkmark.circle"
-        case .note: return "info.circle"
-        case .attention: return "exclamationmark.circle"
+        case .good: return "checkmark.circle.fill"
+        case .note: return "info.circle.fill"
+        case .attention: return "exclamationmark.circle.fill"
         }
     }
 }
 
-// MARK: - Cards
+// MARK: - Panels
 
-private struct ProcessorCard: View {
+private struct ProcessorPanel: View {
     let sample: PerformanceSample
     let history: [Double]
 
     var body: some View {
         Card {
             VStack(alignment: .leading, spacing: 10) {
-                GaugeTitle(text: tr("Processor"), symbol: "cpu")
-                Text(headline)
-                    .font(.system(size: 34, weight: .semibold))
-                    .monospacedDigit()
-                Text(tr("in use, across %1$@ cores", "\(sample.coreCount)"))
-                    .foregroundStyle(.secondary)
+                PanelHeading(
+                    title: tr("Processor"),
+                    number: headline,
+                    context: tr("in use, across %1$@ cores", "\(sample.coreCount)")
+                )
                 Sparkline(values: history)
 
                 if !sample.topByCPU.isEmpty {
-                    Divider()
+                    ThemedDivider()
                     Text(tr("Busiest now"))
                         .font(.subheadline)
                         .bold()
@@ -168,7 +176,7 @@ private struct ProcessorCard: View {
     }
 }
 
-private struct MemoryCard: View {
+private struct MemoryPanel: View {
     let sample: PerformanceSample
     let memory: MemoryUsage
     let history: [Double]
@@ -176,13 +184,14 @@ private struct MemoryCard: View {
     var body: some View {
         Card {
             VStack(alignment: .leading, spacing: 10) {
-                GaugeTitle(text: tr("Memory"), symbol: "memorychip")
-                Text(formatMemory(memory.usedBytes))
-                    .font(.system(size: 34, weight: .semibold))
-                    .monospacedDigit()
-                Text(tr("in use, of %1$@", formatMemory(memory.totalBytes)))
-                    .foregroundStyle(.secondary)
+                PanelHeading(
+                    title: tr("Memory"),
+                    number: formatMemory(memory.usedBytes),
+                    context: tr("in use, of %1$@", formatMemory(memory.totalBytes))
+                )
                 Sparkline(values: history)
+
+                PressureMeter(pressure: memory.pressure)
                 Text(pressureText)
                     .fixedSize(horizontal: false, vertical: true)
                 if memory.swapUsedBytes > 0 {
@@ -193,7 +202,7 @@ private struct MemoryCard: View {
                 }
 
                 if !sample.topByMemory.isEmpty {
-                    Divider()
+                    ThemedDivider()
                     Text(tr("Using the most"))
                         .font(.subheadline)
                         .bold()
@@ -217,22 +226,34 @@ private struct MemoryCard: View {
     }
 }
 
-private struct DiskCard: View {
+private struct DiskPanel: View {
     let sample: PerformanceSample
+    /// What the last Cleanup check found safe to remove, or zero when there is nothing to say.
+    let safeToRemoveBytes: Int64
+    let open: (AppSection) -> Void
 
     var body: some View {
         Card {
             VStack(alignment: .leading, spacing: 10) {
-                GaugeTitle(text: tr("Startup disk"), symbol: "internaldrive")
                 if let total = sample.diskTotalBytes, let available = sample.diskAvailableBytes {
-                    Text(formatBytes(available))
-                        .font(.system(size: 34, weight: .semibold))
-                        .monospacedDigit()
-                    Text(tr("free, of %1$@", formatBytes(total)))
-                        .foregroundStyle(.secondary)
-                    ProgressView(value: 1 - (sample.diskFreeFraction ?? 0))
-                        .tint(Color.siivosMoss)
+                    PanelHeading(
+                        title: tr("Startup disk"),
+                        number: formatBytes(available),
+                        context: tr("free, of %1$@", formatBytes(total))
+                    )
+                    MeterBar(fraction: 1 - (sample.diskFreeFraction ?? 0))
+
+                    if safeToRemoveBytes > 0 {
+                        ThemedDivider()
+                        Text(tr("Cleanup found %1$@ that is safe to remove.", formatBytes(safeToRemoveBytes)))
+                            .fixedSize(horizontal: false, vertical: true)
+                        Button(tr("Open Cleanup")) {
+                            open(.cleanup)
+                        }
+                    }
                 } else {
+                    Text(tr("Startup disk"))
+                        .font(.headline)
                     Text(tr("The disk could not be read."))
                         .foregroundStyle(.secondary)
                 }
@@ -241,21 +262,23 @@ private struct DiskCard: View {
     }
 }
 
-private struct BatteryCard: View {
+private struct BatteryPanel: View {
     let battery: BatteryStatus
 
     var body: some View {
         Card {
             VStack(alignment: .leading, spacing: 10) {
-                GaugeTitle(text: tr("Battery"), symbol: "battery.75percent")
-                Text(formatPercent(Double(battery.chargePercent) / 100))
-                    .font(.system(size: 34, weight: .semibold))
-                    .monospacedDigit()
-                Text(stateText)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
+                PanelHeading(
+                    title: tr("Battery"),
+                    number: formatPercent(Double(battery.chargePercent) / 100),
+                    context: stateText
+                )
+                MeterBar(fraction: Double(battery.chargePercent) / 100)
+
+                if battery.healthPercent != nil || battery.cycleCount != nil {
+                    ThemedDivider()
+                }
                 if let health = battery.healthPercent {
-                    Divider()
                     Text(tr("Holds about %1$@ of what it did when new.", formatPercent(Double(health) / 100)))
                         .fixedSize(horizontal: false, vertical: true)
                 }
@@ -287,19 +310,41 @@ private struct BatteryCard: View {
 
 // MARK: - Building blocks
 
-/// The heading of a gauge card: a tinted symbol and a name.
-private struct GaugeTitle: View {
-    let text: String
-    let symbol: String
+/// The top of a panel: a plain title, a large number, and one line of context.
+/// No icon; the sidebar already says where you are.
+private struct PanelHeading: View {
+    let title: String
+    let number: String
+    let context: String
 
     var body: some View {
-        Label {
-            Text(text)
-        } icon: {
-            Image(systemName: symbol)
-                .foregroundStyle(Color.siivosTint)
+        VStack(alignment: .leading, spacing: 4) {
+            Text(title)
+                .font(.headline)
+            Text(number)
+                .font(.system(size: 32, weight: .semibold))
+                .monospacedDigit()
+            Text(context)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
         }
-        .font(.headline)
+    }
+}
+
+/// Memory pressure in three steps: normal, tight, heavy. One step is lit when there is
+/// room to spare, all three when apps are waiting for memory.
+private struct PressureMeter: View {
+    let pressure: MemoryUsage.Pressure
+
+    var body: some View {
+        HStack(spacing: 4) {
+            ForEach(0..<3, id: \.self) { step in
+                Capsule()
+                    .fill(step <= pressure.rawValue ? Color.siivosTint : SiivOSTheme.divider)
+                    .frame(height: 8)
+            }
+        }
+        .accessibilityHidden(true)
     }
 }
 
@@ -333,39 +378,71 @@ private struct ProcessRow: View {
     }
 }
 
-/// A small line chart of recent readings, newest at the right edge.
+/// A small chart of recent readings, newest at the right edge: a 2 pt line in the tint
+/// colour over a soft fade of the same colour, with no axes.
 private struct Sparkline: View {
     /// Readings from 0 to 1, oldest first.
     let values: [Double]
 
     var body: some View {
         GeometryReader { proxy in
-            Path { path in
-                guard values.count > 1 else {
-                    return
-                }
-                let slot = proxy.size.width / CGFloat(PerformanceModel.historyLimit - 1)
-                for (index, value) in values.enumerated() {
-                    let fromRight = CGFloat(values.count - 1 - index)
-                    let level = CGFloat(min(1, max(0, value)))
-                    let point = CGPoint(
-                        x: proxy.size.width - fromRight * slot,
-                        y: proxy.size.height * (1 - level)
+            let points = self.points(in: proxy.size)
+            ZStack {
+                area(through: points, height: proxy.size.height)
+                    .fill(
+                        LinearGradient(
+                            colors: [Color.siivosTint.opacity(0.3), Color.siivosTint.opacity(0)],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
                     )
-                    if index == 0 {
-                        path.move(to: point)
-                    } else {
-                        path.addLine(to: point)
-                    }
-                }
+                line(through: points)
+                    .stroke(Color.siivosTint, style: StrokeStyle(lineWidth: 2, lineCap: .round, lineJoin: .round))
             }
-            .stroke(Color.siivosTint, style: StrokeStyle(lineWidth: 2, lineCap: .round, lineJoin: .round))
         }
-        .frame(height: 44)
-        .overlay(alignment: .bottom) {
-            Divider()
-        }
+        .frame(height: 48)
         .accessibilityHidden(true)
+    }
+
+    /// Where each reading sits. Each has a fixed slot, so the line grows in from the right.
+    private func points(in size: CGSize) -> [CGPoint] {
+        let slot = size.width / CGFloat(PerformanceModel.historyLimit - 1)
+        // Leave room for the line's own thickness at the top and bottom.
+        let inset: CGFloat = 2
+        let usableHeight = max(0, size.height - inset * 2)
+        var result: [CGPoint] = []
+        for (index, value) in values.enumerated() {
+            let fromRight = CGFloat(values.count - 1 - index)
+            let level = CGFloat(min(1, max(0, value)))
+            result.append(
+                CGPoint(x: size.width - fromRight * slot, y: inset + usableHeight * (1 - level))
+            )
+        }
+        return result
+    }
+
+    private func line(through points: [CGPoint]) -> Path {
+        var path = Path()
+        guard points.count > 1, let first = points.first else {
+            return path
+        }
+        path.move(to: first)
+        for point in points.dropFirst() {
+            path.addLine(to: point)
+        }
+        return path
+    }
+
+    /// The shape under the line, down to the bottom edge.
+    private func area(through points: [CGPoint], height: CGFloat) -> Path {
+        var path = line(through: points)
+        guard points.count > 1, let first = points.first, let last = points.last else {
+            return path
+        }
+        path.addLine(to: CGPoint(x: last.x, y: height))
+        path.addLine(to: CGPoint(x: first.x, y: height))
+        path.closeSubpath()
+        return path
     }
 }
 

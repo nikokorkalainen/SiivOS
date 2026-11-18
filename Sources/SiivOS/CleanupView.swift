@@ -41,10 +41,9 @@ struct CleanupView: View {
                 Text(tr("SiivOS looks for app caches, logs, leftovers from removed apps, old downloads, large files and duplicate files."))
                 Text(tr("Scanning only looks. Nothing is removed until you tick items and confirm. macOS may ask for permission to look in your Desktop, Documents and Downloads folders."))
             } actions: {
-                Button(tr("Scan for Clutter")) {
+                ProminentButton(tr("Scan for Clutter")) {
                     model.scan()
                 }
-                .buttonStyle(.borderedProminent)
             }
         }
     }
@@ -75,9 +74,12 @@ private struct CleanupResultsView: View {
                     title: tr("Cleanup"),
                     subtitle: tr("Tick what you want to remove. Nothing changes until you confirm.")
                 ) {
-                    Button(tr("Scan Again")) {
+                    Button {
                         model.scan()
+                    } label: {
+                        ButtonLabel(title: tr("Scan Again"), systemImage: "arrow.clockwise")
                     }
+                    .controlSize(.large)
                     .disabled(model.isWorking)
                 }
 
@@ -123,9 +125,12 @@ private struct RemovalBanner: View {
             Text(text)
                 .fixedSize(horizontal: false, vertical: true)
             Spacer()
-            Button(tr("Undo")) {
+            Button {
                 model.undoLastRemoval()
+            } label: {
+                ButtonLabel(title: tr("Undo"), systemImage: "arrow.uturn.backward")
             }
+            .controlSize(.large)
             .disabled(model.isWorking)
             Button {
                 model.dismissRemovalNotice()
@@ -137,7 +142,7 @@ private struct RemovalBanner: View {
         }
         .padding(12)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.siivosLichen.opacity(0.2), in: RoundedRectangle(cornerRadius: 10))
+        .cardBackground()
     }
 
     private var text: String {
@@ -207,7 +212,7 @@ private struct CleanupGroupView: View {
             if isOpen {
                 details
                     .padding(.top, 10)
-                    .padding(.leading, 22)
+                    .padding(.leading, 26)
             }
         }
         .padding(12)
@@ -221,10 +226,7 @@ private struct CleanupGroupView: View {
                 isOpen.toggle()
             } label: {
                 HStack(spacing: 8) {
-                    Image(systemName: isOpen ? "chevron.down" : "chevron.right")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .frame(width: 14)
+                    DisclosureArrow(isOpen: isOpen)
                     Text(section.title)
                         .font(.headline)
                 }
@@ -382,10 +384,9 @@ private struct CleanupActionBar: View {
                     .foregroundStyle(.secondary)
             }
             Spacer()
-            Button(tr("Remove Ticked Items…")) {
+            ProminentButton(tr("Remove Ticked Items…")) {
                 model.prepareRemoval()
             }
-            .buttonStyle(.borderedProminent)
             .controlSize(.large)
             .disabled(model.selection.isEmpty || model.isWorking)
         }
@@ -393,7 +394,7 @@ private struct CleanupActionBar: View {
         .padding(.vertical, 12)
         .background(.bar)
         .overlay(alignment: .top) {
-            Divider()
+            ThemedDivider()
         }
     }
 }

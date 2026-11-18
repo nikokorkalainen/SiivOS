@@ -83,7 +83,7 @@ Kept short on purpose. A setting is only added when people would reasonably want
 
 - The app will need **Full Disk Access** to do its job, so it cannot be distributed through the Mac App Store. It will be distributed directly.
 - A public release needs a paid Apple Developer account for signing and notarisation. Personal use does not.
-- The accent colour from `docs/design.md` is set in code (`Sources/SiivOS/Theme.swift`), not as an `AccentColor` asset, because asset catalogs can only be compiled with Xcode. Buttons and tinted icons use it; the selected sidebar row keeps the Mac's own accent colour until the project is built with Xcode.
+- The accent colour from `docs/design.md` is an asset (`Resources/Assets.xcassets`) that `Scripts/make-app.sh` compiles with Xcode's asset tool. On a Mac without Xcode the script skips it and the app uses the Mac's own accent colour. It also does not apply when the app is run straight from Xcode, because that run has no app bundle.
 - macOS gives apps no supported way to list the "Open at Login" items in System Settings. SiivOS lists background items from the LaunchAgents and LaunchDaemons folders, and opens System Settings for the rest.
 - Removing background items and apps that belong to all users needs administrator rights, which SiivOS does not ask for yet. It shows those items and leaves them alone.
 

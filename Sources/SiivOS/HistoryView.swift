@@ -75,7 +75,7 @@ struct HistoryView: View {
         VStack(alignment: .leading, spacing: 0) {
             ForEach(Array(model.records.enumerated()), id: \.element.id) { index, record in
                 if index > 0 {
-                    Divider()
+                    ThemedDivider()
                 }
                 RecordRow(
                     record: record,
@@ -126,11 +126,7 @@ private struct RecordRow: View {
                 Button {
                     showsDetails.toggle()
                 } label: {
-                    Image(systemName: showsDetails ? "chevron.down" : "chevron.right")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .frame(width: 14, height: 18)
-                        .contentShape(Rectangle())
+                    DisclosureArrow(isOpen: showsDetails)
                 }
                 .buttonStyle(.plain)
 
@@ -168,7 +164,7 @@ private struct RecordRow: View {
                             .textSelection(.enabled)
                     }
                 }
-                .padding(.leading, 22)
+                .padding(.leading, 26)
             }
         }
     }

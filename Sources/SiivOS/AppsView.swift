@@ -105,6 +105,7 @@ private struct AppListView: View {
                     onUninstall: { model.prepareUninstall(info) }
                 )
             }
+            .scrollContentBackground(.hidden)
         }
     }
 }
@@ -206,6 +207,7 @@ private struct BackgroundItemsView: View {
             )
         }
         .formStyle(.grouped)
+        .scrollContentBackground(.hidden)
     }
 }
 

@@ -1,25 +1,13 @@
 import AppKit
 import SwiftUI
 
-// The look shared by every screen. See docs/design.md.
+// Building blocks shared by every screen. The colours themselves are in SiivOSTheme.swift
+// and SiivOSIcons.swift; see docs/design.md.
 
 extension Color {
-    /// Moss green (#2F7A5F): filled buttons and other accents, in light and dark mode.
-    static let siivosMoss = Color(red: 47.0 / 255.0, green: 122.0 / 255.0, blue: 95.0 / 255.0)
-
-    /// Lichen (#9CCBB0): the lighter green used where moss would be too dark.
-    static let siivosLichen = Color(red: 156.0 / 255.0, green: 203.0 / 255.0, blue: 176.0 / 255.0)
-
-    /// For tinted icons and links: moss in light mode, lichen in dark mode.
-    static let siivosTint = Color(nsColor: NSColor(name: nil) { appearance in
-        if appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua {
-            return NSColor(srgbRed: 156.0 / 255.0, green: 203.0 / 255.0, blue: 176.0 / 255.0, alpha: 1)
-        }
-        return NSColor(srgbRed: 47.0 / 255.0, green: 122.0 / 255.0, blue: 95.0 / 255.0, alpha: 1)
-    })
-
-    /// The background of cards and grouped lists.
-    static let siivosCard = Color(nsColor: .controlBackgroundColor)
+    /// The tint for charts, bars and small marks: mint in dark mode, moss in light mode.
+    /// The same colour as the section icons.
+    static let siivosTint = SiivOSIconColors.tint
 }
 
 extension View {
@@ -29,13 +17,106 @@ extension View {
             .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    /// The rounded background used for cards and grouped lists.
+    /// The rounded background used for panels and grouped lists.
     func cardBackground() -> some View {
-        background(Color.siivosCard, in: RoundedRectangle(cornerRadius: 10))
+        background(SiivOSTheme.panel, in: RoundedRectangle(cornerRadius: 10))
             .overlay(
                 RoundedRectangle(cornerRadius: 10)
-                    .strokeBorder(Color(nsColor: .separatorColor))
+                    .strokeBorder(SiivOSTheme.divider)
             )
+    }
+}
+
+/// A thin line between rows inside a panel, in the theme's divider colour.
+struct ThemedDivider: View {
+    var body: some View {
+        Rectangle()
+            .fill(SiivOSTheme.divider)
+            .frame(height: 1)
+    }
+}
+
+/// The arrow that opens and closes a group. 15 pt, as the design notes ask.
+struct DisclosureArrow: View {
+    let isOpen: Bool
+
+    var body: some View {
+        Image(systemName: isOpen ? "chevron.down" : "chevron.right")
+            .font(.system(size: 15, weight: .semibold))
+            .foregroundStyle(.secondary)
+            .frame(width: 18, height: 20)
+            .contentShape(Rectangle())
+    }
+}
+
+/// The inside of a button: an optional 20 pt symbol, then the title.
+struct ButtonLabel: View {
+    let title: String
+    var systemImage: String?
+
+    var body: some View {
+        HStack(spacing: 6) {
+            if let systemImage {
+                Image(systemName: systemImage)
+                    .font(.system(size: 20))
+            }
+            Text(title)
+        }
+    }
+}
+
+/// A screen's main button: mint with dark text in dark mode, moss with white text in light mode.
+struct ProminentButton: View {
+    private let title: String
+    private let systemImage: String?
+    private let action: () -> Void
+
+    init(_ title: String, systemImage: String? = nil, action: @escaping () -> Void) {
+        self.title = title
+        self.systemImage = systemImage
+        self.action = action
+    }
+
+    var body: some View {
+        Button(action: action) {
+            ProminentLabel(title: title, systemImage: systemImage)
+        }
+        .buttonStyle(.borderedProminent)
+        .tint(SiivOSTheme.prominent)
+    }
+}
+
+/// The label of a prominent button. Mint needs dark text, which the system does not choose
+/// by itself; a disabled button goes back to the system's dimmed look.
+private struct ProminentLabel: View {
+    let title: String
+    let systemImage: String?
+
+    @Environment(\.isEnabled) private var isEnabled
+
+    var body: some View {
+        ButtonLabel(title: title, systemImage: systemImage)
+            .foregroundStyle(isEnabled ? AnyShapeStyle(SiivOSTheme.onProminent) : AnyShapeStyle(.secondary))
+    }
+}
+
+/// A plain bar that fills from the left, for disk space and battery charge.
+struct MeterBar: View {
+    /// How full the bar is, from 0 to 1.
+    let fraction: Double
+
+    var body: some View {
+        GeometryReader { proxy in
+            ZStack(alignment: .leading) {
+                Capsule()
+                    .fill(SiivOSTheme.divider)
+                Capsule()
+                    .fill(Color.siivosTint)
+                    .frame(width: proxy.size.width * CGFloat(min(1, max(0, fraction))))
+            }
+        }
+        .frame(height: 8)
+        .accessibilityHidden(true)
     }
 }
 

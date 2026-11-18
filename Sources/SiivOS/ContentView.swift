@@ -15,14 +15,24 @@ struct ContentView: View {
     var body: some View {
         NavigationSplitView {
             List(AppSection.allCases, selection: $selection) { section in
-                Label(section.title, systemImage: section.symbol)
-                    .badge(historyBadge(for: section))
+                HStack(spacing: 10) {
+                    SiivOSIconView(section.icon, isSelected: selection == section)
+                    Text(section.title)
+                }
+                .padding(.vertical, 8)
+                .badge(historyBadge(for: section))
             }
-            .navigationSplitViewColumnWidth(min: 180, ideal: 210)
+            .scrollContentBackground(.hidden)
+            .background(SiivOSSidebarBackground())
+            .safeAreaInset(edge: .top, spacing: 0) {
+                SiivOSSidebarHeader()
+            }
+            .navigationSplitViewColumnWidth(min: 210, ideal: 240)
         } detail: {
             detail(for: selection ?? .overview)
+                .background(SiivOSWindowBackground())
         }
-        .tint(Color.siivosMoss)
+        .tint(SiivOSTheme.prominent)
         .onAppear {
             holding.refresh()
         }
@@ -46,7 +56,7 @@ struct ContentView: View {
         case .apps:
             AppsView(model: apps)
         case .performance:
-            PerformanceView(model: performance, open: { selection = $0 })
+            PerformanceView(model: performance, cleanup: cleanup, open: { selection = $0 })
         case .history:
             HistoryView()
         default:
@@ -61,7 +71,11 @@ struct ComingSoonView: View {
 
     var body: some View {
         ContentUnavailableView {
-            Label(section.title, systemImage: section.symbol)
+            Label {
+                Text(section.title)
+            } icon: {
+                SiivOSIconView(section.icon, size: 34)
+            }
         } description: {
             Text(section.summary)
             Text(tr("Coming in a later update"))
