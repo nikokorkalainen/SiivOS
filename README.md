@@ -150,6 +150,8 @@ In the Claude desktop app, for example, that is an entry like this in its `claud
 }
 ```
 
+That file usually holds the app's other settings already. Add the `mcpServers` part next to them; do not replace the file. Quit the app before you change the file and open it again afterwards. The file is `~/Library/Application Support/Claude/claude_desktop_config.json`. Ask in a plain chat, not in a coding session that runs in the cloud, because only the app on your Mac can reach a tool on your Mac.
+
 Where this is set differs between agents and changes over time, so check your agent's own instructions for adding a local MCP server. The tools are the same nine questions as above, named `siivos_overview`, `siivos_cleanup` and so on, and the switch in Settings applies to them in the same way.
 
 ## Where SiivOS keeps its data
