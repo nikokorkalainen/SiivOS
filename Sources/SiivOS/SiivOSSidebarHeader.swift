@@ -11,7 +11,7 @@ struct SiivOSSidebarHeader: View {
             .frame(height: 39)
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, 12)
-            .padding(.top, 4)
+            .padding(.top, 10)
             .padding(.bottom, 14)
     }
 }
