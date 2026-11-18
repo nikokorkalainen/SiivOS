@@ -188,9 +188,10 @@ final class AgentDoorTests: TemporaryDirectoryTestCase {
     }
 
     func testCleanupListsItemsWithTheirLabelsAndReasons() throws {
-        try makeFile("Library/Caches/com.example.Browser/data.bin", bytes: 500_000_000 / 1_000)
-        try makeFile("Library/Caches/com.example.Editor/data.bin", bytes: 2_000_000)
-        try makeFile("Movies/holiday.mov", bytes: 2_000_000)
+        // Caches under 1 MB are not listed. Sizes on disk are rounded up, and by different
+        // amounts on a Mac and on Linux, so both of these are well above that on either.
+        try makeFile("Library/Caches/com.example.Browser/data.bin", bytes: 3_000_000)
+        try makeFile("Library/Caches/com.example.Editor/data.bin", bytes: 6_000_000)
         let door = try makeDoor()
 
         let cleanup = try object(door.answer(["cleanup", "--limit", "1"]))
@@ -204,7 +205,7 @@ final class AgentDoorTests: TemporaryDirectoryTestCase {
         XCTAssertTrue((items[0]["path"] as? String)?.hasSuffix("com.example.Editor") ?? false)
         XCTAssertEqual(items[0]["label"] as? String, "safeToRemove")
         XCTAssertFalse((items[0]["labelReason"] as? String ?? "").isEmpty)
-        XCTAssertGreaterThanOrEqual(cleanup["safeToRemoveBytes"] as? Int ?? 0, 2_500_000)
+        XCTAssertGreaterThanOrEqual(cleanup["safeToRemoveBytes"] as? Int ?? 0, 9_000_000)
         XCTAssertTrue((cleanup["note"] as? String)?.contains("only reads") ?? false)
     }
 
