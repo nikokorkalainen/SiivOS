@@ -164,6 +164,7 @@ public struct AgentDoor: Sendable {
         case protection
         case apps
         case history
+        case mcp
         case help
 
         /// What the command answers, in one line.
@@ -178,6 +179,7 @@ public struct AgentDoor: Sendable {
             case .protection: return tr("The protection built into macOS, background items, browser extensions and profiles.")
             case .apps: return tr("Installed apps with their size and last use, largest first. Add --limit 50 for more.")
             case .history: return tr("What SiivOS itself has changed, and what can still be put back.")
+            case .mcp: return tr("Offer these questions to an AI agent as tools, over the Model Context Protocol. The agent starts this itself.")
             case .help: return tr("This list.")
             }
         }
@@ -197,6 +199,9 @@ public struct AgentDoor: Sendable {
         switch command {
         case .help:
             return Reply(output: help, exitCode: 0)
+        case .mcp:
+            // The tool itself keeps the conversation going; see AgentDoorServer.
+            return Reply(output: tr("This is meant to be started by an AI agent, which then talks to it. To try the questions yourself, use the other words in the list."), exitCode: 0)
         case .status:
             return json(StatusAnswer(
                 version: Self.version,
@@ -222,7 +227,7 @@ public struct AgentDoor: Sendable {
         case .protection: return json(protection())
         case .apps: return json(apps(limit: max(1, options["limit"] ?? 25)))
         case .history: return history()
-        case .status, .help: return Reply(output: help, exitCode: 0)
+        case .status, .help, .mcp: return Reply(output: help, exitCode: 0)
         }
     }
 

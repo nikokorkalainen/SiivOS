@@ -91,6 +91,7 @@ final class AgentDoorTests: TemporaryDirectoryTestCase {
         let door = try makeDoor(isOn: false)
         try makeFile("Library/Caches/com.example.Browser/data.bin", bytes: 500_000)
 
+        XCTAssertEqual(door.answer(["mcp"]).exitCode, 0)
         for command in ["overview", "health", "changes", "cleanup", "performance", "protection", "apps", "history"] {
             let reply = door.answer([command])
             XCTAssertEqual(reply.exitCode, 2, command)
@@ -303,6 +304,81 @@ final class AgentDoorTests: TemporaryDirectoryTestCase {
 
         XCTAssertEqual(lines.all.count, 6, "One line for each of the six checks")
         XCTAssertEqual(lines.all.first, "Checking: App caches…")
+    }
+
+    // MARK: - As tools for an agent (MCP)
+
+    /// Sends one message and reads the answer as a dictionary.
+    private func exchange(_ server: AgentDoorServer, _ message: [String: Any]) throws -> [String: Any] {
+        let line = String(data: try JSONSerialization.data(withJSONObject: message), encoding: .utf8) ?? ""
+        let answer = try XCTUnwrap(server.respond(to: line))
+        XCTAssertFalse(answer.contains("\n"), "One message is one line")
+        return try XCTUnwrap(try JSONSerialization.jsonObject(with: Data(answer.utf8)) as? [String: Any])
+    }
+
+    func testTheServerIntroducesItselfAndListsItsTools() throws {
+        let server = AgentDoorServer(door: try makeDoor())
+
+        let hello = try exchange(server, ["jsonrpc": "2.0", "id": 1, "method": "initialize", "params": ["protocolVersion": "2025-03-26", "capabilities": [String: Any](), "clientInfo": ["name": "test", "version": "1"]]])
+        let result = try XCTUnwrap(hello["result"] as? [String: Any])
+        XCTAssertEqual(hello["id"] as? Int, 1)
+        XCTAssertEqual(result["protocolVersion"] as? String, "2025-03-26", "The agent's own version, when the server knows it")
+        XCTAssertEqual((result["serverInfo"] as? [String: Any])?["name"] as? String, "siivos")
+        XCTAssertNotNil((result["capabilities"] as? [String: Any])?["tools"])
+        XCTAssertTrue((result["instructions"] as? String)?.contains("only read") ?? false)
+
+        let unknownVersion = try exchange(server, ["jsonrpc": "2.0", "id": 2, "method": "initialize", "params": ["protocolVersion": "1999-01-01"]])
+        XCTAssertEqual((unknownVersion["result"] as? [String: Any])?["protocolVersion"] as? String, AgentDoorServer.protocolVersions.last)
+
+        XCTAssertNil(server.respond(to: #"{"jsonrpc":"2.0","method":"notifications/initialized"}"#), "A notification gets no answer")
+        XCTAssertNil(server.respond(to: "   "))
+
+        let list = try exchange(server, ["jsonrpc": "2.0", "id": "abc", "method": "tools/list"])
+        XCTAssertEqual(list["id"] as? String, "abc", "The id comes back as it was sent")
+        let tools = try XCTUnwrap((list["result"] as? [String: Any])?["tools"] as? [[String: Any]])
+        XCTAssertEqual(tools.map { $0["name"] as? String }, [
+            "siivos_status", "siivos_overview", "siivos_health", "siivos_changes", "siivos_cleanup",
+            "siivos_performance", "siivos_protection", "siivos_apps", "siivos_history"
+        ])
+        XCTAssertTrue(tools.allSatisfy { ($0["inputSchema"] as? [String: Any])?["type"] as? String == "object" })
+        XCTAssertTrue(tools.allSatisfy { !(($0["description"] as? String) ?? "").isEmpty })
+        let cleanupSchema = tools[4]["inputSchema"] as? [String: Any]
+        XCTAssertNotNil((cleanupSchema?["properties"] as? [String: Any])?["limit"])
+
+        let ping = try exchange(server, ["jsonrpc": "2.0", "id": 3, "method": "ping"])
+        XCTAssertNotNil(ping["result"])
+    }
+
+    func testAToolCallGivesTheSameAnswerAsTheQuestion() throws {
+        let door = try makeDoor()
+        let server = AgentDoorServer(door: door)
+
+        let overview = try exchange(server, ["jsonrpc": "2.0", "id": 1, "method": "tools/call", "params": ["name": "siivos_overview", "arguments": [String: Any]()]])
+        let result = try XCTUnwrap(overview["result"] as? [String: Any])
+        XCTAssertEqual(result["isError"] as? Bool, false)
+        let text = try XCTUnwrap(((result["content"] as? [[String: Any]])?.first)?["text"] as? String)
+        XCTAssertEqual(text, door.answer(["overview"]).output)
+
+        let apps = try exchange(server, ["jsonrpc": "2.0", "id": 2, "method": "tools/call", "params": ["name": "siivos_apps", "arguments": ["limit": 1]]])
+        let appsText = try XCTUnwrap((((apps["result"] as? [String: Any])?["content"] as? [[String: Any]])?.first)?["text"] as? String)
+        XCTAssertEqual(appsText, door.answer(["apps", "--limit", "1"]).output)
+    }
+
+    func testTheServerRefusesWhatItCannotDoAndStaysShutWhileTheDoorIsOff() throws {
+        let closed = AgentDoorServer(door: try makeDoor(isOn: false))
+        let refused = try exchange(closed, ["jsonrpc": "2.0", "id": 1, "method": "tools/call", "params": ["name": "siivos_cleanup"]])
+        let result = try XCTUnwrap(refused["result"] as? [String: Any])
+        XCTAssertEqual(result["isError"] as? Bool, true)
+        XCTAssertTrue((((result["content"] as? [[String: Any]])?.first)?["text"] as? String)?.contains("The agent door is off") ?? false)
+
+        let noSuchTool = try exchange(closed, ["jsonrpc": "2.0", "id": 2, "method": "tools/call", "params": ["name": "siivos_delete"]])
+        XCTAssertEqual((noSuchTool["error"] as? [String: Any])?["code"] as? Int, -32602)
+
+        let noSuchMethod = try exchange(closed, ["jsonrpc": "2.0", "id": 3, "method": "resources/list"])
+        XCTAssertEqual((noSuchMethod["error"] as? [String: Any])?["code"] as? Int, -32601)
+
+        let nonsense = try XCTUnwrap(closed.respond(to: "this is not json"))
+        XCTAssertTrue(nonsense.contains("-32700"))
     }
 
     // MARK: - Only reading

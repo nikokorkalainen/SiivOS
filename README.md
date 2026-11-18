@@ -126,7 +126,31 @@ swift run siivos-cli help
 | `apps` | Installed apps with their size and last use, largest first. |
 | `history` | What SiivOS itself has changed, and what can still be put back. |
 
-Answers are in JSON and in English. The tool sees what the program that runs it is allowed to see: started from Terminal, it has Terminal's permissions, not SiivOS's.
+Answers are in JSON and in English. The tool sees what the program that runs it is allowed to see: started from Terminal, it has Terminal's permissions, not SiivOS's. Longer questions print a line for each check as they go, so you can see the tool is working.
+
+### As an MCP server
+
+Many agents can add helpers called MCP servers, which lets them use SiivOS's questions as tools without being told the command by hand. `siivos-cli mcp` is such a server. The agent starts it itself and talks to it directly; nothing listens on the network.
+
+Add it to your agent as a local (stdio) server with:
+
+- **command:** the path from **Copy Path** in SiivOS's Settings
+- **argument:** `mcp`
+
+In the Claude desktop app, for example, that is an entry like this in its `claude_desktop_config.json` file:
+
+```
+{
+  "mcpServers": {
+    "siivos": {
+      "command": "/path/from/Copy Path/siivos-cli",
+      "args": ["mcp"]
+    }
+  }
+}
+```
+
+Where this is set differs between agents and changes over time, so check your agent's own instructions for adding a local MCP server. The tools are the same nine questions as above, named `siivos_overview`, `siivos_cleanup` and so on, and the switch in Settings applies to them in the same way.
 
 ## Where SiivOS keeps its data
 
