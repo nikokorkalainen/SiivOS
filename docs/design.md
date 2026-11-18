@@ -46,7 +46,7 @@ The app follows the Mac's appearance setting. Colours and backgrounds are in
 
 ## Sidebar
 
-**Logo at the top:** `SiivOSSidebarHeader()`, the text logo (`SiivOSLogo`, 38 pt tall including the glints): the
+**Logo at the top:** `SiivOSSidebarHeader()`, the text logo (`SiivOSLogo`, 39 pt tall including the glints): the
 name with the two glints off the top-left corner of the S, and no app icon. Put it above the
 sections, for example with `.safeAreaInset(edge: .top)` on the sidebar `List`. It is drawn from
 outlines, so it needs no font installed. Dark mode: soft white with mint "OS"; light mode: deep
@@ -186,6 +186,10 @@ How to wire them in:
 - App icon: green gradient tile (`#1A9E73` top left to `#0B4A39` bottom right) with two
   four-point glints with equal arms, the big one white and the small one mint `#5EE6A8`,
   centred as a group. No name in the icon, at any size: the Dock shows the name on hover.
+- Master logo: `design/logo/SiivOS-logo-for-light-backgrounds.svg`, drawn by the owner. Everything
+  else follows it: the app's `SiivOSLogo` is generated from it, and the glint shape (four points
+  joined by soft curves, control points at 12 % and 45.4 % of the arm) is used in every glint:
+  the app icon, the section icons and the loading animation.
 - Text logo: the name with the two glints off the top-left corner of the S, no tile. Used in the
   app's interface and anywhere a plain logo fits (README, website). Files in `design/logo/`, one
   for dark backgrounds and one for light.

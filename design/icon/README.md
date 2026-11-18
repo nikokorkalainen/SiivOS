@@ -7,20 +7,18 @@
 - `LogoTile.svg` and `LogoTile.png`: the same tile with the name under the glints. For GitHub,
   social posts and the website, not for the app.
 
-The name is drawn as outlines from Nunito ExtraBold, so the tile does not need the font
-installed. Nunito is by The Nunito Project Authors and licensed under the SIL Open Font License
-1.1 (https://github.com/googlefonts/nunito).
+The glint shape and the name on the logo tile come from the master logo in `design/logo/`.
 
-- `make_wordmark.py`: writes `Sources/SiivOS/SiivOSWordmark.swift`, the name as SwiftUI shapes for
-  the sidebar logo: `python3 design/icon/make_wordmark.py path/to/Nunito[wght].ttf Sources/SiivOS/SiivOSWordmark.swift`
+- `make_wordmark.py`: writes `Sources/SiivOS/SiivOSWordmark.swift`, the logo as SwiftUI shapes.
 
 ## Making the files again
 
-On Linux (needs `rsvg-convert`, Python with fontTools and Pillow, and the Nunito variable font):
+From the repo root (needs `rsvg-convert` and Python with Pillow and fontTools):
 
 ```
-python3 design/icon/make_icon.py path/to/Nunito[wght].ttf design/icon
+python3 design/icon/make_icon.py design/icon
 mv design/icon/AppIcon.icns Resources/AppIcon.icns
+python3 design/icon/make_wordmark.py
 ```
 
 On a Mac, the `.icns` can also be rebuilt from the iconset:

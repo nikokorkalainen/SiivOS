@@ -215,15 +215,16 @@ struct SiivOSIconParts {
         return path
     }
 
-    /// A four-point glint with equal arms and concave sides, the logo's shape.
+    /// The SiivOS glint, as drawn in the logo file: four points joined by soft curves.
     private static func glint(_ cx: CGFloat, _ cy: CGFloat, _ arm: CGFloat) -> Path {
-        let p = arm * 0.18
+        let c = CGPoint(x: cx, y: cy)
+        let k1 = arm * 0.12, k2 = arm * 0.454
         var path = Path()
-        path.move(to: CGPoint(x: cx, y: cy - arm))
-        path.addQuadCurve(to: CGPoint(x: cx + arm, y: cy), control: CGPoint(x: cx + p, y: cy - p))
-        path.addQuadCurve(to: CGPoint(x: cx, y: cy + arm), control: CGPoint(x: cx + p, y: cy + p))
-        path.addQuadCurve(to: CGPoint(x: cx - arm, y: cy), control: CGPoint(x: cx - p, y: cy + p))
-        path.addQuadCurve(to: CGPoint(x: cx, y: cy - arm), control: CGPoint(x: cx - p, y: cy - p))
+        path.move(to: CGPoint(x: c.x, y: c.y - arm))
+        path.addCurve(to: CGPoint(x: c.x + arm, y: c.y), control1: CGPoint(x: c.x + k1, y: c.y - k2), control2: CGPoint(x: c.x + k2, y: c.y - k1))
+        path.addCurve(to: CGPoint(x: c.x, y: c.y + arm), control1: CGPoint(x: c.x + k2, y: c.y + k1), control2: CGPoint(x: c.x + k1, y: c.y + k2))
+        path.addCurve(to: CGPoint(x: c.x - arm, y: c.y), control1: CGPoint(x: c.x - k1, y: c.y + k2), control2: CGPoint(x: c.x - k2, y: c.y + k1))
+        path.addCurve(to: CGPoint(x: c.x, y: c.y - arm), control1: CGPoint(x: c.x - k2, y: c.y - k1), control2: CGPoint(x: c.x - k1, y: c.y - k2))
         path.closeSubpath()
         return path
     }
