@@ -128,6 +128,25 @@ alone" with its reasons. Buttons: Cancel, **Move to Holding Area** (default).
 - Moving to the holding area does not free space. Every place that talks about freeing space
   must say it happens when items are deleted permanently in History.
 
+## Icons
+
+Use the SiivOS icon set (`Sources/SiivOS/SiivOSIcons.swift`) instead of SF Symbols for the
+seven sections: Overview, Cleanup, Apps, Performance, Protection, Health Timeline and History.
+Each icon is a soft gradient fill, a thin outline and one white detail (a glint, the gauge
+needle, the check mark, the chart's end dot or the clock hands). In light mode the outline is
+moss and the detail is jade. The icons are drawn in code, so there are no image files.
+
+How to wire them in:
+
+1. In `AppSection`, add `var icon: SiivOSIcon` that returns the case with the same name
+   (`.overview` returns `.overview`, `.timeline` returns `.timeline`, and so on).
+2. In the sidebar (`ContentView`), replace `Label(section.title, systemImage: section.symbol)`
+   with a label whose icon is `SiivOSIconView(section.icon, isSelected: selection == section)`.
+   `isSelected` turns the whole icon white on the selected row.
+3. On the Overview's area cards, replace `Image(systemName: section.symbol)` with
+   `SiivOSIconView(section.icon, size: 24)` for Cleanup and `size: 22` for the others.
+4. Keep SF Symbols for small controls (Scan Again, Undo, chevrons).
+
 ## Loading
 
 - Use `GlintLoader` (in `Sources/SiivOS/GlintLoader.swift`) wherever the app shows a
