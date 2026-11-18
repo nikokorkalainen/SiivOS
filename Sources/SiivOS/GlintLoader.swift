@@ -15,7 +15,7 @@ import SwiftUI
 ///     }
 struct GlintLoader: View {
     /// Width and height of the indicator.
-    var size: CGFloat = 72
+    var size: CGFloat = 96
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 

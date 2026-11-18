@@ -53,12 +53,13 @@ outlines, so it needs no font installed. Dark mode: soft white with mint "OS"; l
 green with jade "OS". The big glint takes the colour of "Siiv", the small one the colour of "OS".
 
 Order: Overview, Cleanup, Apps, Performance, Protection, Health Timeline, History.
+Icons in buttons (Check This Mac, Scan Again, Undo) are 20 pt; disclosure arrows 15 pt.
 History shows the size waiting in the holding area as a small trailing label, only when it is
 not empty. No other badges.
 Sidebar icons are 30 pt (`SiivOSIconView`'s default size), with rows about 52 pt tall. In SwiftUI, set
 `.environment(\.sidebarRowSize, .large)` on the sidebar `List` (macOS 14 and later); if that
 does not give the larger look, use `.imageScale(.large)` on the row labels. The Overview's area
-cards use matching icons: 24 pt for the Cleanup card, 22 pt for the others.
+cards use matching icons: 34 pt for the Cleanup card, 30 pt for the others.
 
 ## Overview
 
@@ -121,6 +122,28 @@ Group the existing scanners by their `id`:
 Show a banner at the top of the list: "Moved 2 items (44,59 GB) to the holding area. Delete
 them permanently in History to free the space." with an **Undo** button that puts them back.
 
+## Performance
+
+Follows the existing `PerformanceView`; these are the design changes.
+
+- Header: title, the line "A live look at what this Mac is doing. Looking changes nothing.", and
+  **Open Activity Monitor** on the right.
+- **What SiivOS notices:** each diagnosis is a panel with a 34 pt round icon (a check for good, an
+  "i" for a note, both in the tint colour with a white mark), the title in semibold and the
+  explanation in secondary text. The all-clear message uses the same panel.
+- **Right now:** a grid of four panels (two across on a normal window, one on a narrow one),
+  each with a plain title, a large number (32 pt semibold, tabular digits), one line of context
+  in secondary text, then:
+  - Processor: a sparkline, then "Busiest now" with the program, its known-program description
+    under it, and its share on the right.
+  - Memory: a sparkline, a three-step pressure meter (normal, tight, heavy) with the pressure
+    sentence under it, then "Using the most".
+  - Startup disk: a bar of used space, and when Cleanup has found something, "Cleanup found
+    53,25 GB that is safe to remove." with an **Open Cleanup** button.
+  - Battery: a charge bar, the charging or time-left sentence, health and charge cycles.
+- Sparklines: the tint colour as a 2 pt line over a soft fade of the same colour, no axes.
+- No icons in the panel titles; the sidebar already says where you are.
+
 ## Before anything changes (sheet)
 
 Keep the existing `RemovalPlanSheet`, with shorter copy:
@@ -165,14 +188,14 @@ How to wire them in:
    with a label whose icon is `SiivOSIconView(section.icon, isSelected: selection == section)`.
    `isSelected` turns the whole icon white on the selected row.
 3. On the Overview's area cards, replace `Image(systemName: section.symbol)` with
-   `SiivOSIconView(section.icon, size: 24)` for Cleanup and `size: 22` for the others.
+   `SiivOSIconView(section.icon, size: 34)` for Cleanup and `size: 30` for the others.
 4. Keep SF Symbols for small controls (Scan Again, Undo, chevrons).
 
 ## Loading
 
 - Use `GlintLoader` (in `Sources/SiivOS/GlintLoader.swift`) wherever the app shows a
   `ProgressView` spinner: the Cleanup and Apps scans, and "Checking now…" on the Overview.
-- Layout: the glints (72 pt) centred in the content area, with the progress text under them in
+- Layout: the glints (96 pt) centred in the content area, with the progress text under them in
   secondary text, 18 pt apart. Keep the existing wording ("Checking: %@…", "Getting ready…").
 - Motion: the two glints take turns to twinkle, each growing, brightening and making a quarter
   turn every 1.6 seconds. With Reduce Motion on, they stay still and only fade.
