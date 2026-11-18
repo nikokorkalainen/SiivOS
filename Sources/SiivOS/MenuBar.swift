@@ -28,7 +28,9 @@ enum MainWindow {
 
     static weak var current: NSWindow?
 
-    /// The size the window opens in the first time, before it has been resized.
+    /// The size the window opens in the first time, before it has been resized. The
+    /// width gives the content its full readable width next to the open sidebar
+    /// (240 + 1 + 24 + 900 + 24 = 1189), so the Overview shows three cards in a row.
     static let defaultSize = CGSize(width: 1_200, height: 800)
 
     /// The name under which the window's size and place are remembered.
@@ -36,8 +38,22 @@ enum MainWindow {
 
     /// Gives the window the size and place it had when it was last used, if any.
     /// macOS keeps the window on the screen if the screens have changed since.
+    ///
+    /// A window with nothing remembered gets the default size, centred. This is done
+    /// here as well as on the scene, because macOS may bring back a size of its own
+    /// from an earlier version of SiivOS, which would be the old small one.
     static func restoreFrame(of window: NSWindow) {
-        window.setFrameUsingName(frameName)
+        if window.setFrameUsingName(frameName) {
+            return
+        }
+        var size = defaultSize
+        if let screen = window.screen ?? NSScreen.main {
+            size.width = min(size.width, screen.visibleFrame.width)
+            size.height = min(size.height, screen.visibleFrame.height)
+        }
+        window.setContentSize(size)
+        window.center()
+        saveFrame(of: window)
     }
 
     /// Remembers the window's size and place for the next time it opens.
