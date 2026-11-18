@@ -145,6 +145,12 @@ private struct CleanupResultsView: View {
                     RemovalBanner(model: model, notice: notice)
                 }
 
+                if let note = model.settingsNote {
+                    Label(note, systemImage: "slider.horizontal.3")
+                        .font(.callout)
+                        .foregroundStyle(.secondary)
+                }
+
                 CleanupPartView(
                     model: model,
                     title: tr("Safe to remove"),

@@ -83,17 +83,21 @@ public struct LargeFilesScanner: SystemScanner {
 
     private let roots: [URL]
     private let minimumBytes: Int64
+    private let foldersLeftOut: [URL]
 
+    /// - Parameter foldersLeftOut: Folders that are not looked into at all.
     public init(
         homeDirectory: URL = URL(fileURLWithPath: NSHomeDirectory()),
-        minimumBytes: Int64 = 100_000_000
+        minimumBytes: Int64 = 100_000_000,
+        foldersLeftOut: [URL] = []
     ) {
         self.roots = ScanSupport.userFolders(inHome: homeDirectory)
         self.minimumBytes = minimumBytes
+        self.foldersLeftOut = foldersLeftOut
     }
 
     public func scan() throws -> [Finding] {
-        ScanSupport.regularFiles(in: roots, atLeast: minimumBytes, fileManager: .default).map { file in
+        ScanSupport.regularFiles(in: roots, atLeast: minimumBytes, leavingOut: foldersLeftOut, fileManager: .default).map { file in
             let changed = file.modified.map { tr("Last changed %1$@.", ScanSupport.describe($0)) } ?? tr("A large file.")
             return Finding(
                 url: file.url,
@@ -116,19 +120,25 @@ public struct DuplicateFilesScanner: SystemScanner {
 
     private let roots: [URL]
     private let minimumBytes: Int64
+    private let foldersLeftOut: [URL]
 
-    /// - Parameter minimumBytes: Smaller files are not compared, to keep the scan quick.
+    /// - Parameters:
+    ///   - minimumBytes: Smaller files are not compared, to keep the scan quick.
+    ///   - foldersLeftOut: Folders that are not looked into at all. A file with a copy in
+    ///     such a folder is not a duplicate as far as this scanner can see.
     public init(
         homeDirectory: URL = URL(fileURLWithPath: NSHomeDirectory()),
-        minimumBytes: Int64 = 1_000_000
+        minimumBytes: Int64 = 1_000_000,
+        foldersLeftOut: [URL] = []
     ) {
         self.roots = ScanSupport.userFolders(inHome: homeDirectory)
         self.minimumBytes = minimumBytes
+        self.foldersLeftOut = foldersLeftOut
     }
 
     public func scan() throws -> [Finding] {
         let fileManager = FileManager.default
-        let files = ScanSupport.regularFiles(in: roots, atLeast: minimumBytes, fileManager: fileManager)
+        let files = ScanSupport.regularFiles(in: roots, atLeast: minimumBytes, leavingOut: foldersLeftOut, fileManager: fileManager)
 
         var findings: [Finding] = []
         // Files can only be identical if they are the same length, so compare within each length.

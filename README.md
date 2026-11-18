@@ -163,6 +163,7 @@ Everything stays on your Mac, in `~/Library/Application Support/SiivOS`:
 - `health-history.json` is the Health Timeline: the health score and free space each time SiivOS looked, and what had changed on the Mac. It is a plain text file too, and deleting it only starts the timeline again.
 - `ClamAV` holds virus definitions, if you have chosen to download them.
 - `agent-door.json` remembers whether the tool for AI agents is switched on.
+- `cleanup-settings.json` holds your Cleanup settings: how old, how large, which checks run, and folders to leave out.
 
 To remove SiivOS completely, first put back or delete what is in History, then quit SiivOS and delete the app and that folder.
 

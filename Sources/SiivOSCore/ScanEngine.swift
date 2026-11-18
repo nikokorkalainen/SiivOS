@@ -136,9 +136,13 @@ public struct ScanReport: Sendable {
 /// Runs scanners one after another and collects what they find.
 public struct ScanEngine: Sendable {
     public let scanners: [any SystemScanner]
+    /// Folders the user has chosen to leave out. Nothing in them is reported, whichever
+    /// scanner found it, and neither is anything that has one of them inside it.
+    public let foldersLeftOut: [URL]
 
-    public init(scanners: [any SystemScanner]) {
+    public init(scanners: [any SystemScanner], foldersLeftOut: [URL] = []) {
         self.scanners = scanners
+        self.foldersLeftOut = foldersLeftOut
     }
 
     /// Runs every scanner. One scanner failing does not stop the others.
@@ -148,7 +152,9 @@ public struct ScanEngine: Sendable {
         let sections = scanners.map { scanner -> ScanReport.Section in
             progress?(scanner.title)
             do {
-                let findings = try scanner.scan().sorted { $0.sizeBytes > $1.sizeBytes }
+                let findings = try scanner.scan()
+                    .filter { foldersLeftOut.isEmpty || !ScanSupport.touches($0.url, anyOf: foldersLeftOut) }
+                    .sorted { $0.sizeBytes > $1.sizeBytes }
                 return ScanReport.Section(
                     id: scanner.id,
                     title: scanner.title,
@@ -173,19 +179,33 @@ public struct ScanEngine: Sendable {
 extension ScanEngine {
     /// The scanners behind the Cleanup screen, in the order they are shown.
     ///
-    /// - Parameter runningApps: The apps that are open right now. Their data is held back.
+    /// - Parameters:
+    ///   - runningApps: The apps that are open right now. Their data is held back.
+    ///   - settings: What the user has chosen in Settings: how old and how large, which
+    ///     checks to run, and folders to leave out. Left out, SiivOS's own choices are used.
     public static func clutter(
         homeDirectory: URL = URL(fileURLWithPath: NSHomeDirectory()),
-        runningApps: [RunningApp] = []
+        runningApps: [RunningApp] = [],
+        settings: CleanupSettings = CleanupSettings()
     ) -> ScanEngine {
-        ScanEngine(scanners: [
+        let leftOut = settings.folderURLsLeftOut
+        let all: [any SystemScanner] = [
             CachesScanner(homeDirectory: homeDirectory, runningApps: runningApps),
             LogsScanner(homeDirectory: homeDirectory, runningApps: runningApps),
             LeftoversScanner(homeDirectory: homeDirectory, runningApps: runningApps),
             DeveloperClutterScanner(homeDirectory: homeDirectory, runningApps: runningApps),
-            OldDownloadsScanner(homeDirectory: homeDirectory),
-            LargeFilesScanner(homeDirectory: homeDirectory),
-            DuplicateFilesScanner(homeDirectory: homeDirectory)
-        ])
+            OldDownloadsScanner(homeDirectory: homeDirectory, olderThanDays: settings.oldDownloadDays),
+            LargeFilesScanner(homeDirectory: homeDirectory, minimumBytes: settings.largeFileBytes, foldersLeftOut: leftOut),
+            DuplicateFilesScanner(homeDirectory: homeDirectory, foldersLeftOut: leftOut)
+        ]
+        return ScanEngine(
+            scanners: all.filter { !settings.checksTurnedOff.contains($0.id) },
+            foldersLeftOut: leftOut
+        )
+    }
+
+    /// Every check Cleanup can run, with its name, for the list in Settings.
+    public static var clutterChecks: [(id: String, title: String)] {
+        clutter().scanners.map { (id: $0.id, title: $0.title) }
     }
 }

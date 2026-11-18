@@ -32,15 +32,38 @@ enum ScanSupport {
         "app", "framework", "bundle", "xcodeproj", "xcworkspace", "playground"
     ]
 
+    /// A path written the same way every time, for comparing. Mac disks normally ignore
+    /// upper and lower case, so this does too.
+    static func comparable(_ url: URL) -> String {
+        var path = url.standardizedFileURL.path.lowercased()
+        while path.count > 1, path.hasSuffix("/") {
+            path.removeLast()
+        }
+        return path
+    }
+
+    /// True when the item is one of the folders, is inside one, or has one inside it.
+    /// The last case matters because removing the item would take the folder with it.
+    static func touches(_ url: URL, anyOf folders: [URL]) -> Bool {
+        let item = comparable(url)
+        return folders.contains { folder in
+            let other = comparable(folder)
+            return item == other || item.hasPrefix(other + "/") || other.hasPrefix(item + "/")
+        }
+    }
+
     /// Every regular file of at least the given size inside the given folders.
     ///
     /// Hidden files are skipped, and so is the inside of packages and libraries such as
-    /// apps and photo libraries, which must not be picked apart.
+    /// apps and photo libraries, which must not be picked apart. Folders the user has
+    /// chosen to leave out are not entered at all.
     static func regularFiles(
         in roots: [URL],
         atLeast minimumBytes: Int64,
+        leavingOut foldersLeftOut: [URL] = [],
         fileManager: FileManager
     ) -> [WalkedFile] {
+        let leftOut = Set(foldersLeftOut.map(comparable))
         let keys: [URLResourceKey] = [
             .isRegularFileKey,
             .isDirectoryKey,
@@ -49,7 +72,7 @@ enum ScanSupport {
             .contentModificationDateKey
         ]
         var files: [WalkedFile] = []
-        for root in roots {
+        for root in roots where !leftOut.contains(comparable(root)) {
             guard let enumerator = fileManager.enumerator(
                 at: root,
                 includingPropertiesForKeys: keys,
@@ -59,6 +82,10 @@ enum ScanSupport {
                 continue
             }
             for case let url as URL in enumerator {
+                if !leftOut.isEmpty, leftOut.contains(comparable(url)) {
+                    enumerator.skipDescendants()
+                    continue
+                }
                 if libraryEndings.contains(url.pathExtension.lowercased()),
                    (try? url.resourceValues(forKeys: [.isDirectoryKey]))?.isDirectory == true {
                     enumerator.skipDescendants()

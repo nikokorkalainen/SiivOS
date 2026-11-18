@@ -97,12 +97,21 @@ public struct AgentDoor: Sendable {
         /// - Parameter progress: Called with a line saying what is being looked at.
         ///   Some checks take a while on a full disk, and without this the tool would
         ///   look stuck. The lines are for a person watching, not part of the answer.
-        public static func live(homeDirectory: URL, progress: (@Sendable (String) -> Void)? = nil) -> Sources {
+        ///
+        /// - Parameter dataDirectory: SiivOS's own folder, where the user's Cleanup
+        ///   settings are. Left out, SiivOS's own choices are used.
+        public static func live(
+            homeDirectory: URL,
+            dataDirectory: URL? = nil,
+            progress: (@Sendable (String) -> Void)? = nil
+        ) -> Sources {
             Sources(
                 snapshot: { SystemSnapshot.current() },
                 scan: {
-                    // Caches and logs of apps that are open are held back, as in the app.
-                    ScanEngine.clutter(homeDirectory: homeDirectory, runningApps: RunningApp.current()).run { title in
+                    // The same scan as the app: the user's Cleanup settings apply, and
+                    // caches and logs of apps that are open are held back.
+                    let settings = dataDirectory.map { CleanupSettingsStore(dataDirectory: $0).load() } ?? CleanupSettings()
+                    return ScanEngine.clutter(homeDirectory: homeDirectory, runningApps: RunningApp.current(), settings: settings).run { title in
                         progress?(tr("Checking: %1$@…", title))
                     }
                 },
@@ -145,9 +154,10 @@ public struct AgentDoor: Sendable {
     ///
     /// - Parameter progress: Called with a line saying what is being looked at.
     public static func standard(progress: (@Sendable (String) -> Void)? = nil) -> AgentDoor {
-        AgentDoor(
-            dataDirectory: SiivOSData.standardDirectory(),
-            sources: .live(homeDirectory: URL(fileURLWithPath: NSHomeDirectory()), progress: progress)
+        let dataDirectory = SiivOSData.standardDirectory()
+        return AgentDoor(
+            dataDirectory: dataDirectory,
+            sources: .live(homeDirectory: URL(fileURLWithPath: NSHomeDirectory()), dataDirectory: dataDirectory, progress: progress)
         )
     }
 
@@ -480,11 +490,16 @@ public struct AgentDoor: Sendable {
         let safeToRemoveBytes: Int64
         let safeToRemove: String
         let groups: [Group]
+        /// What the user has chosen in SiivOS's Settings. A check that is turned off has
+        /// no group above, and nothing in a folder that is left out is listed.
+        let checksTurnedOff: [String]
+        let foldersLeftOut: [String]
         let note: String
     }
 
     private func cleanup(limit: Int) -> CleanupAnswer {
         let report = sources.scan()
+        let settings = CleanupSettingsStore(dataDirectory: dataDirectory).load()
         return CleanupAnswer(
             safeToRemoveBytes: report.safeToRemoveBytes,
             safeToRemove: Self.readable(report.safeToRemoveBytes),
@@ -511,6 +526,8 @@ public struct AgentDoor: Sendable {
                     couldNotFinish: section.failure
                 )
             },
+            checksTurnedOff: settings.checksTurnedOff,
+            foldersLeftOut: settings.foldersLeftOut,
             note: Self.readOnlyNote
         )
     }
