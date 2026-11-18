@@ -124,6 +124,19 @@ alone" with its reasons. Buttons: Cancel, **Move to Holding Area** (default).
 - Moving to the holding area does not free space. Every place that talks about freeing space
   must say it happens when items are deleted permanently in History.
 
+## Loading
+
+- Use `GlintLoader` (in `Sources/SiivOS/GlintLoader.swift`) wherever the app shows a
+  `ProgressView` spinner: the Cleanup and Apps scans, and "Checking now…" on the Overview.
+- Layout: the glints (72 pt) centred in the content area, with the progress text under them in
+  secondary text, 18 pt apart. Keep the existing wording ("Checking: %@…", "Getting ready…").
+- Motion: the two glints take turns to twinkle, each growing, brightening and making a quarter
+  turn every 1.6 seconds. With Reduce Motion on, they stay still and only fade.
+- Colours: in dark mode the big glint is near-white and the small one mint `#5EE6A8`, like the
+  icon. In light mode they are deep green `#145C47` and jade `#1A9E73`.
+- For a small inline spot (a button or a row), `GlintLoader(size: 20)` works, but the standard
+  small `ProgressView` is fine there too.
+
 ## Logo and app icon
 
 - App icon: green gradient tile (`#1A9E73` top left to `#0B4A39` bottom right) with two
