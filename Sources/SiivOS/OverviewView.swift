@@ -11,6 +11,8 @@ struct OverviewView: View {
     let open: (AppSection) -> Void
 
     @State private var snapshot = SystemSnapshot.current()
+    /// How tall each card's content is, so that every card can be as tall as the tallest.
+    @State private var cardContentHeights: [AppSection: CGFloat] = [:]
 
     var body: some View {
         ScrollView {
@@ -108,30 +110,24 @@ struct OverviewView: View {
 
     /// The health score, once there is one, and a way to the reasons behind it.
     private var timelineCard: some View {
-        Card {
-            VStack(alignment: .leading, spacing: 8) {
-                CardTitle(section: .timeline)
-                if let total = timeline.latestTotal {
-                    HStack(alignment: .firstTextBaseline, spacing: 6) {
-                        Text("\(total)")
-                            .font(.system(size: 34, weight: .semibold))
-                            .monospacedDigit()
-                        Text(tr("of 100"))
-                            .foregroundStyle(.secondary)
-                    }
-                    .accessibilityElement(children: .combine)
-                    Text(tr("The health score. See the reasons behind it and what has changed on this Mac."))
+        areaCard(.timeline, buttonTitle: tr("Open")) {
+            CardTitle(section: .timeline)
+            if let total = timeline.latestTotal {
+                HStack(alignment: .firstTextBaseline, spacing: 6) {
+                    Text("\(total)")
+                        .font(.system(size: 34, weight: .semibold))
+                        .monospacedDigit()
+                    Text(tr("of 100"))
                         .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                } else {
-                    Text(tr("A health score with its reasons, and what has changed on this Mac and when."))
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
                 }
-                Button(tr("Open")) {
-                    open(.timeline)
-                }
-                .buttonStyle(SiivOSButtonStyle(.small))
+                .accessibilityElement(children: .combine)
+                Text(tr("The health score. See the reasons behind it and what has changed on this Mac."))
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            } else {
+                Text(tr("A health score with its reasons, and what has changed on this Mac and when."))
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
             }
         }
     }
@@ -154,30 +150,24 @@ struct OverviewView: View {
     }
 
     private var cleanupCard: some View {
-        Card {
-            VStack(alignment: .leading, spacing: 8) {
-                CardTitle(section: .cleanup, iconSize: 34)
-                if cleanup.isScanning {
-                    LoadingView(text: tr("Checking now…"))
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 8)
-                } else if cleanup.report == nil {
-                    Text(tr("Check this Mac to see what can be removed."))
-                        .foregroundStyle(.secondary)
-                } else {
-                    Text(formatBytes(cleanup.safeToRemoveBytes))
-                        .font(.system(size: 34, weight: .semibold))
-                        .monospacedDigit()
-                    Text(tr("safe to remove"))
-                        .foregroundStyle(.secondary)
-                    Text(ownFilesText)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-                Button(tr("Review")) {
-                    open(.cleanup)
-                }
-                .buttonStyle(SiivOSButtonStyle(.small))
+        areaCard(.cleanup, buttonTitle: tr("Review")) {
+            CardTitle(section: .cleanup, iconSize: 34)
+            if cleanup.isScanning {
+                LoadingView(text: tr("Checking now…"))
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 8)
+            } else if cleanup.report == nil {
+                Text(tr("Check this Mac to see what can be removed."))
+                    .foregroundStyle(.secondary)
+            } else {
+                Text(formatBytes(cleanup.safeToRemoveBytes))
+                    .font(.system(size: 34, weight: .semibold))
+                    .monospacedDigit()
+                Text(tr("safe to remove"))
+                    .foregroundStyle(.secondary)
+                Text(ownFilesText)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
             }
         }
     }
@@ -195,18 +185,45 @@ struct OverviewView: View {
 
     /// A card that says what a section is for and opens it.
     private func linkCard(_ section: AppSection, text: String) -> some View {
+        areaCard(section, buttonTitle: tr("Open")) {
+            CardTitle(section: section)
+            Text(text)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
+    /// One card of the grid: its content, then the button that opens the section. Every
+    /// card is as tall as the tallest one, and the buttons line up along the bottom.
+    private func areaCard<Content: View>(
+        _ section: AppSection,
+        buttonTitle: String,
+        @ViewBuilder content: () -> Content
+    ) -> some View {
         Card {
             VStack(alignment: .leading, spacing: 8) {
-                CardTitle(section: section)
-                Text(text)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-                Button(tr("Open")) {
+                VStack(alignment: .leading, spacing: 8) {
+                    content()
+                }
+                // Measured before the shared height is applied, so this is the height
+                // the content needs by itself.
+                .background(
+                    HeightReader { height in
+                        cardContentHeights[section] = height
+                    }
+                )
+                .frame(minHeight: tallestCardContent, alignment: .topLeading)
+
+                Button(buttonTitle) {
                     open(section)
                 }
                 .buttonStyle(SiivOSButtonStyle(.small))
             }
         }
+    }
+
+    private var tallestCardContent: CGFloat {
+        cardContentHeights.values.max() ?? 0
     }
 
     // MARK: - This Mac
@@ -240,6 +257,23 @@ struct OverviewView: View {
         formatter.unitsStyle = .full
         formatter.maximumUnitCount = 2
         return formatter.string(from: seconds) ?? tr("Unknown")
+    }
+}
+
+/// Reports the height of the view it sits behind, now and whenever it changes.
+private struct HeightReader: View {
+    let report: (CGFloat) -> Void
+
+    var body: some View {
+        GeometryReader { proxy in
+            Color.clear
+                .onAppear {
+                    report(proxy.size.height)
+                }
+                .onChange(of: proxy.size.height) { _, height in
+                    report(height)
+                }
+        }
     }
 }
 

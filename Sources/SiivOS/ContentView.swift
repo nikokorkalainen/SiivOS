@@ -126,6 +126,8 @@ private struct SidebarView: View {
                         .transition(.scale(scale: 0.4).combined(with: .opacity))
                 } else {
                     SiivOSSidebarHeader()
+                        // Moved right so the logo starts where the section icons do.
+                        .padding(.leading, 10)
                         .transition(.opacity)
                 }
             }
