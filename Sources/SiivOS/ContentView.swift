@@ -27,7 +27,6 @@ struct ContentView: View {
         HStack(spacing: 0) {
             SidebarView(selection: $selection, heldBytes: holding.heldBytes, isCompact: $sidebarIsCompact)
                 .frame(width: sidebarIsCompact ? SidebarView.compactWidth : SidebarView.fullWidth)
-                .clipped()
 
             Rectangle()
                 .fill(SiivOSTheme.divider)
@@ -132,6 +131,10 @@ private struct SidebarView: View {
         .safeAreaInset(edge: .bottom, spacing: 0) {
             collapseButton
         }
+        // Keep the logo and names inside the sidebar while it narrows. This comes before the
+        // background on purpose: clipping the background too would cut it off below the
+        // window buttons and leave a grey strip there.
+        .clipped()
         .background {
             // Light mode keeps the Mac's standard translucent sidebar; in dark mode the
             // deep green is drawn over it.
