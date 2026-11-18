@@ -286,6 +286,8 @@ enum FinnishTexts {
         "free now": "vapaana nyt",
         "A chart appears here once there are a few readings. SiivOS takes one when you open it, at most every six hours, and when you click Update Now in Health Timeline.": "Kaavio ilmestyy tähän, kun mittauksia on muutama. SiivOS tekee mittauksen, kun avaat sen, enintään kuuden tunnin välein, sekä silloin, kun napsautat Terveystiedoissa Päivitä nyt.",
         "The SiivOS history file at %1$@ could not be read (%2$@). Nothing was changed, to avoid losing track of earlier changes.": "SiivOSin historiatiedostoa %1$@ ei voitu lukea (%2$@). Mitään ei muutettu, jotta tieto aiemmista muutoksista ei katoa.",
+        "Taking readings…": "Tehdään mittauksia…",
+        "Measuring apps…": "Mitataan sovelluksia…",
         "Whether the door is on, and where SiivOS keeps its data.": "Onko agenttiovi auki ja missä SiivOS säilyttää tietonsa.",
         "Disk space, memory, the health score and what waits in the holding area.": "Levytila, muisti, terveyspisteet ja se, mitä välivarastossa odottaa.",
         "The health score with the reason for every point, and recent readings.": "Terveyspisteet ja jokaisen pisteen peruste sekä viimeisimmät mittaukset.",

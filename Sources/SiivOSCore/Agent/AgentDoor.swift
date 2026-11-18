@@ -93,18 +93,34 @@ public struct AgentDoor: Sendable {
         }
 
         /// The real checks, looking at this Mac.
-        public static func live(homeDirectory: URL) -> Sources {
+        ///
+        /// - Parameter progress: Called with a line saying what is being looked at.
+        ///   Some checks take a while on a full disk, and without this the tool would
+        ///   look stuck. The lines are for a person watching, not part of the answer.
+        public static func live(homeDirectory: URL, progress: (@Sendable (String) -> Void)? = nil) -> Sources {
             Sources(
                 snapshot: { SystemSnapshot.current() },
-                scan: { ScanEngine.clutter(homeDirectory: homeDirectory).run() },
-                protection: { ProtectionCheck.run(homeDirectory: homeDirectory) },
+                scan: {
+                    ScanEngine.clutter(homeDirectory: homeDirectory).run { title in
+                        progress?(tr("Checking: %1$@…", title))
+                    }
+                },
+                protection: {
+                    ProtectionCheck.run(homeDirectory: homeDirectory) { title in
+                        progress?(tr("Checking: %1$@…", title))
+                    }
+                },
                 performance: {
+                    progress?(tr("Taking readings…"))
                     let sampler = PerformanceSampler()
                     let first = sampler.sample()
                     Thread.sleep(forTimeInterval: 1)
                     return [first, sampler.sample()]
                 },
-                apps: { AppInventory.load(directories: InstalledApps.standardDirectories(homeDirectory: homeDirectory)) }
+                apps: {
+                    progress?(tr("Measuring apps…"))
+                    return AppInventory.load(directories: InstalledApps.standardDirectories(homeDirectory: homeDirectory))
+                }
             )
         }
     }
@@ -125,10 +141,12 @@ public struct AgentDoor: Sendable {
     }
 
     /// The door the tool uses: SiivOS's own folder and the real checks.
-    public static func standard() -> AgentDoor {
+    ///
+    /// - Parameter progress: Called with a line saying what is being looked at.
+    public static func standard(progress: (@Sendable (String) -> Void)? = nil) -> AgentDoor {
         AgentDoor(
             dataDirectory: SiivOSData.standardDirectory(),
-            sources: .live(homeDirectory: URL(fileURLWithPath: NSHomeDirectory()))
+            sources: .live(homeDirectory: URL(fileURLWithPath: NSHomeDirectory()), progress: progress)
         )
     }
 
@@ -259,7 +277,11 @@ public struct AgentDoor: Sendable {
     }
 
     private static func readable(_ bytes: Int64) -> String {
-        ByteCountFormatter.string(fromByteCount: bytes, countStyle: .file)
+        let formatter = ByteCountFormatter()
+        formatter.countStyle = .file
+        // "0 KB", not "Zero KB".
+        formatter.allowsNonnumericFormatting = false
+        return formatter.string(fromByteCount: bytes)
     }
 
     // MARK: - Status

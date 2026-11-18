@@ -265,6 +265,30 @@ final class AgentDoorTests: TemporaryDirectoryTestCase {
         XCTAssertEqual(after["holdingAreaBytes"] as? Int, 0)
     }
 
+    func testTheRealChecksSayWhatTheyAreLookingAt() {
+        final class Lines: @unchecked Sendable {
+            private let lock = NSLock()
+            private var stored: [String] = []
+            func add(_ line: String) {
+                lock.lock()
+                stored.append(line)
+                lock.unlock()
+            }
+            var all: [String] {
+                lock.lock()
+                defer { lock.unlock() }
+                return stored
+            }
+        }
+        let lines = Lines()
+        let sources = AgentDoor.Sources.live(homeDirectory: home) { lines.add($0) }
+
+        _ = sources.scan()
+
+        XCTAssertEqual(lines.all.count, 6, "One line for each of the six checks")
+        XCTAssertEqual(lines.all.first, "Checking: App caches…")
+    }
+
     // MARK: - Only reading
 
     func testAnsweringNeverCreatesChangesOrRemovesAnything() throws {
