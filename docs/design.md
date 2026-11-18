@@ -186,6 +186,45 @@ Follows the existing `PerformanceView`; these are the design changes.
 - Sparklines: the tint colour as a 2 pt line over a soft fade of the same colour, no axes.
 - No icons in the panel titles; the sidebar already says where you are.
 
+## Switching views (Apps and Background Items)
+
+The standard segmented picker is thin and faint on the green, and it stretches across the window.
+Use `SiivOSSegmentedControl` (`Sources/SiivOS/SiivOSSegmentedControl.swift`) instead:
+
+- 40 pt tall overall: a track (white at 8 % in dark mode, white in light mode, thin outline,
+  corner radius 11) holding segments 34 pt tall, at least 128 pt wide, 14 pt text.
+- The selected segment is filled with the prominent colour: mint with dark text in dark mode,
+  moss with white text in light mode, semibold. Others are medium weight in the primary colour.
+- It hugs its content and sits on the left under the page title, not stretched full width.
+- On the Apps screen: page title "Apps", one line of subtitle, then the control, then the content.
+  Replace the `Picker` with `.pickerStyle(.segmented)` in `AppsView`. The same control suits any
+  other place that switches between two or three views.
+
+## Buttons
+
+Every button in the app uses one of these, so no standard grey macOS buttons remain on the green.
+
+| Style | Use for | Height | Corners | Text | Look |
+|-------|---------|--------|---------|------|------|
+| Main (`ProminentButton`) | the screen's main action: Check This Mac, Scan for Clutter, Remove Ticked Items…, Move to Holding Area | 36 pt | 8 pt | 14 pt semibold | mint with dark text (dark mode), moss with white text (light mode) |
+| Standard (`SiivOSButtonStyle(.standard)`) | header and dialog buttons: Scan Again, Open Activity Monitor, Remove a File or Folder…, Cancel, Undo | 36 pt | 8 pt | 14 pt medium | soft panel (white at 9 %) with a thin outline |
+| Small (`SiivOSButtonStyle(.small)`) | buttons in rows and cards: Review, Tick All, Put Back, Open Cleanup, Sort | 30 pt | 7 pt | 13 pt medium | same as standard |
+| Red | Delete Permanently… (`destructive: true` on standard or small); the confirming Delete Permanently button is a filled red main button | as above | as above | red text | same panel |
+
+- Make sure `ProminentButton` matches the table: 36 pt tall, 8 pt corners, 18 pt side padding.
+- Replace `.buttonStyle(.bordered)` in `AppsView` and every plain `Button` that shows as a grey
+  macOS button with `SiivOSButtonStyle`. Keep `.plain` only for rows that are not meant to look
+  like buttons (sidebar rows, group headers, disclosure arrows).
+- Icons inside buttons are 20 pt; text and icon 8 pt apart.
+
+## Notice icons
+
+The round icons on notices (Performance's "What SiivOS notices", and anywhere else a message
+needs one) are in the icon set: `SiivOSIconView(.good)`, `.note` and `.attention`, 34 pt. Same
+style as the section icons: gradient fill, thin outline, white mark (a check, an "i", an "!").
+`.attention` is drawn in a calm amber instead of the tint. Use them instead of the SF Symbols in
+`DiagnosisCard` (`checkmark.circle`, `info.circle`, `exclamationmark.circle`).
+
 ## Before anything changes (sheet)
 
 Keep the existing `RemovalPlanSheet`, with shorter copy:
