@@ -7,7 +7,7 @@ import SwiftUI
 /// The SiivOS logo for the app's interface: the name with the two glints off the top-left
 /// corner of the S. The big glint takes the colour of "Siiv", the small one the colour of "OS".
 ///
-///     SiivOSLogo().frame(height: 28)
+///     SiivOSLogo().frame(height: 38)
 struct SiivOSLogo: View {
     var body: some View {
         Canvas { graphics, canvasSize in
@@ -49,14 +49,14 @@ enum SiivOSWordmarkPaths {
     static let size = CGSize(width: 307.19, height: 74.26)
 
     /// The logo's box: the name plus room for the glints above and to the left.
-    static let logoSize = CGSize(width: 331.19, height: 92.26)
+    static let logoSize = CGSize(width: 353.19, height: 123.26)
 
     /// Where the name sits inside the logo's box.
-    static let nameOffset = CGPoint(x: 24, y: 18)
+    static let nameOffset = CGPoint(x: 46, y: 49)
 
     /// The glints, in the logo's box: the big one just above the S, the small one to its left.
-    static let bigGlint = glint(center: CGPoint(x: 20, y: 12), arm: 12)
-    static let smallGlint = glint(center: CGPoint(x: 6, y: 24), arm: 5.5)
+    static let bigGlint = glint(center: CGPoint(x: 40, y: 31), arm: 30)
+    static let smallGlint = glint(center: CGPoint(x: 13, y: 53), arm: 12)
 
     /// "Siiv": soft white (#F1F7F3) in dark mode, deep green (#0B3D30) in light mode.
     static let siivColor = adaptive(

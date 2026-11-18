@@ -8,7 +8,7 @@ import SwiftUI
 struct SiivOSSidebarHeader: View {
     var body: some View {
         SiivOSLogo()
-            .frame(height: 28)
+            .frame(height: 38)
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, 12)
             .padding(.top, 4)

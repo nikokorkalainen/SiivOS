@@ -13,7 +13,7 @@ from fontTools.varLib.instancer import instantiateVariableFont
 
 FONT_PATH, OUT = Path(sys.argv[1]), Path(sys.argv[2])
 # Room for the glints above and to the left of the name, in the same units (em = 100).
-PAD_X, PAD_Y = 24, 18
+PAD_X, PAD_Y = 46, 49
 
 
 def num(v: float) -> str:
@@ -85,7 +85,7 @@ import SwiftUI
 /// The SiivOS logo for the app's interface: the name with the two glints off the top-left
 /// corner of the S. The big glint takes the colour of "Siiv", the small one the colour of "OS".
 ///
-///     SiivOSLogo().frame(height: 28)
+///     SiivOSLogo().frame(height: 38)
 struct SiivOSLogo: View {{
     var body: some View {{
         Canvas {{ graphics, canvasSize in
@@ -133,8 +133,8 @@ enum SiivOSWordmarkPaths {{
     static let nameOffset = CGPoint(x: {num(PAD_X)}, y: {num(PAD_Y)})
 
     /// The glints, in the logo's box: the big one just above the S, the small one to its left.
-    static let bigGlint = glint(center: CGPoint(x: {num(PAD_X - 4)}, y: {num(PAD_Y - 6)}), arm: 12)
-    static let smallGlint = glint(center: CGPoint(x: {num(PAD_X - 18)}, y: {num(PAD_Y + 6)}), arm: 5.5)
+    static let bigGlint = glint(center: CGPoint(x: {num(PAD_X - 6)}, y: {num(PAD_Y - 18)}), arm: 30)
+    static let smallGlint = glint(center: CGPoint(x: {num(PAD_X - 33)}, y: {num(PAD_Y + 4)}), arm: 12)
 
     /// "Siiv": soft white (#F1F7F3) in dark mode, deep green (#0B3D30) in light mode.
     static let siivColor = adaptive(

@@ -46,7 +46,7 @@ The app follows the Mac's appearance setting. Colours and backgrounds are in
 
 ## Sidebar
 
-**Logo at the top:** `SiivOSSidebarHeader()`, the text logo (`SiivOSLogo`, 28 pt tall): the
+**Logo at the top:** `SiivOSSidebarHeader()`, the text logo (`SiivOSLogo`, 38 pt tall including the glints): the
 name with the two glints off the top-left corner of the S, and no app icon. Put it above the
 sections, for example with `.safeAreaInset(edge: .top)` on the sidebar `List`. It is drawn from
 outlines, so it needs no font installed. Dark mode: soft white with mint "OS"; light mode: deep
