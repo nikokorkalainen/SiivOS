@@ -68,9 +68,9 @@ def word_paths() -> str:
 
 def icon_svg(small: bool, words: str) -> str:
     if small:
-        art = f'<path d="{S_BIG}" fill="#FFFFFF"/><path d="{S_SMALL}" fill="#FFFFFF"/>'
+        art = f'<path d="{S_BIG}" fill="#FFFFFF"/><path d="{S_SMALL}" fill="#5EE6A8"/>'
     else:
-        art = f'<path d="{F_BIG}" fill="#FFFFFF"/><path d="{F_SMALL}" fill="#FFFFFF"/>\n{words}'
+        art = f'<path d="{F_BIG}" fill="#FFFFFF"/><path d="{F_SMALL}" fill="#5EE6A8"/>\n{words}'
     return f"""<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
 <defs>
 <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1A9E73"/><stop offset="1" stop-color="#0B4A39"/></linearGradient>
