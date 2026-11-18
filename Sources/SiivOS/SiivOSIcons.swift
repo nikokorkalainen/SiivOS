@@ -27,12 +27,12 @@ enum SiivOSIcon: String, CaseIterable {
 ///     }
 struct SiivOSIconView: View {
     let icon: SiivOSIcon
-    /// Width and height. 26 pt in the sidebar, 22 to 24 pt on the Overview cards.
+    /// Width and height. 30 pt in the sidebar, 22 to 24 pt on the Overview cards.
     var size: CGFloat
     /// On a selected sidebar row the whole icon turns white, so it reads on the accent colour.
     var isSelected: Bool
 
-    init(_ icon: SiivOSIcon, size: CGFloat = 26, isSelected: Bool = false) {
+    init(_ icon: SiivOSIcon, size: CGFloat = 30, isSelected: Bool = false) {
         self.icon = icon
         self.size = size
         self.isSelected = isSelected
