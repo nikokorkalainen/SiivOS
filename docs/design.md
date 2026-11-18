@@ -225,6 +225,101 @@ style as the section icons: gradient fill, thin outline, white mark (a check, an
 `.attention` is drawn in a calm amber instead of the tint. Use them instead of the SF Symbols in
 `DiagnosisCard` (`checkmark.circle`, `info.circle`, `exclamationmark.circle`).
 
+## Settings
+
+Settings moves from its own standard window into the main window, with the green look like
+everything else. Mockups: the "Settings, in the main window" row on the design canvas (dark and
+light, with the full and the icons-only sidebar). The Swift for the icon and the controls is in
+`design/swift-pending/`, waiting for a syntax check (see its README).
+
+### Icon
+
+`SiivOSIcon.settings`: an eight-tooth gear in the icon-set style, a gradient fill and thin
+outline in the tint, with a white ring for the hole. It reads at 30 pt (sidebar), 34 pt
+(icons-only sidebar) and all white on the moss selected row in light mode (`isSelected: true`).
+
+### Place in the sidebar
+
+- Pinned at the bottom, apart from the seven sections: a `ThemedDivider` inset 10 pt from both
+  sides, then the Settings row, then the existing collapse button under it. The seven sections
+  scroll if the window is short; the divider, Settings and the collapse button never scroll.
+- The Settings row is a normal `SidebarRow` (same height, icon size, text and selection): white
+  at 14 % in dark mode, moss with white icon and text in light mode. Setting it apart by place and
+  the divider keeps one way of looking selected across the sidebar.
+- Icons-only sidebar: the same order at the bottom: divider, the gear (34 pt, centred), the
+  collapse button (centred) under it. The row's tooltip and VoiceOver label read "Settings".
+- Command-comma selects it; the SiivOS menu's "Settings…" item does the same. The tooltip on the
+  row can say "Settings (⌘,)". No trailing label on the row.
+- Arrow keys: down from History goes to Settings, up from Settings goes to History.
+
+### Layout: one scrolling page, not tabs
+
+Settings is one page with a heading for each group, in this order: General, Cleanup,
+Permissions, AI agents, Privacy. Reasons:
+
+- There is little in each group. General, Permissions and AI agents hold one or two settings
+  each, so as tabs most of the page would be empty, and the tab bar would be the busiest thing.
+- Everything is visible at once. Full Disk Access changes what Cleanup can find, so it should
+  not hide behind a tab you have to think of opening.
+- It matches the other screens, which are scrolling pages. `SiivOSSegmentedControl` stays for
+  switching between two big lists (Apps and Background Items).
+- New settings slot in without a new tab: "Open SiivOS at login" goes in General; a "Holding
+  area" group (empty it automatically after a chosen time, warn past a chosen size) and a
+  "Health Timeline" group (how long history is kept) go after Cleanup, before Permissions.
+
+Page: `PageHeader` with the title "Settings" and the subtitle "How SiivOS runs, and what Cleanup
+lists." (Finnish suggestion: "Miten SiivOS toimii ja mitä Siivous näyttää."). Content left
+aligned, at most 900 pt wide, 30 pt between groups. Each group: a 17 pt semibold heading, then
+one or more panels (`Card`, the theme's panel colour, rows separated by `ThemedDivider`).
+Inside Cleanup, "Checks to run" and "Folders to leave out" are 14 pt semibold sub-headings over
+their own panels, and "Changes apply the next time you scan." is a note under the last panel.
+
+### Controls
+
+All rows use `SettingRow` (label and notes on the left, the control at the far end, 16 pt
+side padding, 14 pt top and bottom). Labels and notes wrap and are never shortened, so Finnish
+fits: in a narrow window the label takes two lines and the control stays on the right.
+
+| Control | Look | Standard or themed |
+|---------|------|--------------------|
+| Switch | the Mac's standard switch (`Toggle` with `.toggleStyle(.switch)`, label hidden, title still read by VoiceOver), `.tint(SiivOSTheme.prominent)`: mint on in dark mode, moss in light; off is the system grey | **standard**: the tint carries the theme, and the system switch keeps its keyboard and VoiceOver behaviour |
+| Choice (menu) | `SiivOSMenuPicker`: a small SiivOS button (30 pt, `SiivOSButtonStyle(.small)`) showing the current choice and up-down arrows; the menu shows a checkmark on the current one | **themed**: the standard pop-up button is a grey bezel that matches nothing else. If the menu ignores the button style on the Mac, use `.menuStyle(.borderlessButton)` and draw the label as the small button instead |
+| Status row | `SettingStatus` at the far end: a small dot and "On" or "Off". On: dot in the tint. Off: dot in calm amber, never red | themed, small |
+| List row with a button | in "Folders to leave out": a folder line icon (20 pt), the path shortened with ~ and cut in the middle (full path in the tooltip), "Include Again" as `SiivOSButtonStyle(.small)` at the far end; rows separated by dividers. Empty list: "No folders are left out." in secondary text (Finnish suggestion: "Yhtään kansiota ei ole jätetty pois."). "Add Folder…" (small) on its own row under the list. The panel grows with the list; the page scrolls, the panel does not | themed |
+| Path row | `SettingPathField`: the path in 12 pt monospaced type on a slightly recessed field (black at 22 % in dark mode, 5 % in light), cut in the middle, selectable, full path in the tooltip; "Copy Path" (small) beside it, which reads "Copied" for a moment after a click (Finnish needed: "Kopioitu") | themed |
+| Note | `SettingNoteText`: 13 pt (callout), secondary colour, at most 640 pt wide, 4 pt under what it explains | |
+| Error line | `SettingErrorLine`: the attention icon (18 pt, amber) and "The setting could not be saved: …" in the primary colour, inside the panel directly under the setting it belongs to. Not a red banner | themed |
+
+Buttons follow the "Buttons" section: "Open Full Disk Access Settings" is the main
+(`ProminentButton`) action while Full Disk Access is off, and a standard button once it is on.
+
+### Groups in detail
+
+- **General:** "Show SiivOS in the menu bar" with its note. Room for "Open SiivOS at login" below.
+- **Cleanup:** the two choices in one panel; "Checks to run" with seven switches in one panel, one
+  row each, no notes; "Folders to leave out" with its note at the top of its panel, then the list
+  and "Add Folder…"; then "Changes apply the next time you scan."
+- **Permissions:** "Full Disk Access" with `SettingStatus`; under it the on or off note, then the
+  button. The long off note is the most likely to grow in Finnish, which is why it sits under the
+  row at full width rather than beside the status.
+- **AI agents:** the switch with notes 1 and 2; then, in the same panel under a divider, the path
+  row with notes 3 and 4. When the tool is not in this copy of the app, that part is replaced by
+  the one note about Scripts/make-app.sh.
+
+### Privacy
+
+Keep it in Settings, as the last group, "Privacy", in its own panel with the Protection icon
+(26 pt) beside the statement. It is not a setting, but Settings is where people look for what an
+app does with their data, and placed straight after AI agents it answers the question that the
+agent notes raise. It does not need to repeat anywhere else. Protection's download button can
+keep its own short line about using the network.
+
+### Wording
+
+Settings only narrow what SiivOS lists. None of them makes it less careful, and nothing on the
+page suggests otherwise: no "safe mode", no warnings on the switches, and the folder note keeps
+saying that left-out folders are not touched.
+
 ## Before anything changes (sheet)
 
 Keep the existing `RemovalPlanSheet`, with shorter copy:
