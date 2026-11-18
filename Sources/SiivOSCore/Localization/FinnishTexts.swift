@@ -170,6 +170,8 @@ enum FinnishTexts {
         "See what is using the processor, memory, disk and battery right now.": "Näe, mikä käyttää suoritinta, muistia, levyä ja akkua juuri nyt.",
         "Check the Mac's built-in protection, what starts by itself, browser extensions and profiles.": "Tarkista Macin sisäänrakennettu suojaus, itsestään käynnistyvät ohjelmat, selainlaajennukset ja profiilit.",
         "Open": "Avaa",
+        "Put items back, or delete them permanently to free the space.": "Palauta kohteita tai vapauta tila poistamalla ne pysyvästi.",
+        "Everything SiivOS has changed, with a way to put it back. The holding area is empty.": "Kaikki SiivOSin tekemät muutokset ja mahdollisuus perua ne. Välivarasto on tyhjä.",
         "The health score. See the reasons behind it and what has changed on this Mac.": "Terveyspisteet. Katso, mistä ne muodostuvat ja mikä tällä Macilla on muuttunut.",
         "A health score with its reasons, and what has changed on this Mac and when.": "Terveyspisteet perusteluineen sekä se, mikä tällä Macilla on muuttunut ja milloin.",
         "Review": "Katso",

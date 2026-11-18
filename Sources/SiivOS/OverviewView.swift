@@ -7,6 +7,8 @@ struct OverviewView: View {
     @ObservedObject var cleanup: CleanupModel
     /// The health score and the readings of free space over time.
     @ObservedObject var timeline: TimelineModel
+    /// How much is waiting in the holding area, for the History card.
+    @ObservedObject private var holding = HoldingStatus.shared
     /// Opens another section of the app.
     let open: (AppSection) -> Void
 
@@ -104,6 +106,28 @@ struct OverviewView: View {
                 linkCard(.performance, text: tr("See what is using the processor, memory, disk and battery right now."))
                 linkCard(.protection, text: tr("Check the Mac's built-in protection, what starts by itself, browser extensions and profiles."))
                 timelineCard
+                historyCard
+            }
+        }
+    }
+
+    /// What is waiting in the holding area, and a way to History.
+    private var historyCard: some View {
+        areaCard(.history, buttonTitle: tr("Open")) {
+            CardTitle(section: .history)
+            if holding.heldBytes > 0 {
+                Text(formatBytes(holding.heldBytes))
+                    .font(.system(size: 34, weight: .semibold))
+                    .monospacedDigit()
+                Text(tr("in the holding area"))
+                    .foregroundStyle(.secondary)
+                Text(tr("Put items back, or delete them permanently to free the space."))
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            } else {
+                Text(tr("Everything SiivOS has changed, with a way to put it back. The holding area is empty."))
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
             }
         }
     }
