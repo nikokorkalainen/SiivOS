@@ -18,7 +18,12 @@ struct HealthTimelineView: View {
         content
             .navigationTitle(tr("Health Timeline"))
             .onAppear {
+                model.markSeen()
                 model.prepareForDisplay()
+            }
+            .onDisappear {
+                // Covers what was noticed while the screen was open.
+                model.markSeen()
             }
             .alert(
                 "SiivOS",

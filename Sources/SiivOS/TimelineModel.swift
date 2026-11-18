@@ -5,6 +5,9 @@ import SwiftUI
 /// Connects the Health Timeline to the readings kept on this Mac.
 @MainActor
 final class TimelineModel: ObservableObject {
+    /// The one model the window and the menu bar share, so both show the same score.
+    static let shared = TimelineModel()
+
     /// Readings and changes so far, as saved on this Mac.
     @Published private(set) var history: HealthHistory
     /// The latest score with its reasons, or `nil` until this Mac has been looked at
@@ -16,16 +19,35 @@ final class TimelineModel: ObservableObject {
     @Published private(set) var ownActions: [ActionRecord] = []
     /// A problem to show the user.
     @Published var message: String?
+    /// When the Health Timeline was last looked at. Changes noticed after this are new.
+    @Published private(set) var lastSeen: Date?
 
     /// How old the last reading must be before SiivOS takes a new one by itself.
     static let automaticInterval: TimeInterval = 6 * 3_600
 
     private let store: HealthStore
+    private static let lastSeenKey = "healthTimelineLastSeen"
 
     init() {
         let store = HealthStore.standard()
         self.store = store
         history = store.load()
+        let seen = UserDefaults.standard.double(forKey: Self.lastSeenKey)
+        lastSeen = seen > 0 ? Date(timeIntervalSince1970: seen) : nil
+    }
+
+    /// Changes worth a second glance that were noticed since the Health Timeline was
+    /// last looked at, newest first. The menu bar points these out.
+    var unseenNoteworthy: [HealthEvent] {
+        history.noteworthyEvents(after: lastSeen)
+    }
+
+    /// Called when the Health Timeline is shown and when it is left: everything in it
+    /// has now been seen.
+    func markSeen() {
+        let now = Date()
+        lastSeen = now
+        UserDefaults.standard.set(now.timeIntervalSince1970, forKey: Self.lastSeenKey)
     }
 
     /// The latest score as a number, from this session or from the last saved reading.

@@ -150,6 +150,20 @@ public struct HealthHistory: Codable, Equatable, Sendable {
     }
 }
 
+extension HealthHistory {
+    /// The changes worth a second glance that were noticed after the given moment,
+    /// newest first. With no moment given, all of them.
+    public func noteworthyEvents(after date: Date?) -> [HealthEvent] {
+        events
+            .filter { event in
+                guard event.isNoteworthy else { return false }
+                guard let date else { return true }
+                return event.date > date
+            }
+            .reversed()
+    }
+}
+
 /// One look at the Mac: what is on it and how it is doing.
 public struct HealthObservation: Equatable, Sendable {
     public let inventory: HealthInventory

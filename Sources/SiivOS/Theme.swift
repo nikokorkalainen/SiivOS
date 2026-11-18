@@ -243,11 +243,11 @@ struct SiivOSGlintMark: View {
             graphics.scaleBy(x: scale, y: scale)
             graphics.translateBy(x: -box.minX, y: -box.minY)
             graphics.fill(
-                Self.glint(center: CGPoint(x: 68, y: 55), arm: 34),
+                SiivOSGlintShape.path(center: CGPoint(x: 68, y: 55), arm: 34),
                 with: .color(SiivOSLogoPaths.siivColor)
             )
             graphics.fill(
-                Self.glint(center: CGPoint(x: 34, y: 83), arm: 16),
+                SiivOSGlintShape.path(center: CGPoint(x: 34, y: 83), arm: 16),
                 with: .color(SiivOSLogoPaths.osColor)
             )
         }
@@ -255,10 +255,13 @@ struct SiivOSGlintMark: View {
         .accessibilityElement()
         .accessibilityLabel("SiivOS")
     }
+}
 
+/// The outline of one glint, shared by the sidebar mark and the menu bar icon.
+enum SiivOSGlintShape {
     /// The SiivOS glint: four points joined by soft curves, with control points at 12 %
     /// and 45.4 % of the arm, as the design notes define it.
-    private static func glint(center c: CGPoint, arm: CGFloat) -> Path {
+    static func path(center c: CGPoint, arm: CGFloat) -> Path {
         let k1 = arm * 0.12
         let k2 = arm * 0.454
         var path = Path()

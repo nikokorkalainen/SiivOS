@@ -3,7 +3,8 @@ import SiivOSCore
 import SwiftUI
 
 struct ContentView: View {
-    @State private var selection: AppSection = .overview
+    /// Which section is shown. Shared with the menu bar, which can open a section.
+    @ObservedObject private var navigation = AppNavigation.shared
     /// Kept here so that scan results survive a visit to another section,
     /// and so that Overview and Cleanup show the same check.
     @StateObject private var cleanup = CleanupModel()
@@ -13,9 +14,9 @@ struct ContentView: View {
     @StateObject private var performance = PerformanceModel()
     /// Kept here so that the results of a protection check survive a visit elsewhere.
     @StateObject private var protection = ProtectionModel()
-    /// Kept here so that a reading is taken when the app opens, and so that the Overview
-    /// and the Health Timeline show the same score.
-    @StateObject private var timeline = TimelineModel()
+    /// Shared with the menu bar, so that it, the Overview and the Health Timeline show
+    /// the same score.
+    @ObservedObject private var timeline = TimelineModel.shared
     @ObservedObject private var holding = HoldingStatus.shared
     /// Whether the sidebar shows icons only. Kept in view state so that changing it can
     /// animate, and saved so that it is remembered between launches.
@@ -28,7 +29,7 @@ struct ContentView: View {
         // sidebar width once it is open, so it could not collapse the sidebar to icons,
         // and it offers a way to hide the sidebar, which SiivOS does not want.
         HStack(spacing: 0) {
-            SidebarView(selection: $selection, heldBytes: holding.heldBytes, isCompact: $sidebarIsCompact)
+            SidebarView(selection: $navigation.selection, heldBytes: holding.heldBytes, isCompact: $sidebarIsCompact)
                 .frame(width: sidebarIsCompact ? SidebarView.compactWidth : SidebarView.fullWidth)
 
             Rectangle()
@@ -38,18 +39,18 @@ struct ContentView: View {
 
             // Fill the whole column first, so the background covers it even when the
             // screen itself is small, such as a start screen.
-            detail(for: selection)
+            detail(for: navigation.selection)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .background(SiivOSWindowBackground())
         }
+        // Lets the menu bar find this window and bring it to the front.
+        .background(MainWindowTracker())
         .tint(SiivOSTheme.prominent)
         .onChange(of: sidebarIsCompact) { _, isCompact in
             UserDefaults.standard.set(isCompact, forKey: Self.compactSidebarKey)
         }
         .onAppear {
             holding.refresh()
-            // Takes a reading in the background unless there is a recent one. Only reads.
-            timeline.updateIfDue()
         }
     }
 
@@ -57,17 +58,17 @@ struct ContentView: View {
     private func detail(for section: AppSection) -> some View {
         switch section {
         case .overview:
-            OverviewView(cleanup: cleanup, timeline: timeline, open: { selection = $0 })
+            OverviewView(cleanup: cleanup, timeline: timeline, open: { navigation.selection = $0 })
         case .cleanup:
             CleanupView(model: cleanup)
         case .apps:
             AppsView(model: apps)
         case .performance:
-            PerformanceView(model: performance, cleanup: cleanup, open: { selection = $0 })
+            PerformanceView(model: performance, cleanup: cleanup, open: { navigation.selection = $0 })
         case .protection:
             ProtectionView(model: protection)
         case .timeline:
-            HealthTimelineView(model: timeline, open: { selection = $0 })
+            HealthTimelineView(model: timeline, open: { navigation.selection = $0 })
         case .history:
             HistoryView()
         }

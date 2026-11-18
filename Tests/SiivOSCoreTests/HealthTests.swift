@@ -191,6 +191,21 @@ final class HealthTests: TemporaryDirectoryTestCase {
         XCTAssertEqual(history.events.count, 1)
     }
 
+    func testNoteworthyChangesCanBeAskedForSinceAMoment() {
+        let history = HealthHistory(events: [
+            HealthEvent(date: hours(0), kind: .trackingStarted),
+            HealthEvent(date: hours(1), kind: .backgroundItemAdded, subject: "com.first.agent"),
+            HealthEvent(date: hours(2), kind: .appAdded, subject: "Notes"),
+            HealthEvent(date: hours(3), kind: .protectionTurnedOff, subject: "filevault"),
+            HealthEvent(date: hours(4), kind: .profileAdded, subject: "Company Wi-Fi")
+        ])
+
+        XCTAssertEqual(history.noteworthyEvents(after: nil).map { $0.kind }, [.profileAdded, .protectionTurnedOff, .backgroundItemAdded], "Newest first")
+        XCTAssertEqual(history.noteworthyEvents(after: hours(1)).map { $0.kind }, [.profileAdded, .protectionTurnedOff], "What was noticed at that moment has been seen")
+        XCTAssertTrue(history.noteworthyEvents(after: hours(4)).isEmpty)
+        XCTAssertTrue(HealthHistory().noteworthyEvents(after: nil).isEmpty)
+    }
+
     func testChangesReadInFinnishWhenTheAppIsShownInFinnish() {
         L10n.overrideLanguage = .finnish
         defer { L10n.overrideLanguage = .english }
