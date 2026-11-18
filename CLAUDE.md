@@ -21,7 +21,7 @@ SiivOS is a macOS optimizer app. Read `PLAN.md` first: it holds the approved pla
 
 - The app is in English and Finnish. Every text shown to people is written as `tr("English text")`, in the engine and in the screens alike. Changing parts are marked `%1$@`, `%2$@` and passed as extra arguments; never put `\(...)` inside `tr`.
 - The Finnish wording lives in `Sources/SiivOSCore/Localization/FinnishTexts.swift`, one pair per line. Add the Finnish for every new text in the same change. `Scripts/check-translations.py` (run by the Linux check) fails if any is missing.
-- Finnish terms in use, chosen by the owner where marked: app = sovellus (owner; not "appi"), health = terveys (owner; not "kunto"), holding area = välivarasto, cache = välimuisti, item = kohde, Cleanup = Siivous, History = Historia. The one exception is "Appien hallinta", which names a page in macOS's own System Settings.
+- Finnish terms in use, chosen by the owner where marked: app = sovellus (owner; not "appi"), health = terveys (owner; not "kunto"), Health Timeline = Terveystiedot (owner), holding area = välivarasto, cache = välimuisti, item = kohde, Cleanup = Siivous, History = Historia. The one exception is "Appien hallinta", which names a page in macOS's own System Settings.
 
 ## Workflow
 

@@ -12,7 +12,7 @@ enum FinnishTexts {
         "Apps": "Sovellukset",
         "Performance": "Suorituskyky",
         "Protection": "Suojaus",
-        "Health Timeline": "Terveyden aikajana",
+        "Health Timeline": "Terveystiedot",
         "History": "Historia",
         "A quick look at this Mac.": "Nopea katsaus tähän Maciin.",
         "Find caches, logs, old downloads, large and duplicate files, and leftovers from removed apps.": "Etsi välimuistit, lokit, vanhat lataukset, suuret tiedostot, tiedostojen kaksoiskappaleet ja poistetuista sovelluksista jääneet tiedot.",
