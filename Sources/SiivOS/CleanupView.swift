@@ -252,7 +252,7 @@ private struct CleanupGroupView: View {
 
     /// The checks whose explanation says something specific about each item.
     private static let sectionsWithExplanations: Set<String> = [
-        "leftovers", "old-downloads", "large-files", "duplicates"
+        "leftovers", "developer", "old-downloads", "large-files", "duplicates"
     ]
 
     private var shownFindings: [Finding] {
@@ -379,7 +379,7 @@ private struct FindingRow: View {
     private var details: some View {
         HStack(alignment: .firstTextBaseline) {
             VStack(alignment: .leading, spacing: 2) {
-                Text(ReadableNames.name(for: finding.url))
+                Text(finding.displayName ?? ReadableNames.name(for: finding.url))
                     .lineLimit(1)
                     .truncationMode(.middle)
                 if showsExplanation {

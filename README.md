@@ -16,7 +16,7 @@ SiivOS is in English and Finnish and follows the language of your Mac. It needs 
 | Section | What you get |
 |---------|--------------|
 | **Overview** | Free space, what the last check found, the health score, and free space over time. |
-| **Cleanup** | Caches, logs, old downloads, large files, duplicate files, and leftovers from apps you have removed. Data of macOS, password managers, iCloud and security software is never listed. |
+| **Cleanup** | Caches, logs, old downloads, large files, duplicate files, leftovers from apps you have removed, and data piled up by developer tools such as Xcode, npm and Docker. Every item is labelled Safe to remove or Check first. Data of macOS, password managers, iCloud and security software is never listed. |
 | **Apps** | Every app with its size and last use. Uninstalling takes the app's leftovers with it. Background items can be reviewed and removed. |
 | **Performance** | Processor, memory, disk and battery right now, with a plain-language explanation when something is holding the Mac back. |
 | **Protection** | The protection built into macOS, what starts by itself, browser extensions, configuration profiles and app permissions, plus an optional malware scan with ClamAV. |

@@ -270,11 +270,13 @@ final class ClutterScannerTests: TemporaryDirectoryTestCase {
         try makeFile("Library/Logs/Example/app.log", bytes: 2_000_000)
         try makeFile("Documents/copy-a.bin", bytes: 1_500_000, fill: 4)
         try makeFile("Documents/copy-b.bin", bytes: 1_500_000, fill: 4)
+        try makeFile("Library/Developer/Xcode/DerivedData/Project-abc/build.bin", bytes: 20_000_000)
 
         let engine = ScanEngine(scanners: [
             CachesScanner(homeDirectory: home),
             LogsScanner(homeDirectory: home),
             LeftoversScanner(homeDirectory: home, applicationDirectories: [applications]),
+            DeveloperClutterScanner(homeDirectory: home),
             OldDownloadsScanner(homeDirectory: home),
             LargeFilesScanner(homeDirectory: home),
             DuplicateFilesScanner(homeDirectory: home)
@@ -282,15 +284,15 @@ final class ClutterScannerTests: TemporaryDirectoryTestCase {
         var titles: [String] = []
         let report = engine.run { titles.append($0) }
 
-        XCTAssertEqual(titles.count, 6)
+        XCTAssertEqual(titles.count, 7)
         XCTAssertTrue(report.sections.allSatisfy { $0.failure == nil })
         let urls = report.sections.flatMap { $0.findings }.map { $0.url }
-        XCTAssertEqual(urls.map { $0.lastPathComponent }.sorted(), ["Example", "com.example.Browser", "copy-b.bin"])
+        XCTAssertEqual(urls.map { $0.lastPathComponent }.sorted(), ["DerivedData", "Example", "com.example.Browser", "copy-b.bin"])
 
         let core = try SafetyCore(baseDirectory: baseDirectory, homeDirectory: home)
         let plan = core.plan(removing: urls, title: "Cleaned up", reason: "Test.")
         XCTAssertTrue(plan.refused.isEmpty)
-        XCTAssertEqual(report.removingFindingsNoLongerOnDisk().findingCount, 3)
+        XCTAssertEqual(report.removingFindingsNoLongerOnDisk().findingCount, 4)
 
         let result = try core.apply(plan)
         XCTAssertTrue(result.failures.isEmpty)
@@ -298,15 +300,66 @@ final class ClutterScannerTests: TemporaryDirectoryTestCase {
 
         let remaining = report.removingFindingsNoLongerOnDisk()
         XCTAssertEqual(remaining.findingCount, 0)
-        XCTAssertEqual(remaining.sections.count, 6)
+        XCTAssertEqual(remaining.sections.count, 7)
 
         let undone = try core.undo(recordID: result.record.id)
         XCTAssertTrue(undone.failures.isEmpty)
         XCTAssertTrue(urls.allSatisfy { exists($0) })
     }
 
-    func testTheStandardCleanupScanHasSixDistinctScanners() {
+    func testTheStandardCleanupScanHasSevenDistinctScanners() {
         let engine = ScanEngine.clutter(homeDirectory: home)
-        XCTAssertEqual(Set(engine.scanners.map { $0.id }).count, 6)
+        XCTAssertEqual(
+            engine.scanners.map { $0.id },
+            ["caches", "logs", "leftovers", "developer", "old-downloads", "large-files", "duplicates"]
+        )
+    }
+
+    // MARK: - Developer tools
+
+    func testDeveloperToolsDataIsFoundByNameWithItsOwnLabel() throws {
+        try makeFile("Library/Developer/Xcode/DerivedData/Project-abc/build.bin", bytes: 20_000_000)
+        try makeFile("Library/Developer/Xcode/Archives/2026-01-01/App.xcarchive/app.bin", bytes: 20_000_000)
+        try makeFile("Library/Developer/Xcode/iOS DeviceSupport/19.0/symbols.bin", bytes: 20_000_000)
+        try makeFile(".npm/_cacache/content/package.tgz", bytes: 20_000_000)
+        try makeFile("Library/Containers/com.docker.docker/Data/vms/0/data/Docker.raw", bytes: 20_000_000)
+        // Too small to be worth listing.
+        try makeFile(".gradle/caches/tiny.bin", bytes: 10)
+
+        let findings = try DeveloperClutterScanner(homeDirectory: home).scan()
+        var labels: [String: Finding.Safety] = [:]
+        for finding in findings {
+            labels[finding.displayName ?? "?"] = finding.safety
+        }
+
+        XCTAssertEqual(labels, [
+            "Xcode build results": .safeToRemove,
+            "Xcode archives": .checkFirst,
+            "Xcode device files (iOS)": .safeToRemove,
+            "npm packages": .safeToRemove,
+            "Docker's disk": .checkFirst
+        ])
+        XCTAssertTrue(findings.allSatisfy { !$0.explanation.isEmpty && !$0.safetyReason.isEmpty })
+        XCTAssertTrue(findings.allSatisfy { $0.heldBackReason == nil })
+        XCTAssertEqual(findings.first { $0.displayName == "Xcode build results" }?.url.lastPathComponent, "DerivedData")
+    }
+
+    func testDeveloperToolsDataIsHeldBackWhileItsToolIsOpen() throws {
+        try makeFile("Library/Developer/Xcode/DerivedData/Project-abc/build.bin", bytes: 20_000_000)
+        try makeFile(".npm/_cacache/content/package.tgz", bytes: 20_000_000)
+
+        let findings = try DeveloperClutterScanner(
+            homeDirectory: home,
+            runningApps: [RunningApp(name: "Xcode", bundleIdentifier: "com.apple.dt.Xcode")]
+        ).scan()
+
+        let derived = findings.first { $0.displayName == "Xcode build results" }
+        XCTAssertEqual(derived?.heldBackReason, "Xcode is open. Quit it, then scan again.")
+        XCTAssertNil(findings.first { $0.displayName == "npm packages" }?.heldBackReason)
+    }
+
+    func testAMacWithoutDeveloperToolsHasNothingToShow() throws {
+        try makeFile("Documents/letter.txt", bytes: 100)
+        XCTAssertEqual(try DeveloperClutterScanner(homeDirectory: home).scan(), [])
     }
 }

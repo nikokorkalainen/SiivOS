@@ -215,7 +215,7 @@ final class AgentDoorTests: TemporaryDirectoryTestCase {
         let cleanup = try object(door.answer(["cleanup", "--limit", "1"]))
 
         let groups = try XCTUnwrap(cleanup["groups"] as? [[String: Any]])
-        XCTAssertEqual(groups.map { $0["id"] as? String }, ["caches", "logs", "leftovers", "old-downloads", "large-files", "duplicates"])
+        XCTAssertEqual(groups.map { $0["id"] as? String }, ["caches", "logs", "leftovers", "developer", "old-downloads", "large-files", "duplicates"])
         let caches = try XCTUnwrap(groups.first)
         XCTAssertEqual(caches["itemCount"] as? Int, 2)
         let items = try XCTUnwrap(caches["items"] as? [[String: Any]])
@@ -302,7 +302,7 @@ final class AgentDoorTests: TemporaryDirectoryTestCase {
 
         _ = sources.scan()
 
-        XCTAssertEqual(lines.all.count, 6, "One line for each of the six checks")
+        XCTAssertEqual(lines.all.count, 7, "One line for each of the seven checks")
         XCTAssertEqual(lines.all.first, "Checking: App caches…")
     }
 

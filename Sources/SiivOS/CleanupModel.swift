@@ -14,7 +14,7 @@ struct RemovalNotice: Equatable, Sendable {
 final class CleanupModel: ObservableObject {
     /// The checks whose findings apps and macOS made for themselves. The other checks
     /// find the user's own files, which are looked at one by one.
-    static let safeSectionIDs: Set<String> = ["caches", "logs", "leftovers"]
+    static let safeSectionIDs: Set<String> = ["caches", "logs", "leftovers", "developer"]
 
     /// What the last scan found, or `nil` before the first scan.
     @Published private(set) var report: ScanReport?
@@ -84,8 +84,16 @@ final class CleanupModel: ObservableObject {
     // MARK: - What was found
 
     /// The groups whose findings apps and macOS made for themselves.
+    ///
+    /// The developer tools group is left out when it found nothing, because most people
+    /// have no such tools and an empty group would only be in the way.
     var safeSections: [ScanReport.Section] {
-        report?.sections.filter { Self.safeSectionIDs.contains($0.id) } ?? []
+        (report?.sections ?? []).filter { section in
+            guard Self.safeSectionIDs.contains(section.id) else {
+                return false
+            }
+            return section.id != "developer" || !section.findings.isEmpty || section.failure != nil
+        }
     }
 
     /// The groups whose findings are the user's own files.

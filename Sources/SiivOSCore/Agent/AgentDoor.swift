@@ -452,6 +452,8 @@ public struct AgentDoor: Sendable {
 
     private struct CleanupAnswer: Encodable {
         struct Item: Encodable {
+            /// What the item is, where its file name says little.
+            let name: String?
             let path: String
             let sizeBytes: Int64
             let size: String
@@ -496,6 +498,7 @@ public struct AgentDoor: Sendable {
                     itemCount: section.findings.count,
                     items: section.findings.prefix(limit).map { finding in
                         CleanupAnswer.Item(
+                            name: finding.displayName,
                             path: finding.url.path,
                             sizeBytes: finding.sizeBytes,
                             size: Self.readable(finding.sizeBytes),

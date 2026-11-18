@@ -31,6 +31,9 @@ public struct Finding: Equatable, Identifiable, Sendable {
     /// Set when the item should not be removed right now, for example because the app
     /// it belongs to is open. The item is shown with this reason and cannot be ticked.
     public let heldBackReason: String?
+    /// A name to show for the item when its own file name says little, such as
+    /// "Xcode build results" for a folder called DerivedData. Left out, the file name is shown.
+    public let displayName: String?
 
     public init(
         id: UUID = UUID(),
@@ -39,7 +42,8 @@ public struct Finding: Equatable, Identifiable, Sendable {
         explanation: String,
         safety: Safety,
         safetyReason: String,
-        heldBackReason: String? = nil
+        heldBackReason: String? = nil,
+        displayName: String? = nil
     ) {
         self.id = id
         self.url = url
@@ -48,6 +52,7 @@ public struct Finding: Equatable, Identifiable, Sendable {
         self.safety = safety
         self.safetyReason = safetyReason
         self.heldBackReason = heldBackReason
+        self.displayName = displayName
     }
 }
 
@@ -177,6 +182,7 @@ extension ScanEngine {
             CachesScanner(homeDirectory: homeDirectory, runningApps: runningApps),
             LogsScanner(homeDirectory: homeDirectory, runningApps: runningApps),
             LeftoversScanner(homeDirectory: homeDirectory, runningApps: runningApps),
+            DeveloperClutterScanner(homeDirectory: homeDirectory, runningApps: runningApps),
             OldDownloadsScanner(homeDirectory: homeDirectory),
             LargeFilesScanner(homeDirectory: homeDirectory),
             DuplicateFilesScanner(homeDirectory: homeDirectory)
