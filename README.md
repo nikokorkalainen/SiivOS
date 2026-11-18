@@ -130,3 +130,15 @@ The tests only touch temporary files that they create themselves, apart from a f
 3. Code that inspects or changes the Mac belongs in the engine, with tests.
 4. Every text shown to people is written as `tr("English text")`, with its Finnish added to `Sources/SiivOSCore/Localization/FinnishTexts.swift` in the same change.
 5. Plain words. No scare tactics, and no feature that only looks useful.
+
+## Licence
+
+Copyright © 2026 Niko Korkalainen.
+
+SiivOS is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+
+SiivOS is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the [GNU General Public License](LICENSE) for more details.
+
+In plain words: you may use, change and share SiivOS freely, and if you share a changed version, it has to stay open source under the same licence.
+
+ClamAV is separate software under its own licence. SiivOS does not include it; it only runs a copy you have installed yourself.

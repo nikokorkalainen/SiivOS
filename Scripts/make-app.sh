@@ -76,6 +76,8 @@ cat > "${APP_DIR}/Contents/Info.plist" <<PLIST
     <string>1</string>
     <key>LSMinimumSystemVersion</key>
     <string>14.0</string>
+    <key>NSHumanReadableCopyright</key>
+    <string>Copyright © 2026 Niko Korkalainen. Free software under the GNU General Public License, version 3 or later.</string>
     <key>NSHighResolutionCapable</key>
     <true/>
     <key>NSPrincipalClass</key>

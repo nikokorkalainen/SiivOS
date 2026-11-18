@@ -40,7 +40,7 @@ Purge already covers "open, private, honest, reversible" for storage cleanup, so
 | 5 | Performance | Live view of processor, memory, disk and battery use, with plain-language diagnoses from built-in rules | Done. Built and tried out on macOS 15.8.3 |
 | 6 | Protection | ClamAV for malware, plus own checks for adware, suspicious background agents, browser extensions and configuration profiles | Done. Built and tried out on macOS 15.8.3, including a real ClamAV 1.5.4: definitions downloaded and Downloads scanned |
 | 7 | Health timeline | Health score with local history | Done. Built and tried out on macOS 15.8.3, with all 144 engine tests passing there. A score out of 100 that shows its reasons, a reading when the app opens (at most every six hours) kept in `health-history.json`, charts of the score and free space over time, and a list of what has changed: apps, background items, browser extensions, profiles, macOS's protections, free space, and SiivOS's own changes |
-| 8 | Polish | Menu bar widget, tests, README and licence, ready for an open-source release | Built, waiting for the owner to build and try it on the Mac. Menu bar icon with a panel (health score, disk, memory, processor, new changes worth a look), a Settings window with the switch for it and a privacy statement, tests for the safety paths that had none, and a README written for the public. The licence waits for the owner's choice |
+| 8 | Polish | Menu bar widget, tests, README and licence, ready for an open-source release | Built, waiting for the owner to build and try it on the Mac. Menu bar icon with a panel (health score, disk, memory, processor, new changes worth a look), a Settings window with the switch for it and a privacy statement, tests for the safety paths that had none, a README written for the public, and the licence: GNU General Public License version 3 or later, chosen by the owner on 18 November 2026. Running the tests automatically on GitHub was offered and left for when the repository goes public, where it is free |
 | 9 | AI assistant (later) | Added once the rules-based diagnoses work | Not started |
 
 ## Planned additions
@@ -98,5 +98,6 @@ Kept short on purpose. A setting is only added when people would reasonably want
 - `Tests/SiivOSCoreTests/` holds tests for the engine.
 - `docs/design.md` describes how the screens should look and behave. The screens follow it.
 - `Resources/AppIcon.icns` is the app icon; its master files are in `design/icon/`.
+- `LICENSE` is the GNU General Public License, version 3.
 - `Scripts/make-app.sh` builds a double-clickable `SiivOS.app`.
 - `Scripts/check-engine-on-linux.sh` compiles and tests the engine in Claude's Linux workspace.
