@@ -17,16 +17,31 @@ the written version so the app code can follow it. Written against the code on t
 
 ## Look
 
+The main design is the **green look** in dark mode, with a standard light mode alongside it.
+The app follows the Mac's appearance setting. Colours and backgrounds are in
+`Sources/SiivOS/SiivOSTheme.swift`.
+
 - **Font:** the system font only (SF Pro). No custom fonts in the app.
 - **Layout:** the existing `NavigationSplitView` with a sidebar. Content is left aligned with a
   readable maximum width (about 860 to 960 pt) rather than a narrow centred column.
-- **Accent colour:** add an `AccentColor` asset.
-  - Light appearance: `#2F7A5F` (moss green).
-  - Dark appearance: `#2F7A5F` for filled buttons and the selected sidebar row. Use `#9CCBB0`
-    (lichen) for tinted icons, links and chart lines on dark backgrounds, where moss is too dark.
-- **Light and dark mode:** both are required. Use system semantic colours (`.primary`,
-  `.secondary`, `Color(nsColor: .windowBackgroundColor)` and so on) everywhere else so both
-  modes work without extra code.
+- **Dark mode, the green look:**
+  - Window: `SiivOSWindowBackground()`, a soft diagonal gradient (`#13563F` top left,
+    `#0B3A2E`, `#072519` bottom right), behind the detail column. Use
+    `.scrollContentBackground(.hidden)` on lists and forms so the gradient shows through.
+  - Sidebar: `SiivOSSidebarBackground()` behind the sidebar `List`, also with
+    `.scrollContentBackground(.hidden)`. Deep green with a hint of the gradient.
+  - Panels and dividers: `SiivOSTheme.panel` (white at 6 %) and `SiivOSTheme.divider` (white
+    at 9 %), so they sit on the green instead of looking like grey boxes.
+  - Text: the system primary and secondary colours. They read well on the green as they are.
+  - Prominent buttons: `.buttonStyle(.borderedProminent)` with `.tint(SiivOSTheme.prominent)`,
+    which is mint. Mint needs dark text: if the label stays white, add
+    `.foregroundStyle(SiivOSTheme.onProminent)` to the label.
+  - Icons: the SiivOS icon set in mint `#7EE0B4`, with white details.
+- **Light mode:** standard macOS window and sidebar, moss `#2F7A5F` for prominent buttons with
+  white text, moss icons with jade details.
+- **Accent colour:** add an `AccentColor` asset of moss `#2F7A5F` in both appearances. macOS uses
+  it for the selected sidebar row, checkboxes and focus rings. (The canvas shows the selected row
+  as a soft white highlight in dark mode; that needs a custom sidebar, so moss is fine for now.)
 - **Sizes:** keep using `ByteCountFormatter`, so the user's region decides the decimal comma.
 
 ## Sidebar

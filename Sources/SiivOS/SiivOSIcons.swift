@@ -79,9 +79,9 @@ struct SiivOSIconView: View {
 
 /// Colours for the icon set.
 enum SiivOSIconColors {
-    /// Lichen (#9CCBB0) in dark mode, moss (#2F7A5F) in light mode.
+    /// Mint (#7EE0B4) in dark mode, on the green look; moss (#2F7A5F) in light mode.
     static let tint = adaptive(
-        dark: NSColor(srgbRed: 0.612, green: 0.796, blue: 0.690, alpha: 1),
+        dark: NSColor(srgbRed: 0.494, green: 0.878, blue: 0.706, alpha: 1),
         light: NSColor(srgbRed: 0.184, green: 0.478, blue: 0.373, alpha: 1)
     )
 
