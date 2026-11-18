@@ -11,6 +11,8 @@ struct ContentView: View {
     @StateObject private var apps = AppsModel()
     /// Kept here so that the charts keep their history during a short visit elsewhere.
     @StateObject private var performance = PerformanceModel()
+    /// Kept here so that the results of a protection check survive a visit elsewhere.
+    @StateObject private var protection = ProtectionModel()
     @ObservedObject private var holding = HoldingStatus.shared
     /// Whether the sidebar shows icons only. Kept in view state so that changing it can
     /// animate, and saved so that it is remembered between launches.
@@ -58,6 +60,8 @@ struct ContentView: View {
             AppsView(model: apps)
         case .performance:
             PerformanceView(model: performance, cleanup: cleanup, open: { selection = $0 })
+        case .protection:
+            ProtectionView(model: protection)
         case .history:
             HistoryView()
         default:

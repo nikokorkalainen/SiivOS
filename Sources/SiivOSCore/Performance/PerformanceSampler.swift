@@ -48,8 +48,10 @@ struct CPUTicks: Equatable {
 
 /// Runs one of macOS's own command-line tools and returns what it printed.
 enum SystemCommand {
+    /// - Parameter includingErrors: Also capture what the tool prints as errors. Some
+    ///   tools, such as `codesign`, report their findings there.
     /// - Returns: The tool's output, or `nil` when it is missing or could not be run.
-    static func output(of path: String, _ arguments: [String]) -> String? {
+    static func output(of path: String, _ arguments: [String], includingErrors: Bool = false) -> String? {
         guard FileManager.default.isExecutableFile(atPath: path) else {
             return nil
         }
@@ -63,7 +65,11 @@ enum SystemCommand {
 
         let pipe = Pipe()
         process.standardOutput = pipe
-        process.standardError = FileHandle.nullDevice
+        if includingErrors {
+            process.standardError = pipe
+        } else {
+            process.standardError = FileHandle.nullDevice
+        }
         do {
             try process.run()
         } catch {

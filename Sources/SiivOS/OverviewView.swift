@@ -97,7 +97,7 @@ struct OverviewView: View {
                 cleanupCard
                 linkCard(.apps, text: tr("See your apps, their size and what starts in the background."))
                 linkCard(.performance, text: tr("See what is using the processor, memory, disk and battery right now."))
-                QuietCard(section: .protection)
+                linkCard(.protection, text: tr("Check the Mac's built-in protection, what starts by itself, browser extensions and profiles."))
             }
         }
     }
@@ -242,21 +242,6 @@ private struct CardTitle: View {
             SiivOSIconView(section.icon, size: iconSize)
             Text(section.title)
                 .font(.headline)
-        }
-    }
-}
-
-/// A card for a part of the app that does not exist yet.
-private struct QuietCard: View {
-    let section: AppSection
-
-    var body: some View {
-        Card {
-            VStack(alignment: .leading, spacing: 8) {
-                CardTitle(section: section)
-                Text(tr("Coming in a later update"))
-                    .foregroundStyle(.secondary)
-            }
         }
     }
 }

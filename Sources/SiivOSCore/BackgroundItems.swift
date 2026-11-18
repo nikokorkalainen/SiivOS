@@ -18,6 +18,8 @@ public struct BackgroundItem: Equatable, Identifiable, Sendable {
     public let label: String
     /// Path of the program that gets started, if the file names one.
     public let program: String?
+    /// The program and everything passed to it, as the file lists them.
+    public let arguments: [String]
     public let scope: Scope
     /// True when the program starts at login or startup, not only when something asks for it.
     public let startsAutomatically: Bool
@@ -90,6 +92,7 @@ public enum BackgroundItems {
             url: url,
             label: (settings["Label"] as? String) ?? url.deletingPathExtension().lastPathComponent,
             program: program,
+            arguments: arguments ?? (program.map { [$0] } ?? []),
             scope: scope,
             startsAutomatically: runAtLoad || keepAlive,
             isDisabled: (settings["Disabled"] as? Bool) ?? false,

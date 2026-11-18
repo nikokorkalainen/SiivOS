@@ -38,7 +38,7 @@ Purge already covers "open, private, honest, reversible" for storage cleanup, so
 | 3 | Clutter cleanup | Caches, logs, old downloads, large and duplicate files, leftovers from removed apps | Done. Built and tried out on macOS 15.8.3 |
 | 4 | App manager | All apps with size and last use, full uninstall including leftovers, login items and background agents | Done. Built and tried out on macOS 15.8.3. Login items are not listed, only linked to in System Settings (see Known constraints) |
 | 5 | Performance | Live view of processor, memory, disk and battery use, with plain-language diagnoses from built-in rules | Done. Built and tried out on macOS 15.8.3 |
-| 6 | Protection | ClamAV for malware, plus own checks for adware, suspicious background agents, browser extensions and configuration profiles | Not started |
+| 6 | Protection | ClamAV for malware, plus own checks for adware, suspicious background agents, browser extensions and configuration profiles | Own checks built: engine tests pass in Claude's workspace, awaiting build and test on a Mac. ClamAV not started: waiting for the owner to choose how it is obtained and whether it may download virus definitions |
 | 7 | Health timeline | Health score with local history | Not started |
 | 8 | Polish | Menu bar widget, tests, README and licence, ready for an open-source release | Not started |
 | 9 | AI assistant (later) | Added once the rules-based diagnoses work | Not started |
@@ -55,10 +55,10 @@ Ideas taken from the comparison above and from the owner. Each is built as part 
 | Developer clutter: Xcode data, Homebrew, npm and Docker caches | Purge | Phase 3 follow-up | Not started |
 | Count copies that share disk space once, so sizes are honest | Purge | Phase 3 follow-up | Not started |
 | Visual map of the largest folders on the disk | CleanMyMac | Phase 3 follow-up | Not started |
-| App permissions overview: which apps can use the camera, microphone and files | CleanMyMac | Phase 6 | Not started |
-| Notice and record new background items when they appear | SiivOS's own | Phases 6 and 7 | Not started |
+| App permissions overview: which apps can use the camera, microphone and files | CleanMyMac | Phase 6 | Built with Phase 6's own checks. It needs Full Disk Access to show anything |
+| Notice and record new background items when they appear | SiivOS's own | Phase 7, where the history of readings is built | Not started |
 | Green look, SiivOS icon set, sidebar logo and the app-drawn sidebar from `docs/design.md` | Owner's design notes | All screens | Done. Built and tried out on macOS 15.8.3 in dark and light mode |
-| Sidebar cannot be hidden; its own button collapses it to slightly larger icons only. The app lays out the sidebar and content itself, without the standard split view, and the window has no title bar strip. Collapsing is animated, and the collapsed sidebar shows the two glints in place of the logo | Owner | Sidebar and window | Collapsing works on macOS 15.8.3. The animation and the glints are built, awaiting test on a Mac |
+| Sidebar cannot be hidden; its own button collapses it to slightly larger icons only. The app lays out the sidebar and content itself, without the standard split view, and the window has no title bar strip. Collapsing is animated, and the collapsed sidebar shows the two glints in place of the logo | Owner | Sidebar and window | Done. Built and tried out on macOS 15.8.3 |
 | Settings window (see below) | Owner | Phase 8, or earlier where a phase needs a setting | Proposed, not yet agreed |
 | Finnish language version. The app follows the Mac's language, with English as the fallback | Owner | Its own step after Phase 4, then kept up to date in every later phase | Done. Built and tried out on macOS 15.8.3. The owner chose "sovellus", "terveys" and "Terveystiedot" |
 | Screens redesigned to follow `docs/design.md`: Overview with Check This Mac and a three-part disk bar, Cleanup in two parts with a bottom action bar and Undo, History as one list, app icon | Owner's design notes | Overview, Cleanup, History, sidebar and the confirmation sheet | Done. Built and tried out on macOS 15.8.3, including the glint loading animation |
