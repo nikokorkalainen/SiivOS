@@ -109,8 +109,9 @@ struct OverviewView: View {
             VStack(alignment: .leading, spacing: 8) {
                 CardTitle(section: .cleanup)
                 if cleanup.isScanning {
-                    Text(tr("Checking now…"))
-                        .foregroundStyle(.secondary)
+                    LoadingView(text: tr("Checking now…"))
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 8)
                 } else if cleanup.report == nil {
                     Text(tr("Check this Mac to see what can be removed."))
                         .foregroundStyle(.secondary)

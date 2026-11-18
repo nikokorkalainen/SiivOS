@@ -69,6 +69,20 @@ struct PageHeader<Trailing: View>: View {
     }
 }
 
+/// The SiivOS loading indicator with the progress text under it, as the design notes ask:
+/// the glints, then the text in secondary colour, 18 pt apart.
+struct LoadingView: View {
+    let text: String
+
+    var body: some View {
+        VStack(spacing: 18) {
+            GlintLoader()
+            Text(text)
+                .foregroundStyle(.secondary)
+        }
+    }
+}
+
 /// A rounded box that holds one topic.
 struct Card<Content: View>: View {
     private let content: Content

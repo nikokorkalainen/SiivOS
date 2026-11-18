@@ -51,7 +51,7 @@ struct AppsView: View {
     @ViewBuilder
     private var content: some View {
         if model.isLoading {
-            ProgressView(progressText)
+            LoadingView(text: progressText)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else if tab == .apps {
             AppListView(model: model)

@@ -30,7 +30,7 @@ struct CleanupView: View {
     @ViewBuilder
     private var content: some View {
         if model.isScanning {
-            ProgressView(progressText)
+            LoadingView(text: progressText)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else if model.report != nil {
             CleanupResultsView(model: model)
