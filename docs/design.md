@@ -186,6 +186,20 @@ Follows the existing `PerformanceView`; these are the design changes.
 - Sparklines: the tint colour as a 2 pt line over a soft fade of the same colour, no axes.
 - No icons in the panel titles; the sidebar already says where you are.
 
+## Switching views (Apps and Background Items)
+
+The standard segmented picker is thin and faint on the green, and it stretches across the window.
+Use `SiivOSSegmentedControl` (`Sources/SiivOS/SiivOSSegmentedControl.swift`) instead:
+
+- 40 pt tall overall: a track (white at 8 % in dark mode, white in light mode, thin outline,
+  corner radius 11) holding segments 34 pt tall, at least 128 pt wide, 14 pt text.
+- The selected segment is filled with the prominent colour: mint with dark text in dark mode,
+  moss with white text in light mode, semibold. Others are medium weight in the primary colour.
+- It hugs its content and sits on the left under the page title, not stretched full width.
+- On the Apps screen: page title "Apps", one line of subtitle, then the control, then the content.
+  Replace the `Picker` with `.pickerStyle(.segmented)` in `AppsView`. The same control suits any
+  other place that switches between two or three views.
+
 ## Before anything changes (sheet)
 
 Keep the existing `RemovalPlanSheet`, with shorter copy:
