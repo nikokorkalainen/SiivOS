@@ -8,6 +8,8 @@ struct ContentView: View {
     @StateObject private var cleanup = CleanupModel()
     /// Kept here so that the app list is only measured once.
     @StateObject private var apps = AppsModel()
+    /// Kept here so that the charts keep their history during a short visit elsewhere.
+    @StateObject private var performance = PerformanceModel()
     @ObservedObject private var holding = HoldingStatus.shared
 
     var body: some View {
@@ -43,6 +45,8 @@ struct ContentView: View {
             CleanupView(model: cleanup)
         case .apps:
             AppsView(model: apps)
+        case .performance:
+            PerformanceView(model: performance, open: { selection = $0 })
         case .history:
             HistoryView()
         default:

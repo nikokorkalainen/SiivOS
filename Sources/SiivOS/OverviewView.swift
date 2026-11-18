@@ -97,8 +97,8 @@ struct OverviewView: View {
                 spacing: 16
             ) {
                 cleanupCard
-                appsCard
-                QuietCard(section: .performance)
+                linkCard(.apps, text: tr("See your apps, their size and what starts in the background."))
+                linkCard(.performance, text: tr("See what is using the processor, memory, disk and battery right now."))
                 QuietCard(section: .protection)
             }
         }
@@ -143,15 +143,16 @@ struct OverviewView: View {
         return tr("%1$@ of your own files to look through.", "\(count)")
     }
 
-    private var appsCard: some View {
+    /// A card that says what a section is for and opens it.
+    private func linkCard(_ section: AppSection, text: String) -> some View {
         Card {
             VStack(alignment: .leading, spacing: 8) {
-                CardTitle(section: .apps)
-                Text(tr("See your apps, their size and what starts in the background."))
+                CardTitle(section: section)
+                Text(text)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
                 Button(tr("Open")) {
-                    open(.apps)
+                    open(section)
                 }
             }
         }
