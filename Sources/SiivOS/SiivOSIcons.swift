@@ -16,6 +16,10 @@ enum SiivOSIcon: String, CaseIterable {
     case protection
     case timeline
     case history
+    /// Notices: something is fine, worth knowing, or needs attention.
+    case good
+    case note
+    case attention
 }
 
 /// Draws one icon from the SiivOS set.
@@ -39,7 +43,7 @@ struct SiivOSIconView: View {
     }
 
     var body: some View {
-        let tint = isSelected ? Color.white : SiivOSIconColors.tint
+        let tint = isSelected ? Color.white : (icon == .attention ? SiivOSIconColors.attention : SiivOSIconColors.tint)
         let highlight = isSelected ? Color.white : SiivOSIconColors.highlight
         let parts = SiivOSIconParts.parts(for: icon)
         Canvas { graphics, canvasSize in
@@ -83,6 +87,12 @@ enum SiivOSIconColors {
     static let tint = adaptive(
         dark: NSColor(srgbRed: 0.494, green: 0.878, blue: 0.706, alpha: 1),
         light: NSColor(srgbRed: 0.184, green: 0.478, blue: 0.373, alpha: 1)
+    )
+
+    /// For the attention notice: a calm amber, #E3C46A in dark mode and #8A6508 in light mode.
+    static let attention = adaptive(
+        dark: NSColor(srgbRed: 0.890, green: 0.769, blue: 0.416, alpha: 1),
+        light: NSColor(srgbRed: 0.541, green: 0.396, blue: 0.031, alpha: 1)
     )
 
     /// White in dark mode, jade (#1A9E73) in light mode.
@@ -172,6 +182,32 @@ struct SiivOSIconParts {
                 fills: [area],
                 strokes: [polygon(points, closed: false), line(3, 20, 21, 20)],
                 highlightFills: [circle(21, 9, 1.6)]
+            )
+
+        case .good:
+            let ring = circle(12, 12, 8.5)
+            return SiivOSIconParts(
+                fills: [ring],
+                strokes: [ring],
+                highlightStrokes: [polygon([(8.4, 12.3), (10.8, 14.7), (15.6, 9.7)], closed: false)]
+            )
+
+        case .note:
+            let ring = circle(12, 12, 8.5)
+            return SiivOSIconParts(
+                fills: [ring],
+                strokes: [ring],
+                highlightStrokes: [line(12, 11, 12, 16.4)],
+                highlightFills: [circle(12, 7.9, 1.2)]
+            )
+
+        case .attention:
+            let ring = circle(12, 12, 8.5)
+            return SiivOSIconParts(
+                fills: [ring],
+                strokes: [ring],
+                highlightStrokes: [line(12, 7.4, 12, 13)],
+                highlightFills: [circle(12, 16.2, 1.2)]
             )
 
         case .history:
