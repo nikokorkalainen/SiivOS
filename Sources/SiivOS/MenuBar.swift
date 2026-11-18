@@ -20,7 +20,8 @@ final class AppNavigation: ObservableObject {
     @Published var selection: AppSection = .overview
 }
 
-/// Keeps hold of the app's window, so that the menu bar can bring it to the front.
+/// Keeps hold of the app's window, so that the menu bar can bring it to the front, and
+/// remembers the window's size and place.
 @MainActor
 enum MainWindow {
     /// The identifier of the window's scene.
@@ -33,17 +34,35 @@ enum MainWindow {
     /// (240 + 1 + 24 + 900 + 24 = 1189), so the Overview shows three cards in a row.
     static let defaultSize = CGSize(width: 1_200, height: 800)
 
-    /// The name under which the window's size and place are remembered.
-    private static let frameName = "SiivOSMainWindowFrame"
+    /// Where the window's size and place are remembered, as macOS writes them down.
+    static let frameKey = "mainWindowFrame"
+    /// Where the size of the window's content is remembered, for the size of a new window.
+    static let contentWidthKey = "mainWindowContentWidth"
+    static let contentHeightKey = "mainWindowContentHeight"
 
-    /// Gives the window the size and place it had when it was last used, if any.
-    /// macOS keeps the window on the screen if the screens have changed since.
+    /// The size and place the window was last left in, or `nil` if it has never been
+    /// moved or resized.
+    private static var rememberedFrame: String? {
+        UserDefaults.standard.string(forKey: frameKey)
+    }
+
+    /// True when the window is where it was last left.
+    static func isAsRemembered(_ window: NSWindow) -> Bool {
+        guard let remembered = rememberedFrame else {
+            return true
+        }
+        return window.frameDescriptor == remembered
+    }
+
+    /// Gives the window the size and place it was last left in. macOS keeps the window
+    /// on the screen if the screens have changed since.
     ///
     /// A window with nothing remembered gets the default size, centred. This is done
     /// here as well as on the scene, because macOS may bring back a size of its own
     /// from an earlier version of SiivOS, which would be the old small one.
     static func restoreFrame(of window: NSWindow) {
-        if window.setFrameUsingName(frameName) {
+        if let remembered = rememberedFrame {
+            window.setFrame(from: remembered)
             return
         }
         var size = defaultSize
@@ -53,7 +72,6 @@ enum MainWindow {
         }
         window.setContentSize(size)
         window.center()
-        saveFrame(of: window)
     }
 
     /// Remembers the window's size and place for the next time it opens.
@@ -62,7 +80,20 @@ enum MainWindow {
         guard !window.styleMask.contains(.fullScreen) else {
             return
         }
-        window.saveFrame(usingName: frameName)
+        let defaults = UserDefaults.standard
+        let frame = window.frameDescriptor
+        if defaults.string(forKey: frameKey) != frame {
+            defaults.set(frame, forKey: frameKey)
+        }
+        // The size of the content is what a new window is asked to open in.
+        if let size = window.contentView?.frame.size, size.width > 0, size.height > 0 {
+            if defaults.double(forKey: contentWidthKey) != Double(size.width) {
+                defaults.set(Double(size.width), forKey: contentWidthKey)
+            }
+            if defaults.double(forKey: contentHeightKey) != Double(size.height) {
+                defaults.set(Double(size.height), forKey: contentHeightKey)
+            }
+        }
     }
 }
 
@@ -77,42 +108,62 @@ struct MainWindowTracker: NSViewRepresentable {
     func updateNSView(_ nsView: NSView, context: Context) {}
 
     private final class TrackingView: NSView {
+        /// False while the window is still being set up. Sizes and places it is given
+        /// during that time are not the user's doing and must not be remembered.
+        private var isSettled = false
+
         override func viewDidMoveToWindow() {
             super.viewDidMoveToWindow()
             NotificationCenter.default.removeObserver(self)
+            isSettled = false
             guard let window = self.window else {
                 return
             }
             MainWindow.current = window
 
-            // A moment later, so that this comes after the size and place the window is
-            // given while it is being set up. Only then start remembering changes, or
-            // that first set-up would be remembered in place of what the user chose.
-            Task { @MainActor [weak self] in
-                guard let self, self.window === window else {
-                    return
-                }
-                MainWindow.restoreFrame(of: window)
+            let center = NotificationCenter.default
+            center.addObserver(self, selector: #selector(windowChanged(_:)), name: NSWindow.didMoveNotification, object: window)
+            center.addObserver(self, selector: #selector(windowChanged(_:)), name: NSWindow.didResizeNotification, object: window)
+            center.addObserver(self, selector: #selector(windowChanged(_:)), name: NSWindow.willCloseNotification, object: window)
 
-                let center = NotificationCenter.default
-                center.addObserver(self, selector: #selector(self.windowChanged(_:)), name: NSWindow.didEndLiveResizeNotification, object: window)
-                center.addObserver(self, selector: #selector(self.windowChanged(_:)), name: NSWindow.didMoveNotification, object: window)
-                center.addObserver(self, selector: #selector(self.windowChanged(_:)), name: NSWindow.willCloseNotification, object: window)
-                // Quitting does not close the window first, so remember it then too.
-                center.addObserver(self, selector: #selector(self.appWillQuit(_:)), name: NSApplication.willTerminateNotification, object: nil)
+            Task { @MainActor [weak self] in
+                // Put the window where it was left. A new window is still being given
+                // its size and place for a moment after it appears, which can undo
+                // this, so look again shortly afterwards and correct it if needed.
+                MainWindow.restoreFrame(of: window)
+                try? await Task.sleep(nanoseconds: 300_000_000)
+                if !MainWindow.isAsRemembered(window) {
+                    MainWindow.restoreFrame(of: window)
+                }
+                try? await Task.sleep(nanoseconds: 500_000_000)
+                // From here on, changes are the user's own and are remembered. Nothing
+                // is remembered at this point itself: only what the user then does.
+                if let self, self.window === window {
+                    self.isSettled = true
+                }
             }
+        }
+
+        /// Called by macOS when the user lets go after dragging the window's edge.
+        override func viewDidEndLiveResize() {
+            super.viewDidEndLiveResize()
+            remember()
         }
 
         @objc private func windowChanged(_ notification: Notification) {
-            if let window = notification.object as? NSWindow {
-                MainWindow.saveFrame(of: window)
+            // While an edge is being dragged this would run for every step; the end
+            // of the drag is enough.
+            if let window = self.window, window.inLiveResize {
+                return
             }
+            remember()
         }
 
-        @objc private func appWillQuit(_ notification: Notification) {
-            if let window = self.window {
-                MainWindow.saveFrame(of: window)
+        private func remember() {
+            guard isSettled, let window = self.window else {
+                return
             }
+            MainWindow.saveFrame(of: window)
         }
     }
 }

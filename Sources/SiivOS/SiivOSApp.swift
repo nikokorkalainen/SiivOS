@@ -6,6 +6,10 @@ struct SiivOSApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     /// Whether SiivOS shows itself in the menu bar. Changed in Settings.
     @AppStorage(AppSettings.showsMenuBarKey) private var showsMenuBar = true
+    /// The size the window's content was last left in, which is the size a new window
+    /// opens in. Kept up to date by `MainWindow`.
+    @AppStorage(MainWindow.contentWidthKey) private var windowWidth = Double(MainWindow.defaultSize.width)
+    @AppStorage(MainWindow.contentHeightKey) private var windowHeight = Double(MainWindow.defaultSize.height)
 
     var body: some Scene {
         WindowGroup("SiivOS", id: MainWindow.sceneID) {
@@ -15,8 +19,8 @@ struct SiivOSApp: App {
         // No title bar strip: the sidebar and the content run to the top of the window,
         // with the window buttons over the sidebar. Each screen shows its own title.
         .windowStyle(.hiddenTitleBar)
-        // The size of a first window. After that the window remembers how it was left.
-        .defaultSize(MainWindow.defaultSize)
+        // A new window opens in the size the last one was left in.
+        .defaultSize(width: windowWidth, height: windowHeight)
 
         // The glints in the menu bar, with a small panel under them.
         MenuBarExtra(isInserted: $showsMenuBar) {
