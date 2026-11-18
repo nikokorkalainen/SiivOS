@@ -11,11 +11,20 @@ struct ContentView: View {
     /// Kept here so that the charts keep their history during a short visit elsewhere.
     @StateObject private var performance = PerformanceModel()
     @ObservedObject private var holding = HoldingStatus.shared
+    /// Whether the sidebar shows icons only. Remembered between launches.
+    @AppStorage("sidebarShowsIconsOnly") private var sidebarIsCompact = false
 
     var body: some View {
-        NavigationSplitView {
-            SidebarView(selection: $selection, heldBytes: holding.heldBytes)
-                .navigationSplitViewColumnWidth(min: 210, ideal: 240)
+        // The sidebar can be collapsed to icons with its own button, but never hidden:
+        // the column is kept visible and the standard hide button is removed.
+        NavigationSplitView(columnVisibility: .constant(.all)) {
+            SidebarView(selection: $selection, heldBytes: holding.heldBytes, isCompact: $sidebarIsCompact)
+                .navigationSplitViewColumnWidth(
+                    min: sidebarIsCompact ? SidebarView.compactWidth : 210,
+                    ideal: sidebarIsCompact ? SidebarView.compactWidth : 240,
+                    max: sidebarIsCompact ? SidebarView.compactWidth : 320
+                )
+                .toolbar(removing: .sidebarToggle)
         } detail: {
             // Fill the whole column first, so the background covers it even when the
             // screen itself is small, such as a start screen.
@@ -54,9 +63,15 @@ struct ContentView: View {
 /// The sidebar, drawn by the app itself. A standard list would draw the selected row in
 /// the accent colour chosen in System Settings, which the app cannot change.
 private struct SidebarView: View {
+    /// Width of the sidebar when it shows icons only: room for the window buttons above
+    /// and one 34 pt icon per row.
+    static let compactWidth: CGFloat = 86
+
     @Binding var selection: AppSection
     /// What is waiting in the holding area, shown next to History when it is not empty.
     let heldBytes: Int64
+    /// True when only the icons are shown.
+    @Binding var isCompact: Bool
 
     @FocusState private var hasFocus: Bool
 
@@ -67,7 +82,8 @@ private struct SidebarView: View {
                     SidebarRow(
                         section: section,
                         isSelected: selection == section,
-                        trailingText: trailingText(for: section)
+                        trailingText: trailingText(for: section),
+                        isCompact: isCompact
                     ) {
                         selection = section
                         hasFocus = true
@@ -78,7 +94,16 @@ private struct SidebarView: View {
             .padding(.bottom, 10)
         }
         .safeAreaInset(edge: .top, spacing: 0) {
-            SiivOSSidebarHeader()
+            // The logo is wider than the collapsed sidebar, so it is left out there.
+            if isCompact {
+                Color.clear
+                    .frame(height: 8)
+            } else {
+                SiivOSSidebarHeader()
+            }
+        }
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            collapseButton
         }
         .background(SiivOSSidebarBackground())
         // The arrow keys move through the sections once the sidebar has been clicked.
@@ -88,6 +113,25 @@ private struct SidebarView: View {
         .onMoveCommand { direction in
             move(direction)
         }
+    }
+
+    /// Switches between names with icons and icons only.
+    private var collapseButton: some View {
+        Button {
+            isCompact.toggle()
+        } label: {
+            Image(systemName: isCompact ? "chevron.right.2" : "chevron.left.2")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(.secondary)
+                .frame(width: 34, height: 28)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .help(isCompact ? tr("Show Section Names") : tr("Show Icons Only"))
+        .accessibilityLabel(isCompact ? tr("Show Section Names") : tr("Show Icons Only"))
+        .frame(maxWidth: .infinity, alignment: isCompact ? .center : .leading)
+        .padding(.horizontal, 14)
+        .padding(.vertical, 8)
     }
 
     /// History shows how much is waiting in the holding area. Nothing else has a label.
@@ -124,6 +168,8 @@ private struct SidebarRow: View {
     let section: AppSection
     let isSelected: Bool
     let trailingText: String?
+    /// True when only the icon is shown, a little larger.
+    let isCompact: Bool
     let action: () -> Void
 
     @Environment(\.colorScheme) private var colorScheme
@@ -139,24 +185,29 @@ private struct SidebarRow: View {
     var body: some View {
         Button(action: action) {
             HStack(spacing: 10) {
-                SiivOSIconView(section.icon, isSelected: isOnMoss)
-                Text(section.title)
-                    .foregroundStyle(isOnMoss ? Color.white : Color.primary)
-                Spacer(minLength: 8)
-                if let trailingText {
-                    Text(trailingText)
-                        .font(.callout)
-                        .monospacedDigit()
-                        .foregroundStyle(isOnMoss ? Color.white.opacity(0.85) : Color.secondary)
+                SiivOSIconView(section.icon, size: isCompact ? 34 : 30, isSelected: isOnMoss)
+                if !isCompact {
+                    Text(section.title)
+                        .foregroundStyle(isOnMoss ? Color.white : Color.primary)
+                    Spacer(minLength: 8)
+                    if let trailingText {
+                        Text(trailingText)
+                            .font(.callout)
+                            .monospacedDigit()
+                            .foregroundStyle(isOnMoss ? Color.white.opacity(0.85) : Color.secondary)
+                    }
                 }
             }
-            .padding(.horizontal, 10)
-            .padding(.vertical, 11)
-            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, isCompact ? 0 : 10)
+            .padding(.vertical, isCompact ? 9 : 11)
+            .frame(maxWidth: .infinity, alignment: isCompact ? .center : .leading)
             .background(background, in: RoundedRectangle(cornerRadius: 8))
             .contentShape(RoundedRectangle(cornerRadius: 8))
         }
         .buttonStyle(.plain)
+        // With only the icon showing, the name appears when the pointer rests on the row.
+        .help(section.title)
+        .accessibilityLabel(section.title)
         .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 

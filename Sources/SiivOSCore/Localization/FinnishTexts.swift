@@ -269,5 +269,7 @@ enum FinnishTexts {
         "Scan this Mac for clutter": "Etsi tästä Macista turhat tiedostot",
         "Scanning only looks. Nothing is removed until you tick items and confirm.": "Tarkistus vain katsoo. Mitään ei poisteta, ennen kuin valitset kohteet ja vahvistat.",
         "macOS may ask for permission to look in your Desktop, Documents and Downloads folders.": "macOS voi pyytää lupaa katsoa Työpöytä-, Dokumentit- ja Lataukset-kansioihin.",
+        "Show Section Names": "Näytä osioiden nimet",
+        "Show Icons Only": "Näytä vain kuvakkeet",
     ]
 }
