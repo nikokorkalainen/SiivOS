@@ -107,17 +107,23 @@ private struct SidebarView: View {
             // The full logo is wider than the collapsed sidebar, so there the two glints
             // stand in for it, like the app icon. Both take the same height, so the rows
             // below stay where they are.
-            if isCompact {
-                SiivOSGlintMark()
-                    .frame(height: 39)
-                    .frame(maxWidth: .infinity)
-                    .padding(.top, 10)
-                    .padding(.bottom, 14)
-                    .transition(.opacity)
-            } else {
-                SiivOSSidebarHeader()
-                    .transition(.opacity)
+            Group {
+                if isCompact {
+                    SiivOSGlintMark()
+                        .frame(height: 39)
+                        .frame(maxWidth: .infinity)
+                        .padding(.top, 10)
+                        .padding(.bottom, 14)
+                        // The glints grow into place and shrink away, as well as fading.
+                        .transition(.scale(scale: 0.4).combined(with: .opacity))
+                } else {
+                    SiivOSSidebarHeader()
+                        .transition(.opacity)
+                }
             }
+            // A little air above and below the logo, in both states.
+            .padding(.top, 10)
+            .padding(.bottom, 10)
         }
         .safeAreaInset(edge: .bottom, spacing: 0) {
             collapseButton
