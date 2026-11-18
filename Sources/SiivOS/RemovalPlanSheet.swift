@@ -65,6 +65,7 @@ struct RemovalPlanSheet: View {
             HStack {
                 Spacer()
                 Button(plan.items.isEmpty ? tr("Close") : tr("Cancel"), role: .cancel, action: onCancel)
+                    .buttonStyle(SiivOSButtonStyle(.standard))
                     .keyboardShortcut(.cancelAction)
                 if !plan.items.isEmpty {
                     ProminentButton(tr("Move to Holding Area"), action: onConfirm)

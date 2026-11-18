@@ -13,17 +13,32 @@ struct AppsView: View {
     }
 
     var body: some View {
-        VStack(spacing: 0) {
-            Picker(tr("View"), selection: $tab) {
-                Text(tr("Apps")).tag(Tab.apps)
-                Text(tr("Background Items")).tag(Tab.background)
+        VStack(alignment: .leading, spacing: 0) {
+            VStack(alignment: .leading, spacing: 16) {
+                PageHeader(
+                    title: tr("Apps"),
+                    subtitle: tr("See your apps, their size and what starts in the background.")
+                ) {
+                    Button {
+                        model.load()
+                    } label: {
+                        ButtonLabel(title: tr("Refresh"), systemImage: "arrow.clockwise")
+                    }
+                    .buttonStyle(SiivOSButtonStyle(.standard))
+                    .disabled(model.isLoading || model.isWorking)
+                }
+                SiivOSSegmentedControl(selection: $tab, options: [
+                    (.apps, tr("Apps")),
+                    (.background, tr("Background Items"))
+                ])
             }
-            .pickerStyle(.segmented)
-            .labelsHidden()
-            .padding()
+            .padding(.horizontal, 24)
+            .padding(.top, 24)
+            .padding(.bottom, 12)
 
             content
         }
+        .readableWidth()
         .navigationTitle(tr("Apps"))
         .onAppear {
             if !model.hasLoaded {
@@ -91,11 +106,8 @@ private struct AppListView: View {
                     }
                 }
                 .frame(width: 260)
-                Button(tr("Refresh")) {
-                    model.load()
-                }
             }
-            .padding(.horizontal)
+            .padding(.horizontal, 24)
             .padding(.bottom, 8)
 
             List(model.visibleApps) { info in
@@ -141,6 +153,7 @@ private struct AppRow: View {
                     .frame(width: 110)
             } else {
                 Button(tr("Uninstall…"), action: onUninstall)
+                    .buttonStyle(SiivOSButtonStyle(.small))
                     .disabled(isWorking)
                     .frame(width: 110)
             }
@@ -182,6 +195,7 @@ private struct BackgroundItemsView: View {
                         NSWorkspace.shared.open(url)
                     }
                 }
+                .buttonStyle(SiivOSButtonStyle(.small))
             }
 
             BackgroundSection(
@@ -277,7 +291,7 @@ private struct BackgroundRow: View {
                 }
             }
         }
-        .buttonStyle(.bordered)
+        .buttonStyle(SiivOSButtonStyle(.small))
         .padding(.vertical, 2)
     }
 

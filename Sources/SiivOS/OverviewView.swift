@@ -18,7 +18,6 @@ struct OverviewView: View {
                         snapshot = SystemSnapshot.current()
                         cleanup.scan()
                     }
-                    .controlSize(.large)
                     .disabled(cleanup.isScanning)
                     .help(tr("Look for things that can be removed. Checking only looks; nothing is changed."))
                 }
@@ -127,6 +126,7 @@ struct OverviewView: View {
                 Button(tr("Review")) {
                     open(.cleanup)
                 }
+                .buttonStyle(SiivOSButtonStyle(.small))
             }
         }
     }
@@ -153,6 +153,7 @@ struct OverviewView: View {
                 Button(tr("Open")) {
                     open(section)
                 }
+                .buttonStyle(SiivOSButtonStyle(.small))
             }
         }
     }

@@ -49,13 +49,13 @@ struct DisclosureArrow: View {
     }
 }
 
-/// The inside of a button: an optional 20 pt symbol, then the title.
+/// The inside of a button: an optional 20 pt symbol, then the title, 8 pt apart.
 struct ButtonLabel: View {
     let title: String
     var systemImage: String?
 
     var body: some View {
-        HStack(spacing: 6) {
+        HStack(spacing: 8) {
             if let systemImage {
                 Image(systemName: systemImage)
                     .font(.system(size: 20))
@@ -65,15 +65,21 @@ struct ButtonLabel: View {
     }
 }
 
-/// A screen's main button: mint with dark text in dark mode, moss with white text in light mode.
+/// A screen's main button: mint with dark text in dark mode, moss with white text in light
+/// mode. 36 pt tall with 8 pt corners, as the design notes ask. Every other button uses
+/// `SiivOSButtonStyle`.
 struct ProminentButton: View {
     private let title: String
     private let systemImage: String?
+    private let isDestructive: Bool
     private let action: () -> Void
 
-    init(_ title: String, systemImage: String? = nil, action: @escaping () -> Void) {
+    /// - Parameter isDestructive: Fills the button red, for confirming something that
+    ///   cannot be undone.
+    init(_ title: String, systemImage: String? = nil, isDestructive: Bool = false, action: @escaping () -> Void) {
         self.title = title
         self.systemImage = systemImage
+        self.isDestructive = isDestructive
         self.action = action
     }
 
@@ -81,7 +87,7 @@ struct ProminentButton: View {
         Button(action: action) {
             ButtonLabel(title: title, systemImage: systemImage)
         }
-        .buttonStyle(ProminentButtonStyle())
+        .buttonStyle(ProminentButtonStyle(isDestructive: isDestructive))
     }
 }
 
@@ -89,27 +95,52 @@ struct ProminentButton: View {
 /// us and keeps it light, which is hard to read on mint, so the theme's colours are
 /// applied directly here.
 private struct ProminentButtonStyle: ButtonStyle {
+    let isDestructive: Bool
+
     func makeBody(configuration: Configuration) -> some View {
-        ProminentButtonBody(label: configuration.label, isPressed: configuration.isPressed)
+        ProminentButtonBody(
+            label: configuration.label,
+            isPressed: configuration.isPressed,
+            isDestructive: isDestructive
+        )
     }
 }
 
 private struct ProminentButtonBody<Content: View>: View {
     let label: Content
     let isPressed: Bool
+    let isDestructive: Bool
 
     @Environment(\.isEnabled) private var isEnabled
-    @Environment(\.controlSize) private var controlSize
+    @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
         label
-            .font(.body.weight(.medium))
-            .foregroundStyle(SiivOSTheme.onProminent)
-            .padding(.horizontal, controlSize == .large ? 14 : 10)
-            .padding(.vertical, controlSize == .large ? 6 : 3)
-            .background(SiivOSTheme.prominent, in: RoundedRectangle(cornerRadius: 7))
+            .font(.system(size: 14, weight: .semibold))
+            .foregroundStyle(textColor)
+            .padding(.horizontal, 18)
+            .frame(minHeight: 36)
+            .background(fillColor, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
             .opacity(isEnabled ? (isPressed ? 0.8 : 1) : 0.45)
-            .contentShape(RoundedRectangle(cornerRadius: 7))
+            .contentShape(Rectangle())
+    }
+
+    /// Red for a destructive confirmation: #FF8A80 in dark mode, #C9372C in light mode,
+    /// the same reds as the red text of `SiivOSButtonStyle`.
+    private var fillColor: Color {
+        guard isDestructive else {
+            return SiivOSTheme.prominent
+        }
+        return colorScheme == .dark
+            ? Color(red: 1.0, green: 0.541, blue: 0.502)
+            : Color(red: 0.788, green: 0.216, blue: 0.173)
+    }
+
+    private var textColor: Color {
+        guard isDestructive else {
+            return SiivOSTheme.onProminent
+        }
+        return colorScheme == .dark ? Color(red: 0.23, green: 0.04, blue: 0.03) : Color.white
     }
 }
 

@@ -76,7 +76,6 @@ private struct CleanupStartView: View {
             ProminentButton(tr("Scan for Clutter")) {
                 model.scan()
             }
-            .controlSize(.large)
             .padding(.top, 4)
 
             ThemedDivider()
@@ -138,7 +137,7 @@ private struct CleanupResultsView: View {
                     } label: {
                         ButtonLabel(title: tr("Scan Again"), systemImage: "arrow.clockwise")
                     }
-                    .controlSize(.large)
+                    .buttonStyle(SiivOSButtonStyle(.standard))
                     .disabled(model.isWorking)
                 }
 
@@ -189,7 +188,7 @@ private struct RemovalBanner: View {
             } label: {
                 ButtonLabel(title: tr("Undo"), systemImage: "arrow.uturn.backward")
             }
-            .controlSize(.large)
+            .buttonStyle(SiivOSButtonStyle(.standard))
             .disabled(model.isWorking)
             Button {
                 model.dismissRemovalNotice()
@@ -299,7 +298,7 @@ private struct CleanupGroupView: View {
                 Button(model.areAllSelected(tickableFindings) ? tr("Untick All") : tr("Tick All")) {
                     model.setAllSelected(tickableFindings, !model.areAllSelected(tickableFindings))
                 }
-                .controlSize(.small)
+                .buttonStyle(SiivOSButtonStyle(.small))
             }
 
             Text(formatBytes(section.totalBytes))
@@ -446,7 +445,6 @@ private struct CleanupActionBar: View {
             ProminentButton(tr("Remove Ticked Items…")) {
                 model.prepareRemoval()
             }
-            .controlSize(.large)
             .disabled(model.selection.isEmpty || model.isWorking)
         }
         .padding(.horizontal, 24)

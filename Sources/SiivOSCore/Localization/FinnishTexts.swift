@@ -33,7 +33,6 @@ enum FinnishTexts {
         "Some items could not be moved and were left where they are:": "Joitakin kohteita ei voitu siirtää, ja ne jätettiin paikoilleen:",
         "The app could not be moved, so nothing was changed.": "Sovellusta ei voitu siirtää, joten mitään ei muutettu.",
         "macOS may be stopping SiivOS from changing apps. In System Settings, open Privacy & Security, then App Management, and allow SiivOS. Apps installed for all users may also need an administrator to remove them.": "macOS saattaa estää SiivOSia muuttamasta sovelluksia. Avaa Järjestelmäasetuksissa Tietosuoja ja suojaus, sitten Appien hallinta, ja salli SiivOS. Kaikille käyttäjille asennettujen sovellusten poistamiseen voidaan lisäksi tarvita ylläpitäjä.",
-        "View": "Näkymä",
         "Background Items": "Taustakohteet",
         "Looking for apps…": "Etsitään sovelluksia…",
         "Measuring %1$@…": "Mitataan: %1$@…",

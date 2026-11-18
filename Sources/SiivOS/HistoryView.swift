@@ -13,6 +13,7 @@ struct HistoryView: View {
                     Button(tr("Remove a File or Folder…")) {
                         model.chooseItemsToRemove()
                     }
+                    .buttonStyle(SiivOSButtonStyle(.standard))
                     .disabled(model.isWorking)
                     .help(tr("Choose something to move to the holding area. You will see an explanation first."))
                 }
@@ -35,18 +36,15 @@ struct HistoryView: View {
                 onCancel: { model.pendingPlan = nil }
             )
         }
-        .confirmationDialog(
-            tr("Delete permanently?"),
-            isPresented: isConfirmingDeletion,
-            titleVisibility: .visible,
-            presenting: recordToDelete
-        ) { record in
-            Button(tr("Delete Permanently"), role: .destructive) {
-                model.deletePermanently(record)
-            }
-            Button(tr("Cancel"), role: .cancel) {}
-        } message: { record in
-            Text(tr("This deletes the held items from “%1$@” for good and frees %2$@. It cannot be undone.", record.title, formatBytes(record.heldBytes)))
+        .sheet(item: $recordToDelete) { record in
+            DeleteConfirmationSheet(
+                record: record,
+                onConfirm: {
+                    recordToDelete = nil
+                    model.deletePermanently(record)
+                },
+                onCancel: { recordToDelete = nil }
+            )
         }
         .alert(
             "SiivOS",
@@ -90,16 +88,6 @@ struct HistoryView: View {
         .cardBackground()
     }
 
-    /// True while the "delete permanently" question is on screen.
-    private var isConfirmingDeletion: Binding<Bool> {
-        Binding(
-            get: { recordToDelete != nil },
-            set: { isShown in
-                if !isShown { recordToDelete = nil }
-            }
-        )
-    }
-
     /// True while a problem is being shown to the user.
     private var isShowingMessage: Binding<Bool> {
         Binding(
@@ -108,6 +96,34 @@ struct HistoryView: View {
                 if !isShown { model.message = nil }
             }
         )
+    }
+}
+
+/// Asks before held items are deleted for good, with the same wording as before. It is
+/// the app's own sheet so that its buttons match the rest: a filled red button to confirm.
+private struct DeleteConfirmationSheet: View {
+    let record: ActionRecord
+    let onConfirm: () -> Void
+    let onCancel: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text(tr("Delete permanently?"))
+                .font(.title2)
+                .bold()
+            Text(tr("This deletes the held items from “%1$@” for good and frees %2$@. It cannot be undone.", record.title, formatBytes(record.heldBytes)))
+                .fixedSize(horizontal: false, vertical: true)
+            HStack {
+                Spacer()
+                Button(tr("Cancel"), role: .cancel, action: onCancel)
+                    .buttonStyle(SiivOSButtonStyle(.standard))
+                    .keyboardShortcut(.cancelAction)
+                ProminentButton(tr("Delete Permanently"), isDestructive: true, action: onConfirm)
+            }
+            .padding(.top, 8)
+        }
+        .padding(20)
+        .frame(width: 460)
     }
 }
 
@@ -142,9 +158,10 @@ private struct RecordRow: View {
 
                 if record.canUndo {
                     Button(tr("Put Back"), action: onPutBack)
+                        .buttonStyle(SiivOSButtonStyle(.small))
                         .disabled(isWorking)
                     Button(tr("Delete Permanently…"), role: .destructive, action: onDelete)
-                        .buttonStyle(.borderless)
+                        .buttonStyle(SiivOSButtonStyle(.small, destructive: true))
                         .disabled(isWorking)
                 } else {
                     Text(statusText)

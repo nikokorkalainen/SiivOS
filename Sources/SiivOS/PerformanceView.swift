@@ -22,6 +22,7 @@ struct PerformanceView: View {
                     Button(tr("Open Activity Monitor")) {
                         NSWorkspace.shared.open(URL(fileURLWithPath: "/System/Applications/Utilities/Activity Monitor.app"))
                     }
+                    .buttonStyle(SiivOSButtonStyle(.standard))
                     .help(tr("Activity Monitor is the macOS app for seeing and quitting programs."))
                 }
 
@@ -95,12 +96,7 @@ private struct DiagnosisPanel: View {
     var body: some View {
         Card {
             HStack(alignment: .top, spacing: 14) {
-                Image(systemName: symbol)
-                    .resizable()
-                    .symbolRenderingMode(.palette)
-                    .foregroundStyle(Color.white, Color.siivosTint)
-                    .frame(width: 34, height: 34)
-                    .accessibilityHidden(true)
+                SiivOSIconView(icon, size: 34)
                 VStack(alignment: .leading, spacing: 4) {
                     Text(diagnosis.title)
                         .font(.headline)
@@ -111,11 +107,13 @@ private struct DiagnosisPanel: View {
                         Button(tr("Open Cleanup")) {
                             open(.cleanup)
                         }
+                        .buttonStyle(SiivOSButtonStyle(.small))
                         .padding(.top, 4)
                     } else if diagnosis.suggestion == .openApps {
                         Button(tr("Open Apps")) {
                             open(.apps)
                         }
+                        .buttonStyle(SiivOSButtonStyle(.small))
                         .padding(.top, 4)
                     }
                 }
@@ -123,13 +121,13 @@ private struct DiagnosisPanel: View {
         }
     }
 
-    /// A check for good news, an "i" for a note, an exclamation mark when something is
-    /// slowing the Mac down. All in the same calm tint.
-    private var symbol: String {
+    /// A check for good news, an "i" for a note, and an exclamation mark in a calm amber
+    /// when something is slowing the Mac down. From the SiivOS icon set.
+    private var icon: SiivOSIcon {
         switch diagnosis.level {
-        case .good: return "checkmark.circle.fill"
-        case .note: return "info.circle.fill"
-        case .attention: return "exclamationmark.circle.fill"
+        case .good: return .good
+        case .note: return .note
+        case .attention: return .attention
         }
     }
 }
@@ -250,6 +248,7 @@ private struct DiskPanel: View {
                         Button(tr("Open Cleanup")) {
                             open(.cleanup)
                         }
+                        .buttonStyle(SiivOSButtonStyle(.small))
                     }
                 } else {
                     Text(tr("Startup disk"))
