@@ -59,7 +59,7 @@ final class L10nTests: XCTestCase {
 
     func testTheEngineSpeaksFinnishWhenAsked() {
         L10n.overrideLanguage = .finnish
-        XCTAssertEqual(CachesScanner().title, "Appien välimuistit")
+        XCTAssertEqual(CachesScanner().title, "Sovellusten välimuistit")
         XCTAssertEqual(NeverOffer.Category.signIn.title, "Kirjautuminen, salasanat ja maksaminen")
         XCTAssertEqual(SafetyCoreError.nothingToRemove.errorDescription, "Poistettavaa ei ole.")
         XCTAssertTrue(OldDownloadsScanner(olderThanDays: 90).summary.contains("yli 90 päivään"))
