@@ -33,7 +33,7 @@ Purge already covers "open, private, honest, reversible" for storage cleanup, so
 
 | # | Phase | What it delivers | Status |
 |---|-------|------------------|--------|
-| 1 | Setup | Build tools installed, project skeleton, this plan in the repo | Done. Built and run on macOS 15.8.3 with the Command Line Tools. Tests not yet run on a Mac |
+| 1 | Setup | Build tools installed, project skeleton, this plan in the repo | Done. Built and run on macOS 15.8.3. The engine's tests first ran on the Mac on 18 November 2026, once Xcode was installed, and all passed |
 | 2 | Safety core | Scan engine, action log, undo. Removed items go to a restorable holding area, not straight to deletion | Done. Built and tried out on macOS 15.8.3 |
 | 3 | Clutter cleanup | Caches, logs, old downloads, large and duplicate files, leftovers from removed apps | Done. Built and tried out on macOS 15.8.3 |
 | 4 | App manager | All apps with size and last use, full uninstall including leftovers, login items and background agents | Done. Built and tried out on macOS 15.8.3. Login items are not listed, only linked to in System Settings (see Known constraints) |
