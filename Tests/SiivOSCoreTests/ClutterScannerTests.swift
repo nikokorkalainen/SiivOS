@@ -31,6 +31,64 @@ final class ClutterScannerTests: TemporaryDirectoryTestCase {
         XCTAssertEqual(names(findings), ["Example"])
     }
 
+    // MARK: - Labels
+
+    func testCachesAndLogsAreLabelledSafeToRemove() throws {
+        try makeFile("Library/Caches/com.example.Browser/data.bin", bytes: 500_000)
+        try makeFile("Library/Logs/Example/app.log", bytes: 500_000)
+
+        let caches = try CachesScanner(homeDirectory: home, minimumBytes: 200_000).scan()
+        let logs = try LogsScanner(homeDirectory: home, minimumBytes: 200_000).scan()
+
+        XCTAssertEqual(caches.map { $0.safety }, [.safeToRemove])
+        XCTAssertEqual(logs.map { $0.safety }, [.safeToRemove])
+        XCTAssertTrue((caches + logs).allSatisfy { !$0.safetyReason.isEmpty })
+        XCTAssertEqual(Finding.Safety.safeToRemove.title, "Safe to remove")
+        XCTAssertEqual(Finding.Safety.checkFirst.title, "Check first")
+    }
+
+    func testYourOwnFilesAreAlwaysLabelledCheckFirst() throws {
+        try makeFile("Downloads/old-installer.dmg", bytes: 100)
+        try makeFile("Movies/holiday.mov", bytes: 50_000)
+        try makeFile("Pictures/photo.jpg", bytes: 5_000, fill: 7)
+        try makeFile("Pictures/photo copy.jpg", bytes: 5_000, fill: 7)
+        let later = Date().addingTimeInterval(100 * 86_400)
+
+        let findings = try OldDownloadsScanner(homeDirectory: home, olderThanDays: 90, now: later).scan()
+            + LargeFilesScanner(homeDirectory: home, minimumBytes: 40_000).scan()
+            + DuplicateFilesScanner(homeDirectory: home, minimumBytes: 1_000).scan()
+
+        XCTAssertEqual(names(findings), ["holiday.mov", "old-installer.dmg", "photo copy.jpg"])
+        XCTAssertTrue(findings.allSatisfy { $0.safety == .checkFirst })
+        XCTAssertTrue(findings.allSatisfy { !$0.safetyReason.isEmpty })
+    }
+
+    func testLeftoversThatCanHoldYourWorkAreLabelledCheckFirst() throws {
+        try makeApp("Notes.app", identifier: "com.example.Notes")
+        try makeFile("Library/Application Support/com.gone.Tool/projects.db", bytes: 500_000)
+        try makeFile("Library/Containers/com.gone.Tool/Data/Documents/drawing.bin", bytes: 500_000)
+        try makeFile("Library/Saved Application State/com.gone.Tool.savedState/window.data", bytes: 500_000)
+        try makeFile("Library/HTTPStorages/com.gone.Tool/cookies.bin", bytes: 500_000)
+
+        let findings = try LeftoversScanner(
+            homeDirectory: home,
+            applicationDirectories: [applications],
+            minimumBytes: 200_000
+        ).scan()
+        var labels: [String: Finding.Safety] = [:]
+        for finding in findings {
+            labels[finding.url.deletingLastPathComponent().lastPathComponent] = finding.safety
+        }
+
+        XCTAssertEqual(labels, [
+            "Application Support": .checkFirst,
+            "Containers": .checkFirst,
+            "Saved Application State": .safeToRemove,
+            "HTTPStorages": .safeToRemove
+        ])
+        XCTAssertTrue(findings.allSatisfy { !$0.safetyReason.isEmpty })
+    }
+
     func testScannersFindNothingWhenTheirFolderIsMissing() throws {
         XCTAssertEqual(try CachesScanner(homeDirectory: home).scan(), [])
         XCTAssertEqual(try LogsScanner(homeDirectory: home).scan(), [])

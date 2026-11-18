@@ -93,12 +93,10 @@ final class CleanupModel: ObservableObject {
         report?.sections.filter { !Self.safeSectionIDs.contains($0.id) } ?? []
     }
 
-    /// Combined size of everything in the safe groups that can be removed right now.
+    /// Combined size of everything labelled Safe to remove that can be removed right
+    /// now. Items labelled Check first are not counted, wherever they are listed.
     var safeToRemoveBytes: Int64 {
-        safeSections
-            .flatMap { $0.findings }
-            .filter { $0.heldBackReason == nil }
-            .reduce(0) { $0 + $1.sizeBytes }
+        report?.safeToRemoveBytes ?? 0
     }
 
     /// How many of the user's own files were found. A file listed under two headings counts once.

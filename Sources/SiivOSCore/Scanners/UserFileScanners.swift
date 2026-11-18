@@ -28,6 +28,11 @@ public struct OldDownloadsScanner: SystemScanner {
         self.now = now
     }
 
+    /// Why the user's own files are always to be checked first.
+    static var ownFileReason: String {
+        tr("This is your own file. Only you know whether you still need it.")
+    }
+
     public func scan() throws -> [Finding] {
         let cutoff = now.addingTimeInterval(-Double(olderThanDays) * 86_400)
         return try ScanSupport.children(of: directory, fileManager: .default).compactMap { child in
@@ -37,7 +42,9 @@ public struct OldDownloadsScanner: SystemScanner {
             return Finding(
                 url: child.url,
                 sizeBytes: child.sizeBytes,
-                explanation: tr("Not opened or changed since %1$@.", ScanSupport.describe(lastTouched))
+                explanation: tr("Not opened or changed since %1$@.", ScanSupport.describe(lastTouched)),
+                safety: .checkFirst,
+                safetyReason: Self.ownFileReason
             )
         }
     }
@@ -88,7 +95,13 @@ public struct LargeFilesScanner: SystemScanner {
     public func scan() throws -> [Finding] {
         ScanSupport.regularFiles(in: roots, atLeast: minimumBytes, fileManager: .default).map { file in
             let changed = file.modified.map { tr("Last changed %1$@.", ScanSupport.describe($0)) } ?? tr("A large file.")
-            return Finding(url: file.url, sizeBytes: file.diskBytes, explanation: changed)
+            return Finding(
+                url: file.url,
+                sizeBytes: file.diskBytes,
+                explanation: changed,
+                safety: .checkFirst,
+                safetyReason: OldDownloadsScanner.ownFileReason
+            )
         }
     }
 }
@@ -130,7 +143,9 @@ public struct DuplicateFilesScanner: SystemScanner {
                             Finding(
                                 url: extra.url,
                                 sizeBytes: extra.diskBytes,
-                                explanation: tr("Identical to %1$@, which is kept.", kept.url.path)
+                                explanation: tr("Identical to %1$@, which is kept.", kept.url.path),
+                                safety: .checkFirst,
+                                safetyReason: tr("An exact copy of another file, but it may sit where you or an app expect to find it.")
                             )
                         )
                     }

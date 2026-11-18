@@ -36,6 +36,8 @@ public struct CachesScanner: SystemScanner {
                     url: child.url,
                     sizeBytes: child.sizeBytes,
                     explanation: tr("Cached data for %1$@.", name),
+                    safety: .safeToRemove,
+                    safetyReason: tr("Apps rebuild their caches by themselves. An app can be a little slower the first time it opens afterwards."),
                     heldBackReason: openApp.map { tr("%1$@ is open. Quit it, then scan again to clean its cache.", $0.name) }
                 )
             }
@@ -78,6 +80,8 @@ public struct LogsScanner: SystemScanner {
                     url: child.url,
                     sizeBytes: child.sizeBytes,
                     explanation: tr("Logs from %1$@.", name),
+                    safety: .safeToRemove,
+                    safetyReason: tr("Logs are a record of what an app did. Nothing needs them to keep working."),
                     heldBackReason: openApp.map { tr("%1$@ is open. Quit it, then scan again to remove its logs.", $0.name) }
                 )
             }

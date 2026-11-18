@@ -12,9 +12,26 @@ private struct FakeScanner: SystemScanner {
             Finding(
                 url: URL(fileURLWithPath: "/tmp/\(id)-\(size)"),
                 sizeBytes: size,
-                explanation: "A pretend finding."
+                explanation: "A pretend finding.",
+                safety: .safeToRemove,
+                safetyReason: "A pretend reason."
             )
         }
+    }
+}
+
+/// Finds one item of each kind: safe to remove, to check first, and held back.
+private struct LabelledScanner: SystemScanner {
+    let id = "labelled"
+    let title = "Labelled"
+    let summary = "A scanner used only in tests."
+
+    func scan() throws -> [Finding] {
+        [
+            Finding(url: URL(fileURLWithPath: "/tmp/cache"), sizeBytes: 100, explanation: "", safety: .safeToRemove, safetyReason: "Rebuilt when needed."),
+            Finding(url: URL(fileURLWithPath: "/tmp/own-file"), sizeBytes: 40, explanation: "", safety: .checkFirst, safetyReason: "Yours."),
+            Finding(url: URL(fileURLWithPath: "/tmp/open-app-cache"), sizeBytes: 7, explanation: "", safety: .safeToRemove, safetyReason: "Rebuilt when needed.", heldBackReason: "The app is open.")
+        ]
     }
 }
 
@@ -45,6 +62,15 @@ final class ScanEngineTests: XCTestCase {
         XCTAssertEqual(report.totalBytes, 335)
         XCTAssertEqual(report.findingCount, 4)
         XCTAssertNil(report.sections[0].failure)
+    }
+
+    func testOnlyWhatIsLabelledSafeAndFreeToRemoveCountsAsSafeToRemove() {
+        // The same items listed under two headings count once.
+        let report = ScanEngine(scanners: [LabelledScanner(), LabelledScanner()]).run()
+
+        XCTAssertEqual(report.totalBytes, 294)
+        XCTAssertEqual(report.safeToRemoveBytes, 100, "Not the item to check first, and not the one that is held back")
+        XCTAssertEqual(ScanEngine(scanners: []).run().safeToRemoveBytes, 0)
     }
 
     func testOneFailingScannerDoesNotStopTheOthers() {

@@ -13,15 +13,16 @@ public struct LeftoversScanner: SystemScanner {
         tr("Data in your Library folder that belongs to apps which no longer seem to be installed. SiivOS only lists items when it finds no installed app from the same developer in your Applications folders, so check the list if you keep apps somewhere else.")
     }
 
-    /// Folders inside `~/Library` where apps keep data under their identifier, and the
-    /// ending that follows the identifier in each.
-    private static let locations: [(folder: String, suffix: String)] = [
-        ("Application Support", ""),
-        ("Containers", ""),
-        ("Saved Application State", ".savedState"),
-        ("HTTPStorages", ""),
-        ("WebKit", ""),
-        ("Application Scripts", "")
+    /// Folders inside `~/Library` where apps keep data under their identifier, the
+    /// ending that follows the identifier in each, and whether the folder can hold
+    /// things the user made, as opposed to data the app only kept for itself.
+    private static let locations: [(folder: String, suffix: String, canHoldUserData: Bool)] = [
+        ("Application Support", "", true),
+        ("Containers", "", true),
+        ("Saved Application State", ".savedState", false),
+        ("HTTPStorages", "", false),
+        ("WebKit", "", false),
+        ("Application Scripts", "", true)
     ]
 
     private let libraryDirectory: URL
@@ -82,7 +83,11 @@ public struct LeftoversScanner: SystemScanner {
                     Finding(
                         url: child.url,
                         sizeBytes: child.sizeBytes,
-                        explanation: tr("Data stored by %1$@. No installed app from this developer was found.", identifier)
+                        explanation: tr("Data stored by %1$@. No installed app from this developer was found.", identifier),
+                        safety: location.canHoldUserData ? .checkFirst : .safeToRemove,
+                        safetyReason: location.canHoldUserData
+                            ? tr("This folder can hold things you made or set up in the app, such as saved work. Look inside before you remove it.")
+                            : tr("Window positions and web data the app kept for itself. The app is gone, and nothing else uses them.")
                     )
                 )
             }

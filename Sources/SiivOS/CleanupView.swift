@@ -259,9 +259,10 @@ private struct CleanupGroupView: View {
         Array(section.findings.prefix(Self.rowLimit))
     }
 
-    /// The shown items that can be ticked. Held-back items are left out.
+    /// The shown items that Tick All ticks: the ones labelled Safe to remove that are
+    /// not held back. Items labelled Check first are only ever ticked one by one.
     private var tickableFindings: [Finding] {
-        shownFindings.filter { $0.heldBackReason == nil }
+        shownFindings.filter { $0.heldBackReason == nil && $0.safety == .safeToRemove }
     }
 
     var body: some View {
@@ -299,6 +300,7 @@ private struct CleanupGroupView: View {
                     model.setAllSelected(tickableFindings, !model.areAllSelected(tickableFindings))
                 }
                 .buttonStyle(SiivOSButtonStyle(.small))
+                .help(tr("Ticks everything labelled Safe to remove. Items labelled Check first are left for you to tick one by one."))
             }
 
             Text(formatBytes(section.totalBytes))
@@ -326,7 +328,8 @@ private struct CleanupGroupView: View {
                         FindingRow(
                             model: model,
                             finding: finding,
-                            showsExplanation: Self.sectionsWithExplanations.contains(section.id)
+                            showsExplanation: Self.sectionsWithExplanations.contains(section.id),
+                            isInSafePart: isSafe
                         )
                     }
                 }
@@ -345,6 +348,9 @@ private struct FindingRow: View {
     @ObservedObject var model: CleanupModel
     let finding: Finding
     let showsExplanation: Bool
+    /// True when the row is listed under "Safe to remove". An item there that is
+    /// labelled Check first says why, because it differs from its neighbours.
+    let isInSafePart: Bool
 
     var body: some View {
         row
@@ -381,6 +387,12 @@ private struct FindingRow: View {
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
+                if isInSafePart && finding.safety == .checkFirst {
+                    Text(finding.safetyReason)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
                 if let reason = finding.heldBackReason {
                     Label(reason, systemImage: "lock")
                         .font(.caption)
@@ -388,6 +400,9 @@ private struct FindingRow: View {
                 }
             }
             Spacer()
+            SafetyLabel(safety: finding.safety)
+                // Resting the pointer on the label says why the item has it.
+                .help(finding.safetyReason)
             Text(formatBytes(finding.sizeBytes))
                 .foregroundStyle(.secondary)
                 .monospacedDigit()
@@ -400,6 +415,22 @@ private struct FindingRow: View {
             get: { model.isSelected(finding) },
             set: { isOn in model.setSelected(finding, isOn) }
         )
+    }
+}
+
+/// The label every item carries: "Safe to remove" or "Check first".
+private struct SafetyLabel: View {
+    let safety: Finding.Safety
+
+    var body: some View {
+        HStack(spacing: 4) {
+            SiivOSIconView(safety == .safeToRemove ? .good : .note, size: 16)
+            Text(safety.title)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+        .fixedSize()
+        .accessibilityElement(children: .combine)
     }
 }
 

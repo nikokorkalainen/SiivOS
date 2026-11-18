@@ -2,12 +2,32 @@ import Foundation
 
 /// Something a scanner found that could be removed.
 public struct Finding: Equatable, Identifiable, Sendable {
+    /// How much care removing an item needs. Every finding carries one of these labels.
+    public enum Safety: String, Sendable {
+        /// Made by an app or macOS for itself. Removing it loses nothing of the user's.
+        case safeToRemove
+        /// May be something the user made or still wants. Each one deserves a look.
+        case checkFirst
+
+        /// The label as shown to people.
+        public var title: String {
+            switch self {
+            case .safeToRemove: return tr("Safe to remove")
+            case .checkFirst: return tr("Check first")
+            }
+        }
+    }
+
     public let id: UUID
     public let url: URL
     /// Space the item takes on disk, in bytes.
     public let sizeBytes: Int64
     /// Plain-language description of what the item is and why removing it is safe.
     public let explanation: String
+    /// Whether the item is safe to remove or should be looked at first.
+    public let safety: Safety
+    /// One plain sentence on why the item has that label.
+    public let safetyReason: String
     /// Set when the item should not be removed right now, for example because the app
     /// it belongs to is open. The item is shown with this reason and cannot be ticked.
     public let heldBackReason: String?
@@ -17,12 +37,16 @@ public struct Finding: Equatable, Identifiable, Sendable {
         url: URL,
         sizeBytes: Int64,
         explanation: String,
+        safety: Safety,
+        safetyReason: String,
         heldBackReason: String? = nil
     ) {
         self.id = id
         self.url = url
         self.sizeBytes = sizeBytes
         self.explanation = explanation
+        self.safety = safety
+        self.safetyReason = safetyReason
         self.heldBackReason = heldBackReason
     }
 }
@@ -67,6 +91,23 @@ public struct ScanReport: Sendable {
 
     public var findingCount: Int {
         sections.reduce(0) { $0 + $1.findings.count }
+    }
+
+    /// Combined size of everything labelled safe to remove that can be removed right
+    /// now. Items to check first and items that are held back are left out, and an
+    /// item listed under two headings is counted once.
+    public var safeToRemoveBytes: Int64 {
+        var counted = Set<URL>()
+        var total: Int64 = 0
+        for section in sections {
+            for finding in section.findings
+            where finding.safety == .safeToRemove && finding.heldBackReason == nil {
+                if counted.insert(finding.url).inserted {
+                    total += finding.sizeBytes
+                }
+            }
+        }
+        return total
     }
 
     /// The same report without the findings whose items are no longer where they were,
