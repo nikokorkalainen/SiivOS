@@ -1,76 +1,62 @@
 """Exports the SiivOS app icon (glints only) at every macOS size, plus the logo tile with the name.
 
-The name is converted to outlines from Nunito ExtraBold (SIL Open Font License), so the
-icon does not depend on the font being installed.
+The glint shape and the lettering come from the master logo,
+design/logo/SiivOS-logo-for-light-backgrounds.svg, so a change there carries over here.
 
-Usage: python3 -I make_icon.py <nunito-variable.ttf> <output-dir>
+Usage (from the repo root; needs rsvg-convert and Pillow):
+    python3 design/icon/make_icon.py design/icon
 """
+import re
 import subprocess
 import sys
 from pathlib import Path
 
-from fontTools.pens.svgPathPen import SVGPathPen
-from fontTools.pens.transformPen import TransformPen
-from fontTools.pens.boundsPen import BoundsPen
-from fontTools.ttLib import TTFont
-from fontTools.varLib.instancer import instantiateVariableFont
 from PIL import Image
 
+ROOT = Path(__file__).resolve().parents[2]
+LOGO = ROOT / "design" / "logo" / "SiivOS-logo-for-light-backgrounds.svg"
+OUT = Path(sys.argv[1])
 
-def glint(cx, cy, arm, pinch):
-    """A four-point glint with equal arms and concave sides."""
-    p = pinch
+# The logo's letters, as (class, path data). st0 is "Siiv", st1 is "OS".
+_paths = re.findall(r'<path class="(st\d)" d="([^"]+)"', LOGO.read_text())
+LETTERS = _paths[:-2]           # the last two paths are the glints
+S_HEIGHT, LEFT, RIGHT, BASE = 72.6, 74.73, 367.5, 127.3   # measured from the logo file
+
+
+def glint(cx, cy, arm):
+    """The SiivOS glint, as in the logo: control points at 12 % and 45.4 % of the arm."""
+    k1, k2 = 0.12 * arm, 0.454 * arm
     return (
-        f"M {cx} {cy - arm} Q {cx + p} {cy - p} {cx + arm} {cy} "
-        f"Q {cx + p} {cy + p} {cx} {cy + arm} Q {cx - p} {cy + p} {cx - arm} {cy} "
-        f"Q {cx - p} {cy - p} {cx} {cy - arm} Z"
+        f"M{cx} {cy - arm}"
+        f"C{cx + k1} {cy - k2} {cx + k2} {cy - k1} {cx + arm} {cy}"
+        f"C{cx + k2} {cy + k1} {cx + k1} {cy + k2} {cx} {cy + arm}"
+        f"C{cx - k1} {cy + k2} {cx - k2} {cy + k1} {cx - arm} {cy}"
+        f"C{cx - k2} {cy - k1} {cx - k1} {cy - k2} {cx} {cy - arm}Z"
     )
 
 
 # 1024 x 1024 grid, tile 824 x 824 at (100, 100), the macOS icon template.
 # Logo tile: the glints as one group, centred above the name.
-F_BIG, F_SMALL = glint(560, 350, 145, 25), glint(386, 450, 66, 11)
+F_BIG, F_SMALL = glint(560, 350, 145), glint(386, 450, 66)
 # App icon: no name, the glints centred on the tile.
-S_BIG, S_SMALL = glint(568, 484, 202, 32), glint(346, 650, 92, 14)
-
-FONT_PATH, OUT = Path(sys.argv[1]), Path(sys.argv[2])
-WHITE, MINT = "#FFFFFF", "#5EE6A8"
-SIZE, BASELINE, CENTER_X = 196, 768, 512
+S_BIG, S_SMALL = glint(568, 484, 202), glint(346, 650, 92)
 
 
-def word_paths() -> str:
-    font = instantiateVariableFont(TTFont(FONT_PATH), {"wght": 800})
-    glyph_set = font.getGlyphSet()
-    cmap = font.getBestCmap()
-    scale = SIZE / font["head"].unitsPerEm
-
-    # Lay the letters out on the advance widths and measure the ink.
-    letters, x = [], 0
-    for ch in "SiivOS":
-        name = cmap[ord(ch)]
-        letters.append((ch, name, x))
-        x += font["hmtx"][name][0]
-    bounds = BoundsPen(glyph_set)
-    for _, name, gx in letters:
-        glyph_set[name].draw(TransformPen(bounds, (1, 0, 0, 1, gx, 0)))
-    x_min, _, x_max, _ = bounds.bounds
-    shift = CENTER_X - (x_min + x_max) / 2 * scale
-
-    parts = []
-    for i, (ch, name, gx) in enumerate(letters):
-        pen = SVGPathPen(glyph_set)
-        # Font units are y-up; flip into SVG space and sit on the baseline.
-        glyph_set[name].draw(TransformPen(pen, (scale, 0, 0, -scale, shift + gx * scale, BASELINE)))
-        colour = MINT if i >= 4 else WHITE  # "OS" in mint
-        parts.append(f'<path d="{pen.getCommands()}" fill="{colour}"/>')
-    return "\n".join(parts)
+def name_group(cx: float, baseline: float, cap: float) -> str:
+    """The name from the logo, centred on cx, sitting on baseline, with the S `cap` units tall."""
+    scale = cap / S_HEIGHT
+    tx = cx - (LEFT + RIGHT) / 2 * scale
+    ty = baseline - BASE * scale
+    colour = {"st0": "#FFFFFF", "st1": "#5EE6A8"}
+    shapes = "".join(f'<path d="{d}" fill="{colour[c]}"/>' for c, d in LETTERS)
+    return f'<g transform="translate({tx:.2f} {ty:.2f}) scale({scale:.4f})">{shapes}</g>'
 
 
-def icon_svg(small: bool, words: str) -> str:
-    if small:
-        art = f'<path d="{S_BIG}" fill="#FFFFFF"/><path d="{S_SMALL}" fill="#5EE6A8"/>'
+def icon_svg(with_name: bool) -> str:
+    if with_name:
+        art = f'<path d="{F_BIG}" fill="#FFFFFF"/><path d="{F_SMALL}" fill="#5EE6A8"/>\n' + name_group(512, 768, 138)
     else:
-        art = f'<path d="{F_BIG}" fill="#FFFFFF"/><path d="{F_SMALL}" fill="#5EE6A8"/>\n{words}'
+        art = f'<path d="{S_BIG}" fill="#FFFFFF"/><path d="{S_SMALL}" fill="#5EE6A8"/>'
     return f"""<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
 <defs>
 <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1A9E73"/><stop offset="1" stop-color="#0B4A39"/></linearGradient>
@@ -88,15 +74,9 @@ def icon_svg(small: bool, words: str) -> str:
 
 def main() -> None:
     OUT.mkdir(parents=True, exist_ok=True)
-    words = word_paths()
-    # The app icon is the glints only, at every size. The version with the name is the
-    # square logo tile for GitHub and social, not used by the app.
     icon, tile = OUT / "AppIcon.svg", OUT / "LogoTile.svg"
-    icon.write_text(icon_svg(True, words))
-    tile.write_text(icon_svg(False, words))
-    old_small = OUT / "AppIcon-small.svg"
-    if old_small.exists():
-        old_small.unlink()
+    icon.write_text(icon_svg(False))
+    tile.write_text(icon_svg(True))
 
     iconset = OUT / "AppIcon.iconset"
     iconset.mkdir(exist_ok=True)

@@ -15,7 +15,7 @@ import SwiftUI
 ///     }
 struct GlintLoader: View {
     /// Width and height of the indicator.
-    var size: CGFloat = 72
+    var size: CGFloat = 96
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -78,16 +78,19 @@ struct GlintLoader: View {
         graphics.fill(path, with: .color(color.opacity(opacity)))
     }
 
-    /// A four-point glint with equal arms and concave sides, the same shape as in the app icon.
-    private static func glintPath(center c: CGPoint, arm: CGFloat, pinch p: CGFloat) -> Path {
-        Path { path in
-            path.move(to: CGPoint(x: c.x, y: c.y - arm))
-            path.addQuadCurve(to: CGPoint(x: c.x + arm, y: c.y), control: CGPoint(x: c.x + p, y: c.y - p))
-            path.addQuadCurve(to: CGPoint(x: c.x, y: c.y + arm), control: CGPoint(x: c.x + p, y: c.y + p))
-            path.addQuadCurve(to: CGPoint(x: c.x - arm, y: c.y), control: CGPoint(x: c.x - p, y: c.y + p))
-            path.addQuadCurve(to: CGPoint(x: c.x, y: c.y - arm), control: CGPoint(x: c.x - p, y: c.y - p))
-            path.closeSubpath()
-        }
+    /// The SiivOS glint, as drawn in the logo file: four points joined by soft curves, with
+    /// control points at 12 % and 45.4 % of the arm. `pinch` is no longer used.
+    private static func glintPath(center c: CGPoint, arm: CGFloat, pinch: CGFloat) -> Path {
+        let k1 = arm * 0.12, k2 = arm * 0.454
+        var path = Path()
+        path.move(to: CGPoint(x: c.x, y: c.y - arm))
+        path.addCurve(to: CGPoint(x: c.x + arm, y: c.y), control1: CGPoint(x: c.x + k1, y: c.y - k2), control2: CGPoint(x: c.x + k2, y: c.y - k1))
+        path.addCurve(to: CGPoint(x: c.x, y: c.y + arm), control1: CGPoint(x: c.x + k2, y: c.y + k1), control2: CGPoint(x: c.x + k1, y: c.y + k2))
+        path.addCurve(to: CGPoint(x: c.x - arm, y: c.y), control1: CGPoint(x: c.x - k1, y: c.y + k2), control2: CGPoint(x: c.x - k2, y: c.y + k1))
+        path.addCurve(to: CGPoint(x: c.x, y: c.y - arm), control1: CGPoint(x: c.x - k2, y: c.y - k1), control2: CGPoint(x: c.x - k1, y: c.y - k2))
+        path.closeSubpath()
+        return path
+    }
     }
 
     /// Near-white in dark mode, deep green (#145C47) in light mode.

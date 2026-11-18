@@ -17,23 +17,49 @@ the written version so the app code can follow it. Written against the code on t
 
 ## Look
 
+The main design is the **green look** in dark mode, with a standard light mode alongside it.
+The app follows the Mac's appearance setting. Colours and backgrounds are in
+`Sources/SiivOS/SiivOSTheme.swift`.
+
 - **Font:** the system font only (SF Pro). No custom fonts in the app.
 - **Layout:** the existing `NavigationSplitView` with a sidebar. Content is left aligned with a
   readable maximum width (about 860 to 960 pt) rather than a narrow centred column.
-- **Accent colour:** add an `AccentColor` asset.
-  - Light appearance: `#2F7A5F` (moss green).
-  - Dark appearance: `#2F7A5F` for filled buttons and the selected sidebar row. Use `#9CCBB0`
-    (lichen) for tinted icons, links and chart lines on dark backgrounds, where moss is too dark.
-- **Light and dark mode:** both are required. Use system semantic colours (`.primary`,
-  `.secondary`, `Color(nsColor: .windowBackgroundColor)` and so on) everywhere else so both
-  modes work without extra code.
+- **Dark mode, the green look:**
+  - Window: `SiivOSWindowBackground()`, a soft diagonal gradient (`#13563F` top left,
+    `#0B3A2E`, `#072519` bottom right), behind the detail column. Use
+    `.scrollContentBackground(.hidden)` on lists and forms so the gradient shows through.
+  - Sidebar: `SiivOSSidebarBackground()` behind the sidebar `List`, also with
+    `.scrollContentBackground(.hidden)`. Deep green with a hint of the gradient.
+  - Panels and dividers: `SiivOSTheme.panel` (white at 6 %) and `SiivOSTheme.divider` (white
+    at 9 %), so they sit on the green instead of looking like grey boxes.
+  - Text: the system primary and secondary colours. They read well on the green as they are.
+  - Prominent buttons: `.buttonStyle(.borderedProminent)` with `.tint(SiivOSTheme.prominent)`,
+    which is mint. Mint needs dark text: if the label stays white, add
+    `.foregroundStyle(SiivOSTheme.onProminent)` to the label.
+  - Icons: the SiivOS icon set in mint `#7EE0B4`, with white details.
+- **Light mode:** standard macOS window and sidebar, moss `#2F7A5F` for prominent buttons with
+  white text, moss icons with jade details.
+- **Accent colour:** add an `AccentColor` asset of moss `#2F7A5F` in both appearances. macOS uses
+  it for the selected sidebar row, checkboxes and focus rings. (The canvas shows the selected row
+  as a soft white highlight in dark mode; that needs a custom sidebar, so moss is fine for now.)
 - **Sizes:** keep using `ByteCountFormatter`, so the user's region decides the decimal comma.
 
 ## Sidebar
 
+**Logo at the top:** `SiivOSSidebarHeader()`, the text logo (`SiivOSLogo`, 39 pt tall including the glints): the
+name with the two glints off the top-left corner of the S, and no app icon. Put it above the
+sections, for example with `.safeAreaInset(edge: .top)` on the sidebar `List`. It is drawn from
+outlines, so it needs no font installed. Dark mode: soft white with mint "OS"; light mode: deep
+green with jade "OS". The big glint takes the colour of "Siiv", the small one the colour of "OS".
+
 Order: Overview, Cleanup, Apps, Performance, Protection, Health Timeline, History.
+Icons in buttons (Check This Mac, Scan Again, Undo) are 20 pt; disclosure arrows 15 pt.
 History shows the size waiting in the holding area as a small trailing label, only when it is
 not empty. No other badges.
+Sidebar icons are 30 pt (`SiivOSIconView`'s default size), with rows about 52 pt tall. In SwiftUI, set
+`.environment(\.sidebarRowSize, .large)` on the sidebar `List` (macOS 14 and later); if that
+does not give the larger look, use `.imageScale(.large)` on the row labels. The Overview's area
+cards use matching icons: 34 pt for the Cleanup card, 30 pt for the others.
 
 ## Overview
 
@@ -96,6 +122,28 @@ Group the existing scanners by their `id`:
 Show a banner at the top of the list: "Moved 2 items (44,59 GB) to the holding area. Delete
 them permanently in History to free the space." with an **Undo** button that puts them back.
 
+## Performance
+
+Follows the existing `PerformanceView`; these are the design changes.
+
+- Header: title, the line "A live look at what this Mac is doing. Looking changes nothing.", and
+  **Open Activity Monitor** on the right.
+- **What SiivOS notices:** each diagnosis is a panel with a 34 pt round icon (a check for good, an
+  "i" for a note, both in the tint colour with a white mark), the title in semibold and the
+  explanation in secondary text. The all-clear message uses the same panel.
+- **Right now:** a grid of four panels (two across on a normal window, one on a narrow one),
+  each with a plain title, a large number (32 pt semibold, tabular digits), one line of context
+  in secondary text, then:
+  - Processor: a sparkline, then "Busiest now" with the program, its known-program description
+    under it, and its share on the right.
+  - Memory: a sparkline, a three-step pressure meter (normal, tight, heavy) with the pressure
+    sentence under it, then "Using the most".
+  - Startup disk: a bar of used space, and when Cleanup has found something, "Cleanup found
+    53,25 GB that is safe to remove." with an **Open Cleanup** button.
+  - Battery: a charge bar, the charging or time-left sentence, health and charge cycles.
+- Sparklines: the tint colour as a 2 pt line over a soft fade of the same colour, no axes.
+- No icons in the panel titles; the sidebar already says where you are.
+
 ## Before anything changes (sheet)
 
 Keep the existing `RemovalPlanSheet`, with shorter copy:
@@ -124,11 +172,30 @@ alone" with its reasons. Buttons: Cancel, **Move to Holding Area** (default).
 - Moving to the holding area does not free space. Every place that talks about freeing space
   must say it happens when items are deleted permanently in History.
 
+## Icons
+
+Use the SiivOS icon set (`Sources/SiivOS/SiivOSIcons.swift`) instead of SF Symbols for the
+seven sections: Overview, Cleanup, Apps, Performance, Protection, Health Timeline and History.
+Each icon is a soft gradient fill, a thin outline and one white detail (a glint, the gauge
+needle, the check mark, the chart's end dot or the clock hands). In light mode the outline is
+moss and the detail is jade. The icons are drawn in code, so there are no image files.
+
+How to wire them in:
+
+1. In `AppSection`, add `var icon: SiivOSIcon` that returns the case with the same name
+   (`.overview` returns `.overview`, `.timeline` returns `.timeline`, and so on).
+2. In the sidebar (`ContentView`), replace `Label(section.title, systemImage: section.symbol)`
+   with a label whose icon is `SiivOSIconView(section.icon, isSelected: selection == section)`.
+   `isSelected` turns the whole icon white on the selected row.
+3. On the Overview's area cards, replace `Image(systemName: section.symbol)` with
+   `SiivOSIconView(section.icon, size: 34)` for Cleanup and `size: 30` for the others.
+4. Keep SF Symbols for small controls (Scan Again, Undo, chevrons).
+
 ## Loading
 
 - Use `GlintLoader` (in `Sources/SiivOS/GlintLoader.swift`) wherever the app shows a
   `ProgressView` spinner: the Cleanup and Apps scans, and "Checking now…" on the Overview.
-- Layout: the glints (72 pt) centred in the content area, with the progress text under them in
+- Layout: the glints (96 pt) centred in the content area, with the progress text under them in
   secondary text, 18 pt apart. Keep the existing wording ("Checking: %@…", "Getting ready…").
 - Motion: the two glints take turns to twinkle, each growing, brightening and making a quarter
   turn every 1.6 seconds. With Reduce Motion on, they stay still and only fade.
@@ -142,6 +209,13 @@ alone" with its reasons. Buttons: Cancel, **Move to Holding Area** (default).
 - App icon: green gradient tile (`#1A9E73` top left to `#0B4A39` bottom right) with two
   four-point glints with equal arms, the big one white and the small one mint `#5EE6A8`,
   centred as a group. No name in the icon, at any size: the Dock shows the name on hover.
+- Master logo: `design/logo/SiivOS-logo-for-light-backgrounds.svg`, drawn by the owner. Everything
+  else follows it: the app's `SiivOSLogo` is generated from it, and the glint shape (four points
+  joined by soft curves, control points at 12 % and 45.4 % of the arm) is used in every glint:
+  the app icon, the section icons and the loading animation.
+- Text logo: the name with the two glints off the top-left corner of the S, no tile. Used in the
+  app's interface and anywhere a plain logo fits (README, website). Files in `design/logo/`, one
+  for dark backgrounds and one for light.
 - Logo tile: the same tile with the glints above the name "SiivOS" in Nunito ExtraBold, "OS" in
   mint. For GitHub, social posts and the website only.
 - Files: `Resources/AppIcon.icns` is what the app uses; `Scripts/make-app.sh` copies it into
