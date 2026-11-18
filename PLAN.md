@@ -18,34 +18,89 @@ These are what should make SiivOS stand out, and every feature is held to them.
 3. **Honest.** No "RAM booster" style features that don't help. On macOS the real gains come from freeing disk space and taming background items.
 4. **Health timeline.** A health score with local history, showing what changed and when.
 
+## How SiivOS stands out
+
+Looked at on 17 November 2026, from the products' own websites: CleanMyMac (paid, closed source, the broadest feature set), CCleaner for Mac (free and paid, looks behind on macOS support) and Purge (free, open source, storage cleanup only, files go to the Trash first).
+
+Purge already covers "open, private, honest, reversible" for storage cleanup, so those principles alone do not set SiivOS apart. What does:
+
+1. **Undo with a history.** Every change is recorded with the explanation that was shown, and a whole change, such as an uninstall, can be put back in one click. Purge relies on the Trash and CleanMyMac deletes; neither keeps a readable record of what was done and why.
+2. **The health timeline.** Answering "what changed on my Mac, and when?": new background items, apps added or removed, what grew. None of the three does this.
+3. **Diagnosis instead of boosting.** Explaining why the Mac is slow right now, in plain words, with no "free up memory" buttons.
+4. **Breadth with a trust model.** Cleanup, apps, performance and protection in one app, all local and reversible. Purge is trustworthy but narrow; CleanMyMac is broad but paid and closed.
+
 ## Phases
 
 | # | Phase | What it delivers | Status |
 |---|-------|------------------|--------|
-| 1 | Setup | Xcode installed, project skeleton, this plan in the repo | Built, awaiting first build on a Mac |
-| 2 | Safety core | Scan engine, action log, undo. Removed items go to a restorable holding area, not straight to deletion | Not started |
-| 3 | Clutter cleanup | Caches, logs, old downloads, large and duplicate files, leftovers from removed apps | Not started |
-| 4 | App manager | All apps with size and last use, full uninstall including leftovers, login items and background agents | Not started |
-| 5 | Performance | Live view of processor, memory, disk and battery use, with plain-language diagnoses from built-in rules | Not started |
-| 6 | Protection | ClamAV for malware, plus own checks for adware, suspicious background agents, browser extensions and configuration profiles | Not started |
-| 7 | Health timeline | Health score with local history | Not started |
-| 8 | Polish | Menu bar widget, tests, README and licence, ready for an open-source release | Not started |
-| 9 | AI assistant (later) | Added once the rules-based diagnoses work | Not started |
+| 1 | Setup | Build tools installed, project skeleton, this plan in the repo | Done. Built and run on macOS 15.8.3. The engine's tests first ran on the Mac on 18 November 2026, once Xcode was installed, and all passed |
+| 2 | Safety core | Scan engine, action log, undo. Removed items go to a restorable holding area, not straight to deletion | Done. Built and tried out on macOS 15.8.3 |
+| 3 | Clutter cleanup | Caches, logs, old downloads, large and duplicate files, leftovers from removed apps | Done. Built and tried out on macOS 15.8.3 |
+| 4 | App manager | All apps with size and last use, full uninstall including leftovers, login items and background agents | Done. Built and tried out on macOS 15.8.3. Login items are not listed, only linked to in System Settings (see Known constraints) |
+| 5 | Performance | Live view of processor, memory, disk and battery use, with plain-language diagnoses from built-in rules | Done. Built and tried out on macOS 15.8.3 |
+| 6 | Protection | ClamAV for malware, plus own checks for adware, suspicious background agents, browser extensions and configuration profiles | Done. Built and tried out on macOS 15.8.3, including a real ClamAV 1.5.4: definitions downloaded and Downloads scanned |
+| 7 | Health timeline | Health score with local history | Done. Built and tried out on macOS 15.8.3, with all 144 engine tests passing there. A score out of 100 that shows its reasons, a reading when the app opens (at most every six hours) kept in `health-history.json`, charts of the score and free space over time, and a list of what has changed: apps, background items, browser extensions, profiles, macOS's protections, free space, and SiivOS's own changes |
+| 8 | Polish | Menu bar widget, tests, README and licence, ready for an open-source release | Done. Built and tried out on macOS 15.8.3, with all 151 engine tests passing there. Menu bar icon with a panel (health score, disk, memory, processor, new changes worth a look), a Settings window with the switch for it and a privacy statement, tests for the safety paths that had none, a README written for the public, and the licence: GNU General Public License version 3 or later, chosen by the owner on 18 November 2026. Running the tests automatically on GitHub was offered and left for when the repository goes public, where it is free |
+| 9 | Agent door (was: AI assistant) | Decided with the owner on 18 November 2026: no AI inside SiivOS. A read-only command-line tool, and later an MCP server on top of it, lets the AI agent a person already uses ask SiivOS what it found. Off unless turned on in Settings, no network use by SiivOS, and no removing: at most an agent prepares a removal that the person reads and confirms in the app | First step built. On the Mac all 170 engine tests pass and the tool builds, lists its questions and refuses while the door is off; with the door on, `overview` gives the same figures as the app. Longer questions now say on the error stream which check is running, because `cleanup` looked stuck while it scanned. `cleanup` then worked on the Mac, with all 171 engine tests passing. Its output showed two things that were fixed: caches of open apps were counted as safe to remove by the tool (the app already held them back), and a photo inside a Lightroom library was offered as a duplicate. The read-only `siivos-cli` tool with nine questions (status, overview, health, changes, cleanup, performance, protection, apps, history), its switch in Settings (off unless turned on), and tests showing that a closed door answers nothing and that answering never creates or changes a file. Both fixes were confirmed on the Mac with all 175 engine tests passing: open apps' caches are marked as held back and the safe-to-remove total fell from 22,25 GB to 4,16 GB. Second step built and connected on the Mac: the Claude desktop app lists all nine SiivOS tools after `siivos` was added to its `claude_desktop_config.json`, and calling them works (confirmed by the owner on 18 November 2026). `siivos-cli mcp`, an MCP server over the tool's own input and output that offers the same nine questions as tools. Not started: letting an agent prepare a removal for the person to confirm in the app |
+
+## Planned additions
+
+Ideas taken from the comparison above and from the owner. Each is built as part of the phase it belongs to, or as a follow-up to a finished phase.
+
+| Idea | Inspired by | Belongs to | Status |
+|------|-------------|------------|--------|
+| Never-touch list: Cleanup never lists data of macOS, password managers and sign-in, iCloud and other syncing, or security and device-management software. Passwords, mail and messages cannot be removed at all | Purge | Phase 3 | Done. Built and tried out on macOS 15.8.3 |
+| Hold back caches and logs of apps that are open, and count an open app as installed wherever it is kept | Purge | Phase 3 | Done. Built and tried out on macOS 15.8.3 |
+| "Safe to remove" or "Check first" label on every item, with a reason. Leftovers that can hold the user's work (Application Support, Containers) are labelled Check first although they are listed among the safe groups; they no longer count towards the "safe to remove" figure and Tick All skips them | Purge | Phase 3 follow-up | Done. Built and tried out on macOS 15.8.3, with all 155 engine tests passing there. The owner asked for Check first to stand out more: it is now an amber mark with amber text, without a background, and Safe to remove stays quiet |
+| Never look inside photo, video and music libraries, catalogues and projects, even where macOS does not treat them as one item because the app that owns them is not installed. Found when a photo inside a Lightroom library was offered as a duplicate | Owner's Mac | Cleanup: large files and duplicates | Done. Tried on macOS 15.8.3: the photo inside the Lightroom library is no longer offered |
+| Developer clutter: a seventh check, Developer tools, for Xcode's build results, archives, device files and simulators, packages kept by npm, Gradle, CocoaPods, Cargo, Go and Maven, and Docker's disk. Each place is known by name and has its own label; archives, simulators, Maven and Docker's disk are Check first. Held back while Xcode, the Simulator or Docker is open. Homebrew's and other tools' caches in `~/Library/Caches` were already found by App caches. The group is hidden on Macs where it finds nothing | Purge | Phase 3 follow-up | Done. Built and tried out on macOS 15.8.3, with all 178 engine tests passing there |
+| Count copies that share disk space once, so sizes are honest | Purge | Phase 3 follow-up | Not started |
+| Visual map of the largest folders on the disk | CleanMyMac | Phase 3 follow-up | Not started |
+| App permissions overview: which apps can use the camera, microphone and files | CleanMyMac | Phase 6 | Done with Phase 6. It needs Full Disk Access to show anything |
+| Notice and record new background items when they appear | SiivOS's own | Phase 7, where the history of readings is built | Done with Phase 7. SiivOS notices them when it takes a reading, not at the moment they appear; a notification while the app is closed would need the menu bar widget of Phase 8 |
+| Green look, SiivOS icon set, sidebar logo and the app-drawn sidebar from `docs/design.md` | Owner's design notes | All screens | Done. Built and tried out on macOS 15.8.3 in dark and light mode |
+| Sidebar cannot be hidden; its own button collapses it to slightly larger icons only. The app lays out the sidebar and content itself, without the standard split view, and the window has no title bar strip. Collapsing is animated, and the collapsed sidebar shows the two glints in place of the logo | Owner | Sidebar and window | Done. Built and tried out on macOS 15.8.3 |
+| The window remembers its size and place when it is closed and opened again, and between launches. It opens at 1200 by 800 the first time, wide enough for three Overview cards in a row | Owner | Window | Done. Built and tried out on macOS 15.8.3. Only changes made after the window has settled are remembered, a new window is asked to open in the remembered size, and the place is corrected a moment after it appears |
+| Settings window (see below) | Owner | Phase 8, or earlier where a phase needs a setting | Started with Phase 8: the menu bar switch and the privacy statement. Since then: the switch for the agent door, and a Permissions section that says whether SiivOS has Full Disk Access and opens the right page in System Settings. The Cleanup and holding area settings are not yet agreed |
+| Finnish language version. The app follows the Mac's language, with English as the fallback | Owner | Its own step after Phase 4, then kept up to date in every later phase | Done. Built and tried out on macOS 15.8.3. The owner chose "sovellus", "terveys" and "Terveystiedot" |
+| Screens redesigned to follow `docs/design.md`: Overview with Check This Mac and a three-part disk bar, Cleanup in two parts with a bottom action bar and Undo, History as one list, app icon | Owner's design notes | Overview, Cleanup, History, sidebar and the confirmation sheet | Done. Built and tried out on macOS 15.8.3, including the glint loading animation |
+
+Decided against: cleaning cloud storage and updating other apps (both need network access, against the privacy principle), clearing browser history, and finding blurry or similar photos (little benefit for the effort).
+
+### Proposed settings
+
+Kept short on purpose. A setting is only added when people would reasonably want different behaviour.
+
+- **Cleanup:** how old a download must be to count as old, how big a file must be to count as large, which checks to run, and folders to leave out of every scan.
+- **Holding area:** delete held items automatically after a chosen time (off unless turned on), and warn when the holding area grows past a chosen size.
+- **Permissions:** whether SiivOS has Full Disk Access and App Management, with buttons that open the right page in System Settings.
+- **Privacy:** a plain statement of what SiivOS does and does not send anywhere. Anything that would use the network, such as malware definition updates in Phase 6, is listed here and is off until turned on.
+- **Menu bar (built in Phase 8):** show SiivOS in the menu bar, on unless turned off. With it on, closing the window leaves SiivOS running there.
+- **Still open:** how long the health timeline keeps its history (it now keeps the last 2,000 readings and 1,000 changes), and opening at login.
 
 ## How we work
 
-- Claude writes the code and commits it to this repository. Claude's workspace cannot compile Mac apps.
-- At the end of each phase, Niko builds and runs the app in Xcode and reports what works and what breaks.
+- Claude writes the code and commits it to this repository. Claude's workspace cannot compile the Mac app, but it can compile the engine and run its tests (`Scripts/check-engine-on-linux.sh`).
+- At the end of each phase, Niko builds and runs the app from Xcode, runs `swift test`, and reports what works and what breaks. `bash Scripts/make-app.sh` builds the double-clickable app.
 - Problems are fixed before the next phase starts.
 
 ## Known constraints
 
 - The app will need **Full Disk Access** to do its job, so it cannot be distributed through the Mac App Store. It will be distributed directly.
 - A public release needs a paid Apple Developer account for signing and notarisation. Personal use does not.
+- The accent colour from `docs/design.md` is an asset (`Resources/Assets.xcassets`) that `Scripts/make-app.sh` compiles with Xcode's asset tool. On a Mac without Xcode the script skips it and the app uses the Mac's own accent colour. It also does not apply when the app is run straight from Xcode, because that run has no app bundle.
+- ClamAV (decided by the owner on 18 November 2026): SiivOS uses a ClamAV that the user installs themselves, for example with Homebrew, and bundles no part of it. Virus definitions are kept in SiivOS's own folder and downloaded from database.clamav.net only when the user clicks the button for it. That download is the only network use in SiivOS. Bundling was looked at again in Phase 8, and Claude's recommendation is to keep it this way: ClamAV is under the GPL version 2, which would tie SiivOS's own licence to it; it would add ClamAV's programs and libraries to every copy of the app; and SiivOS would become responsible for shipping ClamAV's security updates. The owner has the last word.
+- macOS gives apps no supported way to list the "Open at Login" items in System Settings. SiivOS lists background items from the LaunchAgents and LaunchDaemons folders, and opens System Settings for the rest.
+- Removing background items and apps that belong to all users needs administrator rights, which SiivOS does not ask for yet. It shows those items and leaves them alone.
 
 ## Project layout
 
 - `Sources/SiivOSCore/` is the engine: everything that inspects or changes the Mac. No UI code.
 - `Sources/SiivOS/` is the app: SwiftUI interface only.
+- `Sources/SiivOSCLI/` is `siivos-cli`, the read-only command-line tool for AI agents. Its logic is in the engine (`Sources/SiivOSCore/Agent/`).
 - `Tests/SiivOSCoreTests/` holds tests for the engine.
+- `docs/design.md` describes how the screens should look and behave. The screens follow it.
+- `Resources/AppIcon.icns` is the app icon; its master files are in `design/icon/`.
+- `LICENSE` is the GNU General Public License, version 3.
 - `Scripts/make-app.sh` builds a double-clickable `SiivOS.app`.
+- `Scripts/check-engine-on-linux.sh` compiles and tests the engine in Claude's Linux workspace.

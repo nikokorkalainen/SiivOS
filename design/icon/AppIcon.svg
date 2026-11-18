@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+<defs>
+<linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1A9E73"/><stop offset="1" stop-color="#0B4A39"/></linearGradient>
+<filter id="shadow" x="-10%" y="-10%" width="120%" height="125%"><feGaussianBlur stdDeviation="10"/></filter>
+<clipPath id="tile"><rect x="100" y="100" width="824" height="824" rx="186"/></clipPath>
+</defs>
+<rect x="100" y="112" width="824" height="824" rx="186" fill="#000000" opacity="0.28" filter="url(#shadow)"/>
+<g clip-path="url(#tile)">
+<rect x="100" y="100" width="824" height="824" fill="url(#bg)"/>
+<path d="M568 282C592.24 392.29200000000003 659.708 459.76 770 484C659.708 508.24 592.24 575.708 568 686C543.76 575.708 476.29200000000003 508.24 366 484C476.29200000000003 459.76 543.76 392.29200000000003 568 282Z" fill="#FFFFFF"/><path d="M346 558C357.04 608.232 387.76800000000003 638.96 438 650C387.76800000000003 661.04 357.04 691.768 346 742C334.96 691.768 304.23199999999997 661.04 254 650C304.23199999999997 638.96 334.96 608.232 346 558Z" fill="#5EE6A8"/>
+</g>
+</svg>

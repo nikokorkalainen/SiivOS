@@ -11,14 +11,43 @@ APP_NAME="SiivOS"
 BUNDLE_ID="io.github.nikokorkalainen.SiivOS"
 VERSION="0.1.0"
 APP_DIR="dist/${APP_NAME}.app"
+CLI_NAME="siivos-cli"
 
 echo "Building ${APP_NAME}..."
 swift build -c release --product "${APP_NAME}"
+# The agent door: a read-only command-line tool for AI agents, kept inside the app.
+swift build -c release --product "${CLI_NAME}"
 BIN_DIR="$(swift build -c release --show-bin-path)"
 
 rm -rf "${APP_DIR}"
-mkdir -p "${APP_DIR}/Contents/MacOS"
+mkdir -p "${APP_DIR}/Contents/MacOS" "${APP_DIR}/Contents/Resources"
 cp "${BIN_DIR}/${APP_NAME}" "${APP_DIR}/Contents/MacOS/${APP_NAME}"
+mkdir -p "${APP_DIR}/Contents/Helpers"
+cp "${BIN_DIR}/${CLI_NAME}" "${APP_DIR}/Contents/Helpers/${CLI_NAME}"
+cp "Resources/AppIcon.icns" "${APP_DIR}/Contents/Resources/AppIcon.icns"
+
+# Compile the accent colour (moss green), which macOS uses for the selected sidebar row,
+# tick boxes and focus rings. This needs Xcode. Without it the app still builds and works,
+# with the Mac's own accent colour.
+if xcrun --find actool >/dev/null 2>&1; then
+    ASSET_INFO="$(mktemp)"
+    if ASSET_OUTPUT="$(xcrun actool "Resources/Assets.xcassets" \
+        --compile "${APP_DIR}/Contents/Resources" \
+        --platform macosx \
+        --target-device mac \
+        --minimum-deployment-target 14.0 \
+        --accent-color AccentColor \
+        --output-partial-info-plist "${ASSET_INFO}" \
+        --output-format human-readable-text 2>&1)"; then
+        echo "Accent colour added."
+    else
+        echo "Note: the accent colour could not be added, so the Mac's own accent colour is used."
+        echo "${ASSET_OUTPUT}"
+    fi
+    rm -f "${ASSET_INFO}"
+else
+    echo "Note: Xcode's asset tool was not found, so the Mac's own accent colour is used."
+fi
 
 cat > "${APP_DIR}/Contents/Info.plist" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
@@ -31,6 +60,17 @@ cat > "${APP_DIR}/Contents/Info.plist" <<PLIST
     <string>${APP_NAME}</string>
     <key>CFBundleExecutable</key>
     <string>${APP_NAME}</string>
+    <key>CFBundleDevelopmentRegion</key>
+    <string>en</string>
+    <key>CFBundleLocalizations</key>
+    <array>
+        <string>en</string>
+        <string>fi</string>
+    </array>
+    <key>CFBundleIconFile</key>
+    <string>AppIcon</string>
+    <key>NSAccentColorName</key>
+    <string>AccentColor</string>
     <key>CFBundleIdentifier</key>
     <string>${BUNDLE_ID}</string>
     <key>CFBundlePackageType</key>
@@ -41,6 +81,8 @@ cat > "${APP_DIR}/Contents/Info.plist" <<PLIST
     <string>1</string>
     <key>LSMinimumSystemVersion</key>
     <string>14.0</string>
+    <key>NSHumanReadableCopyright</key>
+    <string>Copyright © 2026 Niko Korkalainen. Free software under the GNU General Public License, version 3 or later.</string>
     <key>NSHighResolutionCapable</key>
     <true/>
     <key>NSPrincipalClass</key>
@@ -50,6 +92,7 @@ cat > "${APP_DIR}/Contents/Info.plist" <<PLIST
 PLIST
 
 # Sign for this Mac only ("ad hoc"). A public release needs a Developer ID instead.
+codesign --force --sign - "${APP_DIR}/Contents/Helpers/${CLI_NAME}"
 codesign --force --sign - "${APP_DIR}"
 
 echo "Done: ${APP_DIR}"
