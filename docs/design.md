@@ -44,6 +44,48 @@ The app follows the Mac's appearance setting. Colours and backgrounds are in
   as a soft white highlight in dark mode; that needs a custom sidebar, so moss is fine for now.)
 - **Sizes:** keep using `ByteCountFormatter`, so the user's region decides the decimal comma.
 
+## Fixes from the first green build
+
+Seen in the owner's screenshot of the Cleanup screen before scanning (18 November).
+
+1. **The green must fill the whole content column.** `.background(SiivOSWindowBackground())` in
+   `ContentView` only covers the size of the content, so a small screen such as an empty state
+   shows a grey column with a small green box. Make the detail fill the column first:
+
+       detail(for: selection ?? .overview)
+           .frame(maxWidth: .infinity, maxHeight: .infinity)
+           .background(SiivOSWindowBackground())
+
+   and do not give individual screens or empty states their own background.
+
+2. **The selected sidebar row must not be macOS blue.** A `List` selection is drawn in the accent
+   colour chosen in System Settings, which the app cannot change. Draw the rows yourself: keep
+   the same sections and badge, but use plain rows (for example a `ScrollView` with a `VStack`
+   of buttons, or a `List` without a selection binding) and draw the selected row's background:
+   - dark mode: white at 14 %, corner radius 8, icon in mint `#7EE0B4` with its white details,
+     text in the primary colour;
+   - light mode: moss `#2F7A5F`, corner radius 8, white icon and text.
+   Keep keyboard use working: the rows are buttons, and `.onMoveCommand` moves the selection
+   with the up and down arrow keys.
+
+3. **Empty states are not boxes.** Replace `ContentUnavailableView` on the Cleanup screen with
+   the layout on the canvas ("Cleanup before scanning"), centred in the content column on the
+   green, with nothing behind it:
+   - the Cleanup icon, `SiivOSIconView(.cleanup, size: 72)`;
+   - the heading "Scan this Mac for clutter" (22 pt semibold);
+   - the existing sentence about what SiivOS looks for, and "Scanning only looks. Nothing is
+     removed until you tick items and confirm.", in secondary text, at most about 500 pt wide;
+   - **Scan for Clutter** as the main button;
+   - under a thin divider, two short columns: "Safe to remove" (App caches, Logs, Leftovers
+     from removed apps) and "Check first" (Old downloads, Large files, Duplicate files);
+   - last, in small secondary text, the note that macOS may ask for permission to look in the
+     Desktop, Documents and Downloads folders.
+   New texts need Finnish translations like the rest. `ComingSoonView` should follow the same
+   open layout: the section's icon at 72 pt, its title and summary, no box.
+
+4. **More room above the logo.** Add about 6 pt of top padding to `SiivOSSidebarHeader` so the
+   logo does not sit tight under the window buttons.
+
 ## Sidebar
 
 **Logo at the top:** `SiivOSSidebarHeader()`, the text logo (`SiivOSLogo`, 39 pt tall including the glints): the
