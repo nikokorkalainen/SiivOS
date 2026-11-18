@@ -26,6 +26,19 @@ final class SafetyRulesTests: TemporaryDirectoryTestCase {
         XCTAssertNil(rules.reasonToRefuse(looseFile))
     }
 
+    func testBothSpellingsOfTheMacsPrivateFoldersAreTreatedAlike() {
+        // On a Mac, /var, /tmp and /etc are other names for /private/var and so on.
+        let pretendHome = URL(fileURLWithPath: "/private/var/folders/ab/home")
+        let rules = SafetyRules(
+            homeDirectory: pretendHome,
+            holdingDirectory: URL(fileURLWithPath: "/private/var/folders/ab/home/Library/Application Support/SiivOS/HoldingArea")
+        )
+
+        XCTAssertNotNil(rules.reasonToRefuse(URL(fileURLWithPath: "/var/folders/ab/home")), "The home folder, spelled the short way")
+        XCTAssertNotNil(rules.reasonToRefuse(URL(fileURLWithPath: "/var/folders/ab/home/Library/Application Support/SiivOS/HoldingArea")))
+        XCTAssertNotNil(rules.reasonToRefuse(URL(fileURLWithPath: "/private/var/folders/ab/home/Documents")))
+    }
+
     func testTheDiskAndMacOSAreProtected() {
         XCTAssertNotNil(rules.reasonToRefuse(URL(fileURLWithPath: "/")))
         XCTAssertNotNil(rules.reasonToRefuse(URL(fileURLWithPath: "/Applications")))

@@ -1,6 +1,23 @@
 import XCTest
 @testable import SiivOSCore
 
+/// A file manager that can be told to fail when one folder is created, to stand in for
+/// a disk that is full or a folder that may not be written to.
+private final class FailingFileManager: FileManager, @unchecked Sendable {
+    var folderThatCannotBeCreated: URL?
+
+    override func createDirectory(
+        at url: URL,
+        withIntermediateDirectories createIntermediates: Bool,
+        attributes: [FileAttributeKey: Any]? = nil
+    ) throws {
+        if let blocked = folderThatCannotBeCreated, url.standardizedFileURL.path == blocked.standardizedFileURL.path {
+            throw CocoaError(.fileWriteNoPermission)
+        }
+        try super.createDirectory(at: url, withIntermediateDirectories: createIntermediates, attributes: attributes)
+    }
+}
+
 final class SafetyCoreTests: TemporaryDirectoryTestCase {
     private func makeCore() throws -> SafetyCore {
         try SafetyCore(baseDirectory: baseDirectory, homeDirectory: home)
@@ -168,6 +185,43 @@ final class SafetyCoreTests: TemporaryDirectoryTestCase {
 
         XCTAssertThrowsError(try core.apply(plan))
         XCTAssertEqual(try core.history(), [])
+    }
+
+    func testARequiredItemThatCannotBeMovedLeavesEverythingInPlace() throws {
+        let core = try makeCore()
+        let leftover = try makeFile("Library/Caches/com.example.app/data.bin")
+        let app = try makeFile("Documents/the-app-itself.txt")
+        let plan = core.plan(removing: [leftover, app], reason: "Test.", required: [app])
+        XCTAssertEqual(plan.items.count, 2)
+        try FileManager.default.removeItem(at: app)
+
+        XCTAssertThrowsError(try core.apply(plan))
+
+        XCTAssertTrue(exists(leftover), "What was already moved is put back when the change cannot go through")
+        XCTAssertEqual(try core.history(), [])
+    }
+
+    func testAChangeThatCannotBeWrittenDownIsPutBack() throws {
+        let files = FailingFileManager()
+        let core = try SafetyCore(baseDirectory: baseDirectory, homeDirectory: home, fileManager: files)
+        let file = try makeFile("Documents/keep-track-of-me.txt")
+        let plan = core.plan(removing: [file], reason: "Test.")
+        // Saving the history starts by making sure its folder is there.
+        files.folderThatCannotBeCreated = baseDirectory
+
+        XCTAssertThrowsError(try core.apply(plan))
+
+        XCTAssertTrue(exists(file), "A change that is not in the history could never be undone, so it must not stay")
+        files.folderThatCannotBeCreated = nil
+        XCTAssertEqual(try core.history(), [])
+    }
+
+    func testErrorsSayWhatWentWrongInPlainWords() {
+        let unreadable = ActionLogError.unreadable(path: "/tmp/action-log.json", reason: "broken")
+        XCTAssertTrue(unreadable.errorDescription?.contains("/tmp/action-log.json") ?? false)
+        XCTAssertTrue(unreadable.errorDescription?.contains("Nothing was changed") ?? false)
+        XCTAssertTrue(HoldingAreaError.heldCopyMissing("/Users/x/a.txt").errorDescription?.contains("/Users/x/a.txt") ?? false)
+        XCTAssertNotNil(SafetyCoreError.recordNotFound.errorDescription)
     }
 
     func testADamagedHistoryStopsARemovalBeforeAnythingMoves() throws {

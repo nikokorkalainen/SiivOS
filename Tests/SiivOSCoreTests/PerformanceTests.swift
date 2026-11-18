@@ -1,6 +1,26 @@
 import XCTest
 @testable import SiivOSCore
 
+final class KnownProcessesTests: XCTestCase {
+    override func setUp() {
+        super.setUp()
+        L10n.overrideLanguage = .english
+    }
+
+    func testWellKnownPartsOfMacOSAreExplainedAndOthersAreLeftAlone() {
+        XCTAssertTrue(KnownProcesses.explanation(for: "mds_stores")?.contains("Spotlight") ?? false)
+        XCTAssertTrue(KnownProcesses.explanation(for: "backupd")?.contains("Time Machine") ?? false)
+        XCTAssertTrue(KnownProcesses.explanation(for: "photoanalysisd")?.contains("Photos") ?? false)
+        XCTAssertTrue(KnownProcesses.explanation(for: "cloudd")?.contains("iCloud") ?? false)
+        XCTAssertNotNil(KnownProcesses.explanation(for: "softwareupdated"))
+        XCTAssertNotNil(KnownProcesses.explanation(for: "syspolicyd"))
+        XCTAssertNotNil(KnownProcesses.explanation(for: "coreaudiod"))
+        XCTAssertNotNil(KnownProcesses.explanation(for: "launchd"))
+        XCTAssertNotNil(KnownProcesses.explanation(for: "WindowServer"), "Upper and lower case do not matter")
+        XCTAssertNil(KnownProcesses.explanation(for: "Safari"), "SiivOS adds nothing where the name already says it")
+    }
+}
+
 final class PerformanceTests: XCTestCase {
     override func setUp() {
         super.setUp()

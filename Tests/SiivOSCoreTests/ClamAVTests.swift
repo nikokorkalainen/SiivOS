@@ -65,6 +65,26 @@ final class ClamAVTests: TemporaryDirectoryTestCase {
 
     // MARK: - With a pretend ClamAV installed
 
+    func testDetectionsWhoseFilesAreGoneDropOffTheList() throws {
+        let stillThere = try makeFile("Downloads/bad.dmg")
+        let removed = home.appendingPathComponent("Downloads/gone.dmg")
+        let result = MalwareScanResult(
+            scannedFiles: 12,
+            detections: [
+                MalwareDetection(path: stillThere.path, name: "Osx.Test.One"),
+                MalwareDetection(path: removed.path, name: "Osx.Test.Two")
+            ],
+            problem: nil,
+            wasCancelled: false
+        )
+
+        let updated = result.removingDetectionsNoLongerOnDisk()
+
+        XCTAssertEqual(updated.detections.map { $0.name }, ["Osx.Test.One"])
+        XCTAssertEqual(updated.detections.first?.url, stillThere)
+        XCTAssertEqual(updated.scannedFiles, 12)
+    }
+
     func testClamAVThatIsNotInstalledIsReportedAsSuch() {
         let clamAV = makeClamAV()
         XCTAssertNil(clamAV.status())
