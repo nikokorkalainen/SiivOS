@@ -166,13 +166,13 @@ struct OverviewView: View {
                 .bold()
             Card {
                 VStack(alignment: .leading, spacing: 8) {
-                    LabeledContent("macOS", value: snapshot.osVersion)
+                    FactRow(label: "macOS", value: snapshot.osVersion)
                     ThemedDivider()
-                    LabeledContent(tr("Processor cores"), value: "\(snapshot.processorCount)")
+                    FactRow(label: tr("Processor cores"), value: "\(snapshot.processorCount)")
                     ThemedDivider()
-                    LabeledContent(tr("Memory"), value: memory(snapshot.physicalMemoryBytes))
+                    FactRow(label: tr("Memory"), value: memory(snapshot.physicalMemoryBytes))
                     ThemedDivider()
-                    LabeledContent(tr("Time since restart"), value: uptime(snapshot.uptimeSeconds))
+                    FactRow(label: tr("Time since restart"), value: uptime(snapshot.uptimeSeconds))
                 }
             }
         }

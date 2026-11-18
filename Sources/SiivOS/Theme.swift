@@ -79,24 +79,79 @@ struct ProminentButton: View {
 
     var body: some View {
         Button(action: action) {
-            ProminentLabel(title: title, systemImage: systemImage)
+            ButtonLabel(title: title, systemImage: systemImage)
         }
-        .buttonStyle(.borderedProminent)
-        .tint(SiivOSTheme.prominent)
+        .buttonStyle(ProminentButtonStyle())
     }
 }
 
-/// The label of a prominent button. Mint needs dark text, which the system does not choose
-/// by itself; a disabled button goes back to the system's dimmed look.
-private struct ProminentLabel: View {
-    let title: String
-    let systemImage: String?
+/// Draws the main button itself. The Mac's own prominent style picks the text colour for
+/// us and keeps it light, which is hard to read on mint, so the theme's colours are
+/// applied directly here.
+private struct ProminentButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        ProminentButtonBody(label: configuration.label, isPressed: configuration.isPressed)
+    }
+}
+
+private struct ProminentButtonBody<Content: View>: View {
+    let label: Content
+    let isPressed: Bool
 
     @Environment(\.isEnabled) private var isEnabled
+    @Environment(\.controlSize) private var controlSize
 
     var body: some View {
-        ButtonLabel(title: title, systemImage: systemImage)
-            .foregroundStyle(isEnabled ? AnyShapeStyle(SiivOSTheme.onProminent) : AnyShapeStyle(.secondary))
+        label
+            .font(.body.weight(.medium))
+            .foregroundStyle(SiivOSTheme.onProminent)
+            .padding(.horizontal, controlSize == .large ? 14 : 10)
+            .padding(.vertical, controlSize == .large ? 6 : 3)
+            .background(SiivOSTheme.prominent, in: RoundedRectangle(cornerRadius: 7))
+            .opacity(isEnabled ? (isPressed ? 0.8 : 1) : 0.45)
+            .contentShape(RoundedRectangle(cornerRadius: 7))
+    }
+}
+
+/// In dark mode, gives the window's title bar the same green as the top of the content,
+/// so there is no grey strip above the green look. Light mode keeps the standard bar.
+struct ThemedToolbar: ViewModifier {
+    @Environment(\.colorScheme) private var colorScheme
+
+    func body(content: Content) -> some View {
+        if colorScheme == .dark {
+            content
+                .toolbarBackground(
+                    LinearGradient(
+                        colors: [
+                            Color(red: 19.0 / 255.0, green: 86.0 / 255.0, blue: 63.0 / 255.0),
+                            Color(red: 11.0 / 255.0, green: 58.0 / 255.0, blue: 46.0 / 255.0)
+                        ],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    ),
+                    for: .windowToolbar
+                )
+                .toolbarBackground(.visible, for: .windowToolbar)
+        } else {
+            content
+        }
+    }
+}
+
+/// A fact with its value at the far end of the row.
+struct FactRow: View {
+    let label: String
+    let value: String
+
+    var body: some View {
+        HStack(alignment: .firstTextBaseline) {
+            Text(label)
+            Spacer()
+            Text(value)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.trailing)
+        }
     }
 }
 

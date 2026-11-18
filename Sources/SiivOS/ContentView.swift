@@ -11,12 +11,15 @@ struct ContentView: View {
     /// Kept here so that the charts keep their history during a short visit elsewhere.
     @StateObject private var performance = PerformanceModel()
     @ObservedObject private var holding = HoldingStatus.shared
+    @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
         NavigationSplitView {
             List(AppSection.allCases, selection: $selection) { section in
                 HStack(spacing: 10) {
-                    SiivOSIconView(section.icon, isSelected: selection == section)
+                    // The selected row's highlight is light in light mode, where a white
+                    // icon would disappear, so the icon only turns white in dark mode.
+                    SiivOSIconView(section.icon, isSelected: selection == section && colorScheme == .dark)
                     Text(section.title)
                 }
                 .padding(.vertical, 8)
@@ -31,6 +34,7 @@ struct ContentView: View {
         } detail: {
             detail(for: selection ?? .overview)
                 .background(SiivOSWindowBackground())
+                .modifier(ThemedToolbar())
         }
         .tint(SiivOSTheme.prominent)
         .onAppear {
