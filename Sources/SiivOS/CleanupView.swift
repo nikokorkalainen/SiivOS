@@ -421,8 +421,7 @@ private struct FindingRow: View {
 /// The label every item carries: "Safe to remove" or "Check first".
 ///
 /// The two are meant to look different at a glance. "Safe to remove" is quiet: a green
-/// tick and grey text. "Check first" stands out: the amber mark, amber text and a soft
-/// amber background behind it.
+/// tick and grey text. "Check first" stands out: the amber mark and amber text.
 private struct SafetyLabel: View {
     let safety: Finding.Safety
 
@@ -444,10 +443,6 @@ private struct SafetyLabel: View {
                         .fontWeight(.semibold)
                         .foregroundStyle(SiivOSIconColors.attention)
                 }
-                .padding(.leading, 4)
-                .padding(.trailing, 8)
-                .padding(.vertical, 2)
-                .background(SiivOSIconColors.attention.opacity(0.16), in: Capsule())
             }
         }
         .fixedSize()
