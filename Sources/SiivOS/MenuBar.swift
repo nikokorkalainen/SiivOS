@@ -74,6 +74,23 @@ enum MainWindow {
         window.center()
     }
 
+    /// Brings the app's window to the front, opening a new one if it was closed, and
+    /// shows the given section if there is one.
+    static func show(_ section: AppSection?, openWindow: OpenWindowAction) {
+        if let section {
+            AppNavigation.shared.selection = section
+        }
+        NSApp.activate()
+        if let window = current, window.isVisible || window.isMiniaturized {
+            if window.isMiniaturized {
+                window.deminiaturize(nil)
+            }
+            window.makeKeyAndOrderFront(nil)
+        } else {
+            openWindow(id: sceneID)
+        }
+    }
+
     /// Remembers the window's size and place for the next time it opens.
     static func saveFrame(of window: NSWindow) {
         // A window that fills the screen has no size of its own worth remembering.
@@ -391,18 +408,7 @@ struct MenuBarPanel: View {
     /// Brings the app's window to the front, opening a new one if it was closed, and
     /// shows the given section if there is one.
     private func open(_ section: AppSection?) {
-        if let section {
-            AppNavigation.shared.selection = section
-        }
-        NSApp.activate()
-        if let window = MainWindow.current, window.isVisible || window.isMiniaturized {
-            if window.isMiniaturized {
-                window.deminiaturize(nil)
-            }
-            window.makeKeyAndOrderFront(nil)
-        } else {
-            openWindow(id: MainWindow.sceneID)
-        }
+        MainWindow.show(section, openWindow: openWindow)
         dismiss()
     }
 }

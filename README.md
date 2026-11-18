@@ -105,7 +105,7 @@ If you use an AI agent, such as Claude, it can ask SiivOS what it has found inst
 To use it:
 
 1. Build the app with `bash Scripts/make-app.sh`. The tool is put inside the app.
-2. In SiivOS, choose **Settings** from the SiivOS menu and turn on **Let AI agents ask SiivOS questions**.
+2. In SiivOS, open **Settings** at the bottom of the sidebar (or press Command-comma) and turn on **Let AI agents ask SiivOS questions**.
 3. Click **Copy Path** there and give the path to your agent, with a sentence such as "use this tool to look at my Mac; run it with the word help first".
 
 You can try it yourself in Terminal from the project folder:

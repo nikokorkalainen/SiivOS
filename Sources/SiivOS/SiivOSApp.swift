@@ -1,4 +1,5 @@
 import AppKit
+import SiivOSCore
 import SwiftUI
 
 @main
@@ -21,6 +22,9 @@ struct SiivOSApp: App {
         .windowStyle(.hiddenTitleBar)
         // A new window opens in the size the last one was left in.
         .defaultSize(width: windowWidth, height: windowHeight)
+        .commands {
+            SettingsCommands()
+        }
 
         // The glints in the menu bar, with a small panel under them.
         MenuBarExtra(isInserted: $showsMenuBar) {
@@ -29,9 +33,20 @@ struct SiivOSApp: App {
             MenuBarLabel()
         }
         .menuBarExtraStyle(.window)
+    }
+}
 
-        Settings {
-            SettingsView()
+/// "Settings…" in the SiivOS menu, with Command-comma. Settings is a screen in the main
+/// window, so this brings the window forward on that screen.
+struct SettingsCommands: Commands {
+    @Environment(\.openWindow) private var openWindow
+
+    var body: some Commands {
+        CommandGroup(replacing: .appSettings) {
+            Button(tr("Settings…")) {
+                MainWindow.show(.settings, openWindow: openWindow)
+            }
+            .keyboardShortcut(",", modifiers: .command)
         }
     }
 }
