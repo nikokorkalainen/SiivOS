@@ -126,10 +126,11 @@ alone" with its reasons. Buttons: Cancel, **Move to Holding Area** (default).
 
 ## Logo and app icon
 
-- App icon: green gradient tile (`#1A9E73` top left to `#0B4A39` bottom right), two four-point
-  glints with equal arms (the big one white, the small one mint `#5EE6A8`), grouped and centred above the name "SiivOS" in Nunito
-  ExtraBold, with "OS" in mint `#5EE6A8`.
-- In the 16 pt and 32 pt slots (at every pixel density) the name drops out and the glints fill
-  the tile.
+- App icon: green gradient tile (`#1A9E73` top left to `#0B4A39` bottom right) with two
+  four-point glints with equal arms, the big one white and the small one mint `#5EE6A8`,
+  centred as a group. No name in the icon, at any size: the Dock shows the name on hover.
+- Logo tile: the same tile with the glints above the name "SiivOS" in Nunito ExtraBold, "OS" in
+  mint. For GitHub, social posts and the website only.
 - Files: `Resources/AppIcon.icns` is what the app uses; `Scripts/make-app.sh` copies it into
-  the bundle. Master artwork and every size are in `design/icon/` (see its README).
+  the bundle. Master artwork, every size and the logo tile are in `design/icon/` (see its
+  README).
