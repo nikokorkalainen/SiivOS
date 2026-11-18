@@ -219,6 +219,28 @@ struct LoadingView: View {
     }
 }
 
+/// Lays a start screen out in the open: its content centred in the content column, with
+/// nothing behind it. If the window is too small, the content scrolls.
+struct CenteredScreen<Content: View>: View {
+    private let content: Content
+
+    init(@ViewBuilder content: () -> Content) {
+        self.content = content()
+    }
+
+    var body: some View {
+        GeometryReader { proxy in
+            ScrollView {
+                VStack(spacing: 16) {
+                    content
+                }
+                .padding(32)
+                .frame(maxWidth: .infinity, minHeight: proxy.size.height)
+            }
+        }
+    }
+}
+
 /// A rounded box that holds one topic.
 struct Card<Content: View>: View {
     private let content: Content

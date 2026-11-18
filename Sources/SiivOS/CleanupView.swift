@@ -35,16 +35,7 @@ struct CleanupView: View {
         } else if model.report != nil {
             CleanupResultsView(model: model)
         } else {
-            ContentUnavailableView {
-                Label(tr("Cleanup"), systemImage: "trash")
-            } description: {
-                Text(tr("SiivOS looks for app caches, logs, leftovers from removed apps, old downloads, large files and duplicate files."))
-                Text(tr("Scanning only looks. Nothing is removed until you tick items and confirm. macOS may ask for permission to look in your Desktop, Documents and Downloads folders."))
-            } actions: {
-                ProminentButton(tr("Scan for Clutter")) {
-                    model.scan()
-                }
-            }
+            CleanupStartView(model: model)
         }
     }
 
@@ -60,6 +51,74 @@ struct CleanupView: View {
                 if !isShown { model.message = nil }
             }
         )
+    }
+}
+
+/// The Cleanup screen before the first scan: what a scan looks for, in the open layout
+/// from the design notes, with nothing behind it.
+private struct CleanupStartView: View {
+    @ObservedObject var model: CleanupModel
+
+    var body: some View {
+        CenteredScreen {
+            SiivOSIconView(.cleanup, size: 72)
+            Text(tr("Scan this Mac for clutter"))
+                .font(.system(size: 22, weight: .semibold))
+            VStack(spacing: 6) {
+                Text(tr("SiivOS looks for app caches, logs, leftovers from removed apps, old downloads, large files and duplicate files."))
+                Text(tr("Scanning only looks. Nothing is removed until you tick items and confirm."))
+            }
+            .foregroundStyle(.secondary)
+            .multilineTextAlignment(.center)
+            .frame(maxWidth: 500)
+            .fixedSize(horizontal: false, vertical: true)
+
+            ProminentButton(tr("Scan for Clutter")) {
+                model.scan()
+            }
+            .controlSize(.large)
+            .padding(.top, 4)
+
+            ThemedDivider()
+                .frame(maxWidth: 500)
+                .padding(.vertical, 8)
+
+            HStack(alignment: .top, spacing: 56) {
+                StartColumn(
+                    title: tr("Safe to remove"),
+                    items: [tr("App caches"), tr("Logs"), tr("Leftovers from removed apps")]
+                )
+                StartColumn(
+                    title: tr("Check first"),
+                    items: [tr("Old downloads"), tr("Large files"), tr("Duplicate files")]
+                )
+            }
+
+            Text(tr("macOS may ask for permission to look in your Desktop, Documents and Downloads folders."))
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .frame(maxWidth: 500)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.top, 8)
+        }
+    }
+}
+
+/// One of the two short columns on the start screen: a heading and what belongs under it.
+private struct StartColumn: View {
+    let title: String
+    let items: [String]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(title)
+                .font(.headline)
+            ForEach(items, id: \.self) { item in
+                Text(item)
+                    .foregroundStyle(.secondary)
+            }
+        }
     }
 }
 

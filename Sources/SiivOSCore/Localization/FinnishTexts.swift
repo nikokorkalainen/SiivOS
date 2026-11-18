@@ -67,7 +67,6 @@ enum FinnishTexts {
         "%1$@ items ticked, %2$@": "%1$@ kohdetta valittu, %2$@",
         "Some items could not be put back and are still in the holding area:": "Joitakin kohteita ei voitu palauttaa, ja ne ovat yhä välivarastossa:",
         "SiivOS looks for app caches, logs, leftovers from removed apps, old downloads, large files and duplicate files.": "SiivOS etsii sovellusten välimuisteja, lokeja, poistetuista sovelluksista jääneitä tietoja, vanhoja latauksia, suuria tiedostoja ja tiedostojen kaksoiskappaleita.",
-        "Scanning only looks. Nothing is removed until you tick items and confirm. macOS may ask for permission to look in your Desktop, Documents and Downloads folders.": "Tarkistus vain katsoo. Mitään ei poisteta, ennen kuin valitset kohteet ja vahvistat. macOS voi pyytää lupaa katsoa Työpöytä-, Dokumentit- ja Lataukset-kansioihin.",
         "Scan for Clutter": "Etsi turhat tiedostot",
         "Getting ready…": "Valmistellaan…",
         "Checking: %1$@…": "Tarkistetaan: %1$@…",
@@ -267,5 +266,8 @@ enum FinnishTexts {
         "Extra copies of files with exactly the same contents, in your Desktop, Documents, Downloads, Movies, Music and Pictures folders. One copy of each is always kept and is not listed here. If the copies were made on this Mac they may share disk space, so less may be freed than shown.": "Ylimääräisiä kopioita tiedostoista, joiden sisältö on täsmälleen sama, Työpöytä-, Dokumentit-, Lataukset-, Elokuvat-, Musiikki- ja Kuvat-kansioissasi. Jokaisesta säilytetään aina yksi kopio, eikä sitä näytetä tässä. Jos kopiot on tehty tällä Macilla, ne voivat jakaa levytilaa, jolloin tilaa voi vapautua näytettyä vähemmän.",
         "Identical to %1$@, which is kept.": "Sama sisältö kuin tiedostolla %1$@, joka säilytetään.",
         "Cleanup found %1$@ that is safe to remove.": "Siivous löysi %1$@, jonka voi turvallisesti poistaa.",
+        "Scan this Mac for clutter": "Etsi tästä Macista turhat tiedostot",
+        "Scanning only looks. Nothing is removed until you tick items and confirm.": "Tarkistus vain katsoo. Mitään ei poisteta, ennen kuin valitset kohteet ja vahvistat.",
+        "macOS may ask for permission to look in your Desktop, Documents and Downloads folders.": "macOS voi pyytää lupaa katsoa Työpöytä-, Dokumentit- ja Lataukset-kansioihin.",
     ]
 }
