@@ -161,7 +161,7 @@ Everything stays on your Mac, in `~/Library/Application Support/SiivOS`:
 
 - `HoldingArea` holds the items SiivOS has removed, until you put them back or delete them permanently from the History screen.
 - `action-log.json` is the list of changes SiivOS has made. It is a plain text file you can open and read.
-- `health-history.json` is the Health Timeline: the health score and free space each time SiivOS looked, and what had changed on the Mac. It is a plain text file too, and deleting it only starts the timeline again.
+- `health-history.json` is the Health Timeline: the health score and free space each time SiivOS looked, and what had changed on the Mac. It keeps the last 2,000 readings and 1,000 changes, which is well over a year in ordinary use; older ones drop off. It is a plain text file too, and deleting it only starts the timeline again.
 - `ClamAV` holds virus definitions, if you have chosen to download them.
 - `agent-door.json` remembers whether the tool for AI agents is switched on.
 - `cleanup-settings.json` holds your Cleanup settings: how old, how large, which checks run, and folders to leave out.
