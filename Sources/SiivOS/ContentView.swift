@@ -8,6 +8,8 @@ struct ContentView: View {
     /// Kept here so that scan results survive a visit to another section,
     /// and so that Overview and Cleanup show the same check.
     @StateObject private var cleanup = CleanupModel()
+    /// Kept here so that the measured folders survive a visit to another section.
+    @StateObject private var diskMap = DiskMapModel()
     /// Kept here so that the app list is only measured once.
     @StateObject private var apps = AppsModel()
     /// Kept here so that the charts keep their history during a short visit elsewhere.
@@ -60,7 +62,7 @@ struct ContentView: View {
         case .overview:
             OverviewView(cleanup: cleanup, timeline: timeline, open: { navigation.selection = $0 })
         case .cleanup:
-            CleanupView(model: cleanup)
+            CleanupView(model: cleanup, diskMap: diskMap)
         case .apps:
             AppsView(model: apps)
         case .performance:

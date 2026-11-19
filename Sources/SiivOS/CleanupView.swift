@@ -2,29 +2,52 @@ import AppKit
 import SiivOSCore
 import SwiftUI
 
-/// Finds clutter and lets the user choose what to remove.
+/// Finds clutter and lets the user choose what to remove, and shows where the space
+/// in the home folder goes.
 struct CleanupView: View {
     @ObservedObject var model: CleanupModel
+    @ObservedObject var diskMap: DiskMapModel
+    @State private var tab: Tab = .clutter
+
+    private enum Tab: Hashable {
+        case clutter
+        case map
+    }
 
     var body: some View {
-        content
-            .navigationTitle(tr("Cleanup"))
-            .sheet(item: $model.pendingPlan) { plan in
-                RemovalPlanSheet(
-                    plan: plan,
-                    onConfirm: { model.confirmPendingPlan() },
-                    onCancel: { model.pendingPlan = nil }
-                )
+        VStack(alignment: .leading, spacing: 0) {
+            SiivOSSegmentedControl(selection: $tab, options: [
+                (.clutter, tr("Clutter")),
+                (.map, tr("Disk Map"))
+            ])
+            .padding(.horizontal, 24)
+            .padding(.top, 20)
+            .padding(.bottom, 4)
+            .readableWidth()
+
+            if tab == .clutter {
+                content
+            } else {
+                DiskMapView(model: diskMap)
             }
-            .alert(
-                "SiivOS",
-                isPresented: isShowingMessage,
-                presenting: model.message
-            ) { _ in
-                Button("OK") {}
-            } message: { text in
-                Text(text)
-            }
+        }
+        .navigationTitle(tr("Cleanup"))
+        .sheet(item: $model.pendingPlan) { plan in
+            RemovalPlanSheet(
+                plan: plan,
+                onConfirm: { model.confirmPendingPlan() },
+                onCancel: { model.pendingPlan = nil }
+            )
+        }
+        .alert(
+            "SiivOS",
+            isPresented: isShowingMessage,
+            presenting: model.message
+        ) { _ in
+            Button("OK") {}
+        } message: { text in
+            Text(text)
+        }
     }
 
     @ViewBuilder

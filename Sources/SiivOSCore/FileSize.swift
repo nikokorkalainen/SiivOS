@@ -33,7 +33,8 @@ enum FileSize {
         return total
     }
 
-    private static func ownSize(of url: URL) -> Int64 {
+    /// Space used by the item itself, not counting anything inside it.
+    static func ownSize(of url: URL) -> Int64 {
         guard let values = try? url.resourceValues(forKeys: Set(sizeKeys)) else {
             return 0
         }

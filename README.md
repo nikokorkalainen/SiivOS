@@ -16,7 +16,7 @@ SiivOS is in English and Finnish and follows the language of your Mac. It needs 
 | Section | What you get |
 |---------|--------------|
 | **Overview** | Free space, what the last check found, the health score, and free space over time. |
-| **Cleanup** | Caches, logs, old downloads, large files, duplicate files, leftovers from apps you have removed, and data piled up by developer tools such as Xcode, npm and Docker. Every item is labelled Safe to remove or Check first. Data of macOS, password managers, iCloud and security software is never listed. |
+| **Cleanup** | Caches, logs, old downloads, large files, duplicate files, leftovers from apps you have removed, and data piled up by developer tools such as Xcode, npm and Docker. Every item is labelled Safe to remove or Check first. Data of macOS, password managers, iCloud and security software is never listed. A Disk Map shows where the space in your home folder goes. |
 | **Apps** | Every app with its size and last use. Uninstalling takes the app's leftovers with it. Background items can be reviewed and removed. |
 | **Performance** | Processor, memory, disk and battery right now, with a plain-language explanation when something is holding the Mac back. |
 | **Protection** | The protection built into macOS, what starts by itself, browser extensions, configuration profiles and app permissions, plus an optional malware scan with ClamAV. |
@@ -124,6 +124,7 @@ swift run siivos-cli help
 | `performance` | Processor, memory and battery right now, with what SiivOS makes of them. |
 | `protection` | macOS's own protection, background items, browser extensions and profiles. |
 | `apps` | Installed apps with their size and last use, largest first. |
+| `folders` | Where the space in your home folder goes: the largest folders and what is in them. |
 | `history` | What SiivOS itself has changed, and what can still be put back. |
 
 Answers are in JSON and in English. The tool sees what the program that runs it is allowed to see: started from Terminal, it has Terminal's permissions, not SiivOS's. Longer questions print a line for each check as they go, so you can see the tool is working.
@@ -152,7 +153,7 @@ In the Claude desktop app, for example, that is an entry like this in its `claud
 
 That file usually holds the app's other settings already. Add the `mcpServers` part next to them; do not replace the file. Quit the app before you change the file and open it again afterwards. The file is `~/Library/Application Support/Claude/claude_desktop_config.json`. Ask in a plain chat, not in a coding session that runs in the cloud, because only the app on your Mac can reach a tool on your Mac.
 
-Where this is set differs between agents and changes over time, so check your agent's own instructions for adding a local MCP server. The tools are the same nine questions as above, named `siivos_overview`, `siivos_cleanup` and so on, and the switch in Settings applies to them in the same way.
+Where this is set differs between agents and changes over time, so check your agent's own instructions for adding a local MCP server. The tools are the same ten questions as above, named `siivos_overview`, `siivos_cleanup` and so on, and the switch in Settings applies to them in the same way.
 
 ## Where SiivOS keeps its data
 

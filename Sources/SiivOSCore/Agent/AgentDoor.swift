@@ -77,19 +77,23 @@ public struct AgentDoor: Sendable {
         /// Readings a moment apart, oldest first. Processor use needs two.
         public var performance: @Sendable () -> [PerformanceSample]
         public var apps: @Sendable () -> [AppInfo]
+        /// The home folder measured two levels deep.
+        public var folders: @Sendable () -> DiskMapNode
 
         public init(
             snapshot: @escaping @Sendable () -> SystemSnapshot,
             scan: @escaping @Sendable () -> ScanReport,
             protection: @escaping @Sendable () -> ProtectionReport,
             performance: @escaping @Sendable () -> [PerformanceSample],
-            apps: @escaping @Sendable () -> [AppInfo]
+            apps: @escaping @Sendable () -> [AppInfo],
+            folders: @escaping @Sendable () -> DiskMapNode
         ) {
             self.snapshot = snapshot
             self.scan = scan
             self.protection = protection
             self.performance = performance
             self.apps = apps
+            self.folders = folders
         }
 
         /// The real checks, looking at this Mac.
@@ -130,6 +134,11 @@ public struct AgentDoor: Sendable {
                 apps: {
                     progress?(tr("Measuring apps…"))
                     return AppInventory.load(directories: InstalledApps.standardDirectories(homeDirectory: homeDirectory))
+                },
+                folders: {
+                    DiskMap.measure(homeDirectory, levels: 2, progress: { name in
+                        progress?(tr("Measuring: %1$@…", name))
+                    })
                 }
             )
         }
@@ -173,6 +182,7 @@ public struct AgentDoor: Sendable {
         case performance
         case protection
         case apps
+        case folders
         case history
         case mcp
         case help
@@ -188,6 +198,7 @@ public struct AgentDoor: Sendable {
             case .performance: return tr("Processor, memory and battery right now, with what SiivOS makes of them.")
             case .protection: return tr("The protection built into macOS, background items, browser extensions and profiles.")
             case .apps: return tr("Installed apps with their size and last use, largest first. Add --limit 50 for more.")
+            case .folders: return tr("Where the space in your home folder goes: the largest folders, and the largest things in each. Add --limit 30 for more.")
             case .history: return tr("What SiivOS itself has changed, and what can still be put back.")
             case .mcp: return tr("Offer these questions to an AI agent as tools, over the Model Context Protocol. The agent starts this itself.")
             case .help: return tr("This list.")
@@ -236,6 +247,7 @@ public struct AgentDoor: Sendable {
         case .performance: return json(performance())
         case .protection: return json(protection())
         case .apps: return json(apps(limit: max(1, options["limit"] ?? 25)))
+        case .folders: return json(folders(limit: max(1, options["limit"] ?? 15)))
         case .history: return history()
         case .status, .help, .mcp: return Reply(output: help, exitCode: 0)
         }
@@ -749,6 +761,60 @@ public struct AgentDoor: Sendable {
                     partOfMacOS: $0.isPartOfMacOS
                 )
             }
+        )
+    }
+
+    // MARK: - Folders
+
+    private struct FoldersAnswer: Encodable {
+        struct Inside: Encodable {
+            let name: String
+            let path: String
+            let sizeBytes: Int64
+            let size: String
+        }
+        struct Item: Encodable {
+            let name: String
+            let path: String
+            let sizeBytes: Int64
+            let size: String
+            /// Share of the home folder, from 0 to 100.
+            let percent: Int
+            /// False for files, and for apps and libraries, which are one thing.
+            let isFolder: Bool
+            /// The largest things in the folder, largest first.
+            let largestInside: [Inside]
+        }
+
+        let folder: String
+        let totalBytes: Int64
+        let total: String
+        /// The largest items, up to the limit asked for.
+        let largest: [Item]
+        let note: String
+    }
+
+    private func folders(limit: Int) -> FoldersAnswer {
+        let map = sources.folders()
+        let total = max(1, map.sizeBytes)
+        return FoldersAnswer(
+            folder: map.url.path,
+            totalBytes: map.sizeBytes,
+            total: Self.readable(map.sizeBytes),
+            largest: map.children.prefix(limit).map { item in
+                FoldersAnswer.Item(
+                    name: item.name,
+                    path: item.url.path,
+                    sizeBytes: item.sizeBytes,
+                    size: Self.readable(item.sizeBytes),
+                    percent: Int((Double(item.sizeBytes) / Double(total) * 100).rounded()),
+                    isFolder: item.canBeOpened,
+                    largestInside: item.children.prefix(5).map {
+                        FoldersAnswer.Inside(name: $0.name, path: $0.url.path, sizeBytes: $0.sizeBytes, size: Self.readable($0.sizeBytes))
+                    }
+                )
+            },
+            note: Self.readOnlyNote
         )
     }
 
