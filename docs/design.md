@@ -514,8 +514,10 @@ One entrance per step, and nothing that loops.
   at 0.32 s (each 0.7 s: from scale 0 and turned -90 degrees to a slight overshoot, 1.18 and 8
   degrees, then settling at 1 and 0); the logo's letters fade in at 0.45 s; then the heading,
   the line under it, the panel and the footer rise 10 pt and fade in, 0.12 s apart from 0.6 s.
-  To do this, draw the logo's glints and letters as separate shapes (`SiivOSLogoPaths` already
-  has them apart).
+  To do this, the logo's glints and letters must be separate shapes. Today `SiivOSLogoPaths`
+  joins each glint to its letters (`logoSiiv`, `logoOS`), so add `logoBigGlint` and
+  `logoSmallGlint` and letter-only paths in the logo's own coordinates, generated from the logo
+  file by `design/icon/make_wordmark.py` like the others.
 - **Step 2:** the picture, the texts and the steps rise in 0.1 s apart. In the picture, a
   pointer moves onto the SiivOS switch, presses (scale 0.88) and the switch slides on, over
   1.6 s from 0.5 s.
