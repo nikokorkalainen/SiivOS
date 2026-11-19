@@ -76,7 +76,7 @@ Kept short on purpose. A setting is only added when people would reasonably want
 - **Permissions:** whether SiivOS has Full Disk Access and App Management, with buttons that open the right page in System Settings.
 - **Privacy:** a plain statement of what SiivOS does and does not send anywhere. Anything that would use the network, such as malware definition updates in Phase 6, is listed here and is off until turned on.
 - **Menu bar (built in Phase 8):** show SiivOS in the menu bar, on unless turned off. With it on, closing the window leaves SiivOS running there.
-- **Open at login (built):** a switch in Settings, off unless turned on. On the owner's Mac the switch works in the built app, and macOS confirmed "Login Item Added" (19 November 2026); starting quietly in the menu bar after an actual login has not been tried yet. macOS keeps the list and shows SiivOS under Login Items. Opened at login with the menu bar icon on, SiivOS starts in the menu bar without opening its window. It only works in the app built with `Scripts/make-app.sh`, not in a copy run from Xcode.
+- **Open at login (done):** a switch in Settings, off unless turned on. On the owner's Mac the switch works in the built app, and macOS confirmed "Login Item Added" (19 November 2026); after logging out and in again SiivOS started in the menu bar with no window, as intended. macOS keeps the list and shows SiivOS under Login Items. Opened at login with the menu bar icon on, SiivOS starts in the menu bar without opening its window. It only works in the app built with `Scripts/make-app.sh`, not in a copy run from Xcode.
 - **Still open:** how long the health timeline keeps its history (it now keeps the last 2,000 readings and 1,000 changes).
 
 ## How we work
