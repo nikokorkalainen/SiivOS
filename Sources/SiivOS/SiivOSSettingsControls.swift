@@ -25,7 +25,9 @@ struct SettingRow<Control: View>: View {
     }
 
     var body: some View {
-        HStack(alignment: .top, spacing: 16) {
+        // A row with only a label lines its control up with the label. A row with notes
+        // keeps the control at the top, next to the label and above the notes.
+        HStack(alignment: notes.isEmpty ? .center : .top, spacing: 16) {
             VStack(alignment: .leading, spacing: 4) {
                 Text(title)
                     .fixedSize(horizontal: false, vertical: true)
