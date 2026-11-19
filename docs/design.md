@@ -320,6 +320,78 @@ Settings only narrow what SiivOS lists. None of them makes it less careful, and 
 page suggests otherwise: no "safe mode", no warnings on the switches, and the folder note keeps
 saying that left-out folders are not touched.
 
+## Disk Map
+
+A redesign of `DiskMapView` after the first build (19 November). Mockups: "Disk Map" at the end of
+each row on the design canvas, drawn with the owner's real home folder.
+
+### What was wrong
+
+- Every block is the same green at a different strength, so the map reads as one slab and the
+  eye cannot tell a photo library from a cache.
+- Small blocks with no labels at the bottom right are noise; long names are cut to "iMyfo…ackup".
+- The switch sits above the page title, the folder name appears twice, and the list repeats the
+  map with the same unreadable shades.
+
+### Page
+
+1. Same top as the other screens: page title **"Cleanup"** with the subtitle "Find what can go,
+   and see where the space goes.", then `SiivOSSegmentedControl` with **Clutter** and
+   **Disk Map** under it, on the left. (Clutter's page gets the same title and switch.)
+2. A row with, on the left, the breadcrumb (home icon, then each folder; every part but the
+   last is a link back) and under it one sentence in 24 pt semibold, "170,55 GB in your home
+   folder" (or "89,1 GB in Library" when looking into a folder). On the right, "Measured today
+   at 9.02" in secondary text and **Measure Again** as a standard button with the refresh icon.
+3. A legend of the kinds below (small rounded squares with their names), 13 pt.
+4. The map, 380 pt tall, full content width.
+5. One line of secondary text: "Click a folder to look inside. Apps and photo, video and music
+   libraries count as one item and are never looked into." (the existing text, shortened).
+6. The list in one panel.
+
+### Colour by kind
+
+Each block and list row is coloured by what the folder holds, worked out from its name and place,
+so the map can be read at a glance. The same colours in dark and light mode:
+
+| Kind | Which folders | Fill | Text on the block |
+|------|---------------|------|-------------------|
+| App data | `~/Library` and anything inside it | `#23775A` | white |
+| Photos and media | Pictures, Movies, Music, and photo, video and music libraries | `#7FD0A8` | deep green `#062A20` |
+| Your documents | Desktop, Documents, and folders inside them | `#5BA8C4` | deep green |
+| Downloads | Downloads | `#D6B04F` | deep green |
+| Developer files | folders named like developer tools: `node_modules`, `.npm`, `.gradle`, `.cargo`, `DerivedData`, names ending in `-studio` or `sdk`, and any folder starting with a dot | `#9A8FD8` | deep green |
+| Other folders | everything else | `#8AA39A` | deep green |
+| Smaller items | the existing "N smaller items" group | `#3D5049` | white |
+
+Inside a folder, children inherit the parent's kind unless their own name says otherwise (for
+example `node_modules` inside Documents is Developer files).
+
+### Blocks
+
+- Rounded 7 pt, 3 pt gaps, flat fills (no gradient, no shading by size).
+- Label: the name in 14 pt semibold and the size in 12 pt under it, top left with 10 to 12 pt
+  padding. Only on blocks at least 92 pt wide and 46 pt tall; smaller blocks have no text, and the
+  name and size show in the tooltip. Long names end in "…" at the end, not the middle.
+- A block that can be opened shows a pointer cursor and lightens slightly on hover.
+- **Library** (when it is a block on the home folder map, and Cleanup has scanned) also says,
+  at the bottom of the block: "53,25 GB of it is app caches that Clutter can clear." with a small
+  **Review in Clutter** button that switches to Clutter. Use the caches total from the last scan;
+  leave the line out if there has been no scan.
+
+### List
+
+One row per block, in the same order: the kind's colour square, the name (with a chevron if it
+can be opened) and the kind under it in 12 pt secondary text, a bar in the kind's colour, the
+percentage and the size, both right aligned with tabular digits. The smaller-items row reads
+"Folders under 1 GB, shown together" instead of a kind. Rows keep "Show in Finder" in their
+context menu.
+
+### New texts (Finnish needed)
+
+"Find what can go, and see where the space goes." · "%1$@ in your home folder" · "Measured today
+at %1$@" · the six kind names · "%1$@ of it is app caches that Clutter can clear." · "Review in
+Clutter" · "Folders under 1 GB, shown together".
+
 ## Before anything changes (sheet)
 
 Keep the existing `RemovalPlanSheet`, with shorter copy:
