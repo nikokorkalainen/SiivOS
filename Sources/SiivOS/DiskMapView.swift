@@ -416,7 +416,7 @@ private struct MapBlock: View {
                 if let symbol = entry.look.symbol, symbolSize >= 28 {
                     Image(systemName: symbol)
                         .font(.system(size: symbolSize, weight: symbolSize > 70 ? .ultraLight : .light))
-                        .foregroundStyle(entry.look.text.opacity(isHovered ? 0.28 : 0.16))
+                        .foregroundStyle(entry.look.text.opacity(isHovered ? 0.22 : 0.16))
                         .padding(8)
                         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
                 }
@@ -438,7 +438,9 @@ private struct MapBlock: View {
                 }
 
                 if isHovered {
-                    shape.strokeBorder(Color.white.opacity(0.78), lineWidth: 2)
+                    // Softer than the design notes give (2 pt at 78 %): the owner found
+                    // the first version too strong.
+                    shape.strokeBorder(Color.white.opacity(0.5), lineWidth: 1.5)
                     // A small round badge on blocks that open.
                     if entry.opens != nil, width >= 40, height >= 40 {
                         Image(systemName: "chevron.right")
@@ -456,15 +458,17 @@ private struct MapBlock: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        // The hover is kept gentle: a slight lift and brightening for the block under
+        // the pointer, and only a slight step back for the others.
         .shadow(
-            color: Color.black.opacity(isHovered ? 0.32 : 0.22),
-            radius: isHovered ? 22 : 2,
+            color: Color.black.opacity(isHovered ? 0.26 : 0.22),
+            radius: isHovered ? 9 : 2,
             x: 0,
-            y: isHovered ? 8 : 1
+            y: isHovered ? 3 : 1
         )
-        .brightness(isHovered ? 0.07 : 0)
-        .saturation(isFadedBack ? 0.8 : 1)
-        .opacity(isFadedBack ? 0.6 : 1)
+        .brightness(isHovered ? 0.035 : 0)
+        .saturation(isFadedBack ? 0.93 : 1)
+        .opacity(isFadedBack ? 0.84 : 1)
         .onHover { isInside in
             setHovered(entry.id, isInside)
         }
@@ -517,7 +521,7 @@ private struct MapRow: View {
             }
             .padding(.horizontal, 14)
             .padding(.vertical, 9)
-            .background(Color.gray.opacity(isHovered ? 0.12 : 0))
+            .background(Color.gray.opacity(isHovered ? 0.09 : 0))
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
