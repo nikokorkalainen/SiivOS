@@ -60,7 +60,7 @@ struct WelcomeView: View {
                 point(
                     .settings,
                     tr("Works with your AI agent"),
-                    tr("An AI agent you already use, such as Claude, can ask SiivOS what it has found. The tool for this only reads, and it is off until you turn it on in Settings. An agent on the internet sends what it reads to its own service.")
+                    tr("An AI agent you already use can ask SiivOS what it has found. The tool for this only reads, and it is off until you turn it on in Settings. An agent on the internet sends what it reads to its own service.")
                 )
             }
 
