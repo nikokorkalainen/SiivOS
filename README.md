@@ -27,7 +27,7 @@ SiivOS also sits in the menu bar, where it shows the health score and marks its 
 
 ## What it does not do
 
-- It does not delete anything without showing you first, and it does not empty the holding area by itself.
+- It does not delete anything without showing you first. It only empties the holding area by itself if you choose a waiting time in Settings, and then only of what has waited that long.
 - It does not "free up memory", clear browser history, or update other apps.
 - It does not remove items that belong to all users of the Mac, because that needs administrator rights, which SiivOS does not ask for. It shows them and leaves them alone.
 - It cannot list the "Open at Login" apps in System Settings, because macOS gives apps no way to read them. It lists background items and opens System Settings for the rest.
@@ -165,6 +165,7 @@ Everything stays on your Mac, in `~/Library/Application Support/SiivOS`:
 - `ClamAV` holds virus definitions, if you have chosen to download them.
 - `agent-door.json` remembers whether the tool for AI agents is switched on.
 - `cleanup-settings.json` holds your Cleanup settings: how old, how large, which checks run, and folders to leave out.
+- `holding-area-settings.json` holds your choices about the holding area.
 
 To remove SiivOS completely, first put back or delete what is in History, then quit SiivOS and delete the app and that folder.
 

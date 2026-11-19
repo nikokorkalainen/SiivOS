@@ -4,6 +4,7 @@ import SwiftUI
 /// Shows every change SiivOS has made and lets the user put things back.
 struct HistoryView: View {
     @StateObject private var model = HistoryModel()
+    @ObservedObject private var holding = HoldingStatus.shared
     @State private var recordToDelete: ActionRecord?
 
     var body: some View {
@@ -16,6 +17,22 @@ struct HistoryView: View {
                     .buttonStyle(SiivOSButtonStyle(.standard))
                     .disabled(model.isWorking)
                     .help(tr("Choose something to move to the holding area. You will see an explanation first."))
+                }
+
+                if let emptying = holding.settings.lastEmptying {
+                    HistoryNotice(text: emptyingText(emptying)) {
+                        holding.dismissEmptyingNote()
+                    }
+                }
+                if holding.isWorthPointingOut {
+                    HistoryNotice(
+                        text: tr(
+                            "The holding area holds %1$@, more than the %2$@ you chose to be told about. The space is freed when items are deleted for good.",
+                            formatBytes(holding.heldBytes),
+                            formatBytes(holding.settings.warnAboveBytes)
+                        ),
+                        dismiss: nil
+                    )
                 }
 
                 if model.records.isEmpty {
@@ -55,6 +72,20 @@ struct HistoryView: View {
         } message: { text in
             Text(text)
         }
+    }
+
+    /// What SiivOS deleted by itself, when, and why, for the note about it.
+    private func emptyingText(_ emptying: AutomaticEmptying) -> String {
+        let size = formatBytes(emptying.bytes)
+        let day = emptying.date.formatted(date: .abbreviated, time: .omitted)
+        let days = "\(emptying.afterDays)"
+        if emptying.itemCount == 1 {
+            return tr("SiivOS deleted 1 item (%1$@) for good on %2$@, because it had waited more than %3$@ days, as chosen in Settings.", size, day, days)
+        }
+        return tr(
+            "SiivOS deleted %1$@ items (%2$@) for good on %3$@, because they had waited more than %4$@ days, as chosen in Settings.",
+            "\(emptying.itemCount)", size, day, days
+        )
     }
 
     /// One line on what is waiting in the holding area.
@@ -226,3 +257,33 @@ private struct RecordRow: View {
         }
     }
 }
+
+/// A calm note at the top of History: the note icon, one or two sentences, and a way to
+/// hide it when there is one.
+private struct HistoryNotice: View {
+    let text: String
+    /// Hides the note, or `nil` for a note that stays for as long as it is true.
+    let dismiss: (() -> Void)?
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 10) {
+            SiivOSIconView(.note, size: 24)
+            Text(text)
+                .fixedSize(horizontal: false, vertical: true)
+            Spacer(minLength: 8)
+            if let dismiss {
+                Button {
+                    dismiss()
+                } label: {
+                    Image(systemName: "xmark")
+                }
+                .buttonStyle(.plain)
+                .help(tr("Hide this message"))
+            }
+        }
+        .padding(12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .cardBackground()
+    }
+}
+

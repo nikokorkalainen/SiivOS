@@ -18,6 +18,7 @@ struct SettingsView: View {
 
                 GeneralSettingsGroup()
                 CleanupSettingsGroup()
+                HoldingAreaSettingsGroup()
                 PermissionsSettingsGroup()
                 AgentSettingsGroup()
                 PrivacyGroup()
@@ -344,6 +345,108 @@ private struct FolderRow: View {
             return "~"
         }
         return path.hasPrefix(home + "/") ? "~" + String(path.dropFirst(home.count)) : path
+    }
+}
+
+// MARK: - Holding area
+
+/// When the holding area is emptied by itself, and when it is pointed out. Emptying is
+/// off until a time is chosen here; what it does is said plainly next to the choice.
+private struct HoldingAreaSettingsGroup: View {
+    @State private var deleteAfterDays = HoldingAreaSettingsStore.standard().load().deleteAfterDays
+    @State private var warnAboveBytes = HoldingAreaSettingsStore.standard().load().warnAboveBytes
+    /// What has already waited as long as the chosen time, so the user sees what the
+    /// choice will delete before it happens.
+    @State private var alreadyWaiting: SafetyCore.WaitingItems?
+    /// Why the settings could not be saved, if they could not.
+    @State private var problem: String?
+
+    var body: some View {
+        SettingsGroup(tr("Holding area")) {
+            SettingsPanel {
+                SettingRow(tr("Delete items for good after they have waited"), notes: deleteNotes) {
+                    SiivOSMenuPicker(
+                        title: tr("Delete items for good after they have waited"),
+                        selection: $deleteAfterDays,
+                        options: HoldingAreaSettings.deleteAfterChoices.map { ($0, timeText($0)) }
+                    )
+                }
+                ThemedDivider()
+                SettingRow(
+                    tr("Point out the holding area when it holds more than"),
+                    notes: [tr("A line on the Overview and in History says so. Nothing is deleted because of this.")]
+                ) {
+                    SiivOSMenuPicker(
+                        title: tr("Point out the holding area when it holds more than"),
+                        selection: $warnAboveBytes,
+                        options: HoldingAreaSettings.warnAboveChoices.map { ($0, $0 == 0 ? tr("Never") : formatBytes($0)) }
+                    )
+                }
+                if let problem {
+                    ThemedDivider()
+                    SettingErrorLine(reason: problem)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 14)
+                }
+            }
+        }
+        .onAppear {
+            lookAtWhatIsWaiting()
+        }
+        .onChange(of: deleteAfterDays) { _, _ in
+            save()
+            lookAtWhatIsWaiting()
+        }
+        .onChange(of: warnAboveBytes) { _, _ in
+            save()
+        }
+    }
+
+    private func timeText(_ days: Int) -> String {
+        switch days {
+        case 0: return tr("Never")
+        case 365: return tr("1 year")
+        default: return tr("%1$@ days", "\(days)")
+        }
+    }
+
+    /// What the choice does, and what it is about to delete if anything.
+    private var deleteNotes: [String] {
+        var notes = [tr("Removed items wait in the holding area and still take up space there. With a time chosen, SiivOS deletes for good what has waited longer, which frees the space. Deleted items cannot be put back. SiivOS checks when it opens, and every half hour while it runs.")]
+        if deleteAfterDays > 0, let waiting = alreadyWaiting, waiting.itemCount > 0 {
+            let size = formatBytes(waiting.bytes)
+            notes.append(
+                waiting.itemCount == 1
+                    ? tr("1 item (%1$@) has already waited that long. It will be deleted for good the next time SiivOS checks.", size)
+                    : tr("%1$@ items (%2$@) have already waited that long. They will be deleted for good the next time SiivOS checks.", "\(waiting.itemCount)", size)
+            )
+        }
+        return notes
+    }
+
+    /// Counts what has already waited as long as the chosen time. Only reads.
+    private func lookAtWhatIsWaiting() {
+        guard deleteAfterDays > 0, case .success(let core) = AppCore.shared else {
+            alreadyWaiting = nil
+            return
+        }
+        let cutoff = Date().addingTimeInterval(-Double(deleteAfterDays) * 86_400)
+        alreadyWaiting = try? core.heldItems(removedBefore: cutoff)
+    }
+
+    /// Saves the two choices without touching anything else kept in the same file.
+    private func save() {
+        let store = HoldingAreaSettingsStore.standard()
+        var current = store.load()
+        current.deleteAfterDays = deleteAfterDays
+        current.warnAboveBytes = warnAboveBytes
+        do {
+            try store.save(current)
+            problem = nil
+        } catch {
+            problem = error.localizedDescription
+        }
+        HoldingStatus.shared.refresh()
     }
 }
 

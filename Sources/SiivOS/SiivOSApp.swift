@@ -72,12 +72,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // Take a health reading now unless there is a recent one, and look again every
         // half hour for as long as SiivOS runs, which with the menu bar icon can be all
         // day. A reading is only taken when the last one is six hours old. Only reads.
+        // The same moments are used to empty the holding area of what has waited longer
+        // than the user chose in Settings. That does nothing unless a time is chosen.
         Task { @MainActor in
             TimelineModel.shared.updateIfDue()
+            HoldingStatus.shared.emptyIfDue()
         }
         readingTimer = Timer.scheduledTimer(withTimeInterval: 1_800, repeats: true) { _ in
             Task { @MainActor in
                 TimelineModel.shared.updateIfDue()
+                HoldingStatus.shared.emptyIfDue()
             }
         }
     }
