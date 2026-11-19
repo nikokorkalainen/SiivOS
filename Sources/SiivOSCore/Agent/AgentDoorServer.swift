@@ -36,6 +36,8 @@ public struct AgentDoorServer: Sendable {
             return [("limit", "How many items to list in each group, largest first. 20 if left out.")]
         case .apps:
             return [("limit", "How many apps to list, largest first. 25 if left out.")]
+        case .folders:
+            return [("limit", "How many of the largest folders to list. 15 if left out.")]
         default:
             return []
         }

@@ -33,6 +33,8 @@ final class CleanupModel: ObservableObject {
     @Published var pendingPlan: RemovalPlan?
     /// A problem to show the user.
     @Published var message: String?
+    /// The Cleanup settings the last scan followed.
+    @Published private(set) var scanSettings = CleanupSettings()
 
     /// The findings as they were before the last removal, so Undo can bring the list back.
     private var reportBeforeRemoval: ScanReport?
@@ -67,9 +69,14 @@ final class CleanupModel: ObservableObject {
             return RunningApp(name: name, bundleIdentifier: app.bundleIdentifier)
         }
 
+        // What the user has chosen in Settings: how old, how large, which checks, and
+        // folders to leave out.
+        let settings = CleanupSettingsStore.standard().load()
+        scanSettings = settings
+
         Task {
             let newReport = await Task.detached(priority: .userInitiated) {
-                ScanEngine.clutter(runningApps: openApps).run { title in
+                ScanEngine.clutter(runningApps: openApps, settings: settings).run { title in
                     Task { @MainActor in
                         self.scanningTitle = title
                     }
@@ -82,6 +89,29 @@ final class CleanupModel: ObservableObject {
     }
 
     // MARK: - What was found
+
+    /// One line saying what the last scan left out because of Settings, or `nil` when
+    /// it left nothing out. Shown above the results so that a short list is not a puzzle.
+    var settingsNote: String? {
+        var parts: [String] = []
+        let folders = scanSettings.foldersLeftOut.count
+        if folders == 1 {
+            parts.append(tr("1 folder left out"))
+        } else if folders > 1 {
+            parts.append(tr("%1$@ folders left out", "\(folders)"))
+        }
+        let known = Set(ScanEngine.clutterChecks.map { $0.id })
+        let checks = scanSettings.checksTurnedOff.filter { known.contains($0) }.count
+        if checks == 1 {
+            parts.append(tr("1 check turned off"))
+        } else if checks > 1 {
+            parts.append(tr("%1$@ checks turned off", "\(checks)"))
+        }
+        guard !parts.isEmpty else {
+            return nil
+        }
+        return tr("As chosen in Settings: %1$@.", parts.joined(separator: ", "))
+    }
 
     /// The groups whose findings apps and macOS made for themselves.
     ///
@@ -146,7 +176,7 @@ final class CleanupModel: ObservableObject {
         for section in report.sections {
             for finding in section.findings where selection.contains(finding.url) {
                 if counted.insert(finding.url).inserted {
-                    total += finding.sizeBytes
+                    total += finding.freesBytes
                 }
             }
         }

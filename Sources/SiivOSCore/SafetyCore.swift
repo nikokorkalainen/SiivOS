@@ -305,6 +305,73 @@ public final class SafetyCore: @unchecked Sendable {
         return ChangeResult(record: updated, failures: failures)
     }
 
+    // MARK: - Emptying the holding area
+
+    /// What is waiting in the holding area from changes made before a given moment.
+    public struct WaitingItems: Equatable, Sendable {
+        public let itemCount: Int
+        public let bytes: Int64
+    }
+
+    /// How an emptying of the holding area went.
+    public struct EmptyingResult: Equatable, Sendable {
+        /// How many items were deleted for good.
+        public let itemCount: Int
+        /// The space they took.
+        public let bytes: Int64
+        /// Items that could not be deleted. They stay in the holding area.
+        public let failures: [ChangeResult.Failure]
+    }
+
+    /// Counts the held items whose change was made before the given moment. Only reads.
+    public func heldItems(removedBefore cutoff: Date) throws -> WaitingItems {
+        lock.lock()
+        defer { lock.unlock() }
+        var count = 0
+        var bytes: Int64 = 0
+        for record in try log.load() where record.date < cutoff {
+            for item in record.items where item.state == .held {
+                count += 1
+                bytes += item.held.sizeBytes
+            }
+        }
+        return WaitingItems(itemCount: count, bytes: bytes)
+    }
+
+    /// Deletes for good every held item whose change was made before the given moment.
+    /// This frees the disk space and cannot be undone. Newer changes are not touched,
+    /// and neither are items that were already put back.
+    ///
+    /// SiivOS only calls this when the user has chosen, in Settings, to have the
+    /// holding area emptied after a set time.
+    public func deleteHeldItems(removedBefore cutoff: Date) throws -> EmptyingResult {
+        lock.lock()
+        defer { lock.unlock() }
+
+        var records = try log.load()
+        var count = 0
+        var bytes: Int64 = 0
+        var failures: [ChangeResult.Failure] = []
+        for recordIndex in records.indices where records[recordIndex].date < cutoff {
+            for itemIndex in records[recordIndex].items.indices
+            where records[recordIndex].items[itemIndex].state == .held {
+                let item = records[recordIndex].items[itemIndex].held
+                do {
+                    try holdingArea.deletePermanently(item)
+                    records[recordIndex].items[itemIndex].state = .deleted
+                    count += 1
+                    bytes += item.sizeBytes
+                } catch {
+                    failures.append(ChangeResult.Failure(path: item.originalPath, message: error.localizedDescription))
+                }
+            }
+        }
+        if count > 0 {
+            try log.save(records)
+        }
+        return EmptyingResult(itemCount: count, bytes: bytes, failures: failures)
+    }
+
     // MARK: - Reading
 
     /// Every change SiivOS has made, newest first.

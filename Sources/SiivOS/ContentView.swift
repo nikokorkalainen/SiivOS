@@ -8,6 +8,8 @@ struct ContentView: View {
     /// Kept here so that scan results survive a visit to another section,
     /// and so that Overview and Cleanup show the same check.
     @StateObject private var cleanup = CleanupModel()
+    /// Kept here so that the measured folders survive a visit to another section.
+    @StateObject private var diskMap = DiskMapModel()
     /// Kept here so that the app list is only measured once.
     @StateObject private var apps = AppsModel()
     /// Kept here so that the charts keep their history during a short visit elsewhere.
@@ -60,7 +62,7 @@ struct ContentView: View {
         case .overview:
             OverviewView(cleanup: cleanup, timeline: timeline, open: { navigation.selection = $0 })
         case .cleanup:
-            CleanupView(model: cleanup)
+            CleanupView(model: cleanup, diskMap: diskMap)
         case .apps:
             AppsView(model: apps)
         case .performance:
@@ -71,6 +73,8 @@ struct ContentView: View {
             HealthTimelineView(model: timeline, open: { navigation.selection = $0 })
         case .history:
             HistoryView()
+        case .settings:
+            SettingsView()
         }
     }
 }
@@ -97,7 +101,7 @@ private struct SidebarView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 2) {
-                ForEach(AppSection.allCases) { section in
+                ForEach(AppSection.mainSections) { section in
                     SidebarRow(
                         section: section,
                         isSelected: selection == section,
@@ -137,7 +141,24 @@ private struct SidebarView: View {
             .padding(.bottom, 10)
         }
         .safeAreaInset(edge: .bottom, spacing: 0) {
-            collapseButton
+            // Settings sits apart from the seven sections: a divider, the Settings row,
+            // then the collapse button. These three never scroll.
+            VStack(spacing: 0) {
+                ThemedDivider()
+                    .padding(.horizontal, 10)
+                SidebarRow(
+                    section: .settings,
+                    isSelected: selection == .settings,
+                    trailingText: nil,
+                    isCompact: isCompact
+                ) {
+                    selection = .settings
+                    hasFocus = true
+                }
+                .padding(.horizontal, 10)
+                .padding(.top, 8)
+                collapseButton
+            }
         }
         // Keep the logo and names inside the sidebar while it narrows. This comes before the
         // background on purpose: clipping the background too would cut it off below the
@@ -191,7 +212,8 @@ private struct SidebarView: View {
     }
 
     private func move(_ direction: MoveCommandDirection) {
-        let sections = AppSection.allCases
+        // Down from History goes to Settings, and up from Settings back to History.
+        let sections = AppSection.mainSections + [.settings]
         guard let index = sections.firstIndex(of: selection) else {
             return
         }
@@ -275,7 +297,8 @@ private struct SidebarRow: View {
         }
         .buttonStyle(.plain)
         // With only the icon showing, the name appears when the pointer rests on the row.
-        .help(section.title)
+        // Settings also says how to get there from the keyboard.
+        .help(section == .settings ? section.title + " (⌘,)" : section.title)
         .accessibilityLabel(section.title)
         .accessibilityAddTraits(isSelected ? .isSelected : [])
     }

@@ -73,6 +73,17 @@ final class ScanEngineTests: XCTestCase {
         XCTAssertEqual(ScanEngine(scanners: []).run().safeToRemoveBytes, 0)
     }
 
+    func testOneGroupsSafeToRemoveFigureLeavesOutWhatIsHeldBackOrToCheckFirst() {
+        let report = ScanEngine(scanners: [
+            LabelledScanner(),
+            FakeScanner(id: "logs", title: "Logs", sizes: [5])
+        ]).run()
+
+        XCTAssertEqual(report.safeToRemoveBytes(inSection: "labelled"), 100)
+        XCTAssertEqual(report.safeToRemoveBytes(inSection: "logs"), 5)
+        XCTAssertEqual(report.safeToRemoveBytes(inSection: "not-scanned"), 0)
+    }
+
     func testOneFailingScannerDoesNotStopTheOthers() {
         let engine = ScanEngine(scanners: [
             BrokenScanner(),

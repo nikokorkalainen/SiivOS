@@ -121,9 +121,13 @@ struct OverviewView: View {
                     .monospacedDigit()
                 Text(tr("in the holding area"))
                     .foregroundStyle(.secondary)
-                Text(tr("Put items back, or delete them permanently to free the space."))
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
+                Text(
+                    holding.isWorthPointingOut
+                        ? tr("That is more than the %1$@ you chose to be told about. Deleting items for good in History frees the space.", formatBytes(holding.settings.warnAboveBytes))
+                        : tr("Put items back, or delete them permanently to free the space.")
+                )
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
             } else {
                 Text(tr("Everything SiivOS has changed, with a way to put it back. The holding area is empty."))
                     .foregroundStyle(.secondary)

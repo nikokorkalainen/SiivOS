@@ -16,7 +16,7 @@ SiivOS is in English and Finnish and follows the language of your Mac. It needs 
 | Section | What you get |
 |---------|--------------|
 | **Overview** | Free space, what the last check found, the health score, and free space over time. |
-| **Cleanup** | Caches, logs, old downloads, large files, duplicate files, leftovers from apps you have removed, and data piled up by developer tools such as Xcode, npm and Docker. Every item is labelled Safe to remove or Check first. Data of macOS, password managers, iCloud and security software is never listed. |
+| **Cleanup** | Caches, logs, old downloads, large files, duplicate files, leftovers from apps you have removed, and data piled up by developer tools such as Xcode, npm and Docker. Every item is labelled Safe to remove or Check first. Data of macOS, password managers, iCloud and security software is never listed. A Disk Map shows where the space in your home folder goes. |
 | **Apps** | Every app with its size and last use. Uninstalling takes the app's leftovers with it. Background items can be reviewed and removed. |
 | **Performance** | Processor, memory, disk and battery right now, with a plain-language explanation when something is holding the Mac back. |
 | **Protection** | The protection built into macOS, what starts by itself, browser extensions, configuration profiles and app permissions, plus an optional malware scan with ClamAV. |
@@ -27,7 +27,7 @@ SiivOS also sits in the menu bar, where it shows the health score and marks its 
 
 ## What it does not do
 
-- It does not delete anything without showing you first, and it does not empty the holding area by itself.
+- It does not delete anything without showing you first. It only empties the holding area by itself if you choose a waiting time in Settings, and then only of what has waited that long.
 - It does not "free up memory", clear browser history, or update other apps.
 - It does not remove items that belong to all users of the Mac, because that needs administrator rights, which SiivOS does not ask for. It shows them and leaves them alone.
 - It cannot list the "Open at Login" apps in System Settings, because macOS gives apps no way to read them. It lists background items and opens System Settings for the rest.
@@ -105,7 +105,7 @@ If you use an AI agent, such as Claude, it can ask SiivOS what it has found inst
 To use it:
 
 1. Build the app with `bash Scripts/make-app.sh`. The tool is put inside the app.
-2. In SiivOS, choose **Settings** from the SiivOS menu and turn on **Let AI agents ask SiivOS questions**.
+2. In SiivOS, open **Settings** at the bottom of the sidebar (or press Command-comma) and turn on **Let AI agents ask SiivOS questions**.
 3. Click **Copy Path** there and give the path to your agent, with a sentence such as "use this tool to look at my Mac; run it with the word help first".
 
 You can try it yourself in Terminal from the project folder:
@@ -124,6 +124,7 @@ swift run siivos-cli help
 | `performance` | Processor, memory and battery right now, with what SiivOS makes of them. |
 | `protection` | macOS's own protection, background items, browser extensions and profiles. |
 | `apps` | Installed apps with their size and last use, largest first. |
+| `folders` | Where the space in your home folder goes: the largest folders and what is in them. |
 | `history` | What SiivOS itself has changed, and what can still be put back. |
 
 Answers are in JSON and in English. The tool sees what the program that runs it is allowed to see: started from Terminal, it has Terminal's permissions, not SiivOS's. Longer questions print a line for each check as they go, so you can see the tool is working.
@@ -152,7 +153,7 @@ In the Claude desktop app, for example, that is an entry like this in its `claud
 
 That file usually holds the app's other settings already. Add the `mcpServers` part next to them; do not replace the file. Quit the app before you change the file and open it again afterwards. The file is `~/Library/Application Support/Claude/claude_desktop_config.json`. Ask in a plain chat, not in a coding session that runs in the cloud, because only the app on your Mac can reach a tool on your Mac.
 
-Where this is set differs between agents and changes over time, so check your agent's own instructions for adding a local MCP server. The tools are the same nine questions as above, named `siivos_overview`, `siivos_cleanup` and so on, and the switch in Settings applies to them in the same way.
+Where this is set differs between agents and changes over time, so check your agent's own instructions for adding a local MCP server. The tools are the same ten questions as above, named `siivos_overview`, `siivos_cleanup` and so on, and the switch in Settings applies to them in the same way.
 
 ## Where SiivOS keeps its data
 
@@ -163,6 +164,8 @@ Everything stays on your Mac, in `~/Library/Application Support/SiivOS`:
 - `health-history.json` is the Health Timeline: the health score and free space each time SiivOS looked, and what had changed on the Mac. It is a plain text file too, and deleting it only starts the timeline again.
 - `ClamAV` holds virus definitions, if you have chosen to download them.
 - `agent-door.json` remembers whether the tool for AI agents is switched on.
+- `cleanup-settings.json` holds your Cleanup settings: how old, how large, which checks run, and folders to leave out.
+- `holding-area-settings.json` holds your choices about the holding area.
 
 To remove SiivOS completely, first put back or delete what is in History, then quit SiivOS and delete the app and that folder.
 

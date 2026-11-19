@@ -22,6 +22,10 @@ public struct Finding: Equatable, Identifiable, Sendable {
     public let url: URL
     /// Space the item takes on disk, in bytes.
     public let sizeBytes: Int64
+    /// Space that removing the item would give back, in bytes. Usually the same as its
+    /// size. It is less for a copy that shares its disk space with a file that stays:
+    /// macOS stores such copies once, so removing one frees next to nothing.
+    public let freesBytes: Int64
     /// Plain-language description of what the item is and why removing it is safe.
     public let explanation: String
     /// Whether the item is safe to remove or should be looked at first.
@@ -43,7 +47,8 @@ public struct Finding: Equatable, Identifiable, Sendable {
         safety: Safety,
         safetyReason: String,
         heldBackReason: String? = nil,
-        displayName: String? = nil
+        displayName: String? = nil,
+        freesBytes: Int64? = nil
     ) {
         self.id = id
         self.url = url
@@ -53,6 +58,7 @@ public struct Finding: Equatable, Identifiable, Sendable {
         self.safetyReason = safetyReason
         self.heldBackReason = heldBackReason
         self.displayName = displayName
+        self.freesBytes = freesBytes ?? sizeBytes
     }
 }
 
@@ -83,8 +89,9 @@ public struct ScanReport: Sendable {
         /// Why the scanner could not finish, if it failed.
         public let failure: String?
 
+        /// What removing everything in the group would give back.
         public var totalBytes: Int64 {
-            findings.reduce(0) { $0 + $1.sizeBytes }
+            findings.reduce(0) { $0 + $1.freesBytes }
         }
     }
 
@@ -108,11 +115,22 @@ public struct ScanReport: Sendable {
             for finding in section.findings
             where finding.safety == .safeToRemove && finding.heldBackReason == nil {
                 if counted.insert(finding.url).inserted {
-                    total += finding.sizeBytes
+                    total += finding.freesBytes
                 }
             }
         }
         return total
+    }
+
+    /// What one group holds that is labelled safe to remove and can be removed right
+    /// now. Zero when the group was not part of the scan.
+    public func safeToRemoveBytes(inSection id: String) -> Int64 {
+        guard let section = sections.first(where: { $0.id == id }) else {
+            return 0
+        }
+        return section.findings
+            .filter { $0.safety == .safeToRemove && $0.heldBackReason == nil }
+            .reduce(0) { $0 + $1.freesBytes }
     }
 
     /// The same report without the findings whose items are no longer where they were,
@@ -136,9 +154,13 @@ public struct ScanReport: Sendable {
 /// Runs scanners one after another and collects what they find.
 public struct ScanEngine: Sendable {
     public let scanners: [any SystemScanner]
+    /// Folders the user has chosen to leave out. Nothing in them is reported, whichever
+    /// scanner found it, and neither is anything that has one of them inside it.
+    public let foldersLeftOut: [URL]
 
-    public init(scanners: [any SystemScanner]) {
+    public init(scanners: [any SystemScanner], foldersLeftOut: [URL] = []) {
         self.scanners = scanners
+        self.foldersLeftOut = foldersLeftOut
     }
 
     /// Runs every scanner. One scanner failing does not stop the others.
@@ -148,7 +170,9 @@ public struct ScanEngine: Sendable {
         let sections = scanners.map { scanner -> ScanReport.Section in
             progress?(scanner.title)
             do {
-                let findings = try scanner.scan().sorted { $0.sizeBytes > $1.sizeBytes }
+                let findings = try scanner.scan()
+                    .filter { foldersLeftOut.isEmpty || !ScanSupport.touches($0.url, anyOf: foldersLeftOut) }
+                    .sorted { $0.sizeBytes > $1.sizeBytes }
                 return ScanReport.Section(
                     id: scanner.id,
                     title: scanner.title,
@@ -173,19 +197,33 @@ public struct ScanEngine: Sendable {
 extension ScanEngine {
     /// The scanners behind the Cleanup screen, in the order they are shown.
     ///
-    /// - Parameter runningApps: The apps that are open right now. Their data is held back.
+    /// - Parameters:
+    ///   - runningApps: The apps that are open right now. Their data is held back.
+    ///   - settings: What the user has chosen in Settings: how old and how large, which
+    ///     checks to run, and folders to leave out. Left out, SiivOS's own choices are used.
     public static func clutter(
         homeDirectory: URL = URL(fileURLWithPath: NSHomeDirectory()),
-        runningApps: [RunningApp] = []
+        runningApps: [RunningApp] = [],
+        settings: CleanupSettings = CleanupSettings()
     ) -> ScanEngine {
-        ScanEngine(scanners: [
+        let leftOut = settings.folderURLsLeftOut
+        let all: [any SystemScanner] = [
             CachesScanner(homeDirectory: homeDirectory, runningApps: runningApps),
             LogsScanner(homeDirectory: homeDirectory, runningApps: runningApps),
             LeftoversScanner(homeDirectory: homeDirectory, runningApps: runningApps),
             DeveloperClutterScanner(homeDirectory: homeDirectory, runningApps: runningApps),
-            OldDownloadsScanner(homeDirectory: homeDirectory),
-            LargeFilesScanner(homeDirectory: homeDirectory),
-            DuplicateFilesScanner(homeDirectory: homeDirectory)
-        ])
+            OldDownloadsScanner(homeDirectory: homeDirectory, olderThanDays: settings.oldDownloadDays),
+            LargeFilesScanner(homeDirectory: homeDirectory, minimumBytes: settings.largeFileBytes, foldersLeftOut: leftOut),
+            DuplicateFilesScanner(homeDirectory: homeDirectory, foldersLeftOut: leftOut)
+        ]
+        return ScanEngine(
+            scanners: all.filter { !settings.checksTurnedOff.contains($0.id) },
+            foldersLeftOut: leftOut
+        )
+    }
+
+    /// Every check Cleanup can run, with its name, for the list in Settings.
+    public static var clutterChecks: [(id: String, title: String)] {
+        clutter().scanners.map { (id: $0.id, title: $0.title) }
     }
 }

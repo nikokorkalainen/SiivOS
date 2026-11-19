@@ -27,7 +27,12 @@ def used_texts():
     for path in sorted((ROOT / "Sources").rglob("*.swift")):
         if path == TABLE:
             continue
-        for match in USE.finditer(path.read_text(encoding="utf-8")):
+        # Comment lines are left out: an example in a comment is not a text shown to people.
+        code = "\n".join(
+            line for line in path.read_text(encoding="utf-8").splitlines()
+            if not line.lstrip().startswith("//")
+        )
+        for match in USE.finditer(code):
             found.setdefault(match.group(1), path.relative_to(ROOT))
     return found
 

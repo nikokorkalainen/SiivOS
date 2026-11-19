@@ -59,7 +59,8 @@ final class AgentDoorTests: TemporaryDirectoryTestCase {
                     AppInfo(app: InstalledApp(url: URL(fileURLWithPath: "/Applications/Small.app"), name: "Small", bundleIdentifier: "com.example.Small", version: "1.0"), sizeBytes: 10_000_000, lastUsed: nil, isPartOfMacOS: false),
                     AppInfo(app: InstalledApp(url: URL(fileURLWithPath: "/Applications/Big.app"), name: "Big", bundleIdentifier: "com.example.Big", version: "2.1"), sizeBytes: 900_000_000, lastUsed: moment, isPartOfMacOS: false)
                 ]
-            }
+            },
+            folders: { DiskMap.measure(home, levels: 2) }
         )
         return AgentDoor(dataDirectory: baseDirectory, sources: sources, now: { moment })
     }
@@ -92,7 +93,7 @@ final class AgentDoorTests: TemporaryDirectoryTestCase {
         try makeFile("Library/Caches/com.example.Browser/data.bin", bytes: 500_000)
 
         XCTAssertEqual(door.answer(["mcp"]).exitCode, 0)
-        for command in ["overview", "health", "changes", "cleanup", "performance", "protection", "apps", "history"] {
+        for command in ["overview", "health", "changes", "cleanup", "performance", "protection", "apps", "folders", "history"] {
             let reply = door.answer([command])
             XCTAssertEqual(reply.exitCode, 2, command)
             XCTAssertTrue(reply.output.contains("The agent door is off"), command)
@@ -264,6 +265,26 @@ final class AgentDoorTests: TemporaryDirectoryTestCase {
         XCTAssertEqual(one["appCount"] as? Int, 2)
     }
 
+    func testFoldersShowsWhereTheSpaceGoes() throws {
+        try makeFile("Movies/film.mov", bytes: 3_000_000)
+        try makeFile("Movies/Old/clip.mov", bytes: 1_000_000)
+        try makeFile("Documents/letter.txt", bytes: 500_000)
+        let door = try makeDoor()
+
+        let folders = try object(door.answer(["folders"]))
+
+        XCTAssertEqual(folders["folder"] as? String, home.standardizedFileURL.path)
+        let largest = try XCTUnwrap(folders["largest"] as? [[String: Any]])
+        XCTAssertEqual(largest.prefix(2).map { $0["name"] as? String }, ["Movies", "Documents"])
+        XCTAssertEqual(largest[0]["isFolder"] as? Bool, true)
+        XCTAssertGreaterThan(largest[0]["percent"] as? Int ?? 0, 50)
+        let inside = try XCTUnwrap(largest[0]["largestInside"] as? [[String: Any]])
+        XCTAssertEqual(inside.map { $0["name"] as? String }, ["film.mov", "Old"])
+
+        let one = try object(door.answer(["folders", "--limit", "1"]))
+        XCTAssertEqual((one["largest"] as? [[String: Any]])?.count, 1)
+    }
+
     func testHistoryShowsWhatSiivOSChangedAndWhatCanBePutBack() throws {
         let door = try makeDoor()
         let core = try SafetyCore(baseDirectory: baseDirectory, homeDirectory: home)
@@ -338,7 +359,7 @@ final class AgentDoorTests: TemporaryDirectoryTestCase {
         let tools = try XCTUnwrap((list["result"] as? [String: Any])?["tools"] as? [[String: Any]])
         XCTAssertEqual(tools.map { $0["name"] as? String }, [
             "siivos_status", "siivos_overview", "siivos_health", "siivos_changes", "siivos_cleanup",
-            "siivos_performance", "siivos_protection", "siivos_apps", "siivos_history"
+            "siivos_performance", "siivos_protection", "siivos_apps", "siivos_folders", "siivos_history"
         ])
         XCTAssertTrue(tools.allSatisfy { ($0["inputSchema"] as? [String: Any])?["type"] as? String == "object" })
         XCTAssertTrue(tools.allSatisfy { !(($0["description"] as? String) ?? "").isEmpty })

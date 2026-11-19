@@ -167,6 +167,70 @@ final class ClutterScannerTests: TemporaryDirectoryTestCase {
         XCTAssertTrue(findings.allSatisfy { $0.explanation.contains("/Pictures/photo.jpg") })
     }
 
+    // MARK: - Copies that share disk space
+
+    func testACopyThatSharesItsSpaceWithTheKeptFileFreesNothing() throws {
+        try makeFile("Pictures/photo.psd", bytes: 5_000, fill: 7)
+        try makeFile("Pictures/photo copy.psd", bytes: 5_000, fill: 7)
+
+        // Both files say they share their space, as two copies made in Finder do.
+        let findings = try DuplicateFilesScanner(homeDirectory: home, minimumBytes: 1_000, sharesSpace: { _ in true }).scan()
+
+        XCTAssertEqual(names(findings), ["photo copy.psd"])
+        XCTAssertGreaterThanOrEqual(findings[0].sizeBytes, 5_000, "The file is still as big as it is")
+        XCTAssertEqual(findings[0].freesBytes, 0)
+        XCTAssertTrue(findings[0].explanation.contains("share their disk space"))
+    }
+
+    func testCopiesThatShareSpaceOnlyWithEachOtherCountOnce() throws {
+        // The kept file stands alone; the two extra copies share their space with each other.
+        try makeFile("Pictures/a.psd", bytes: 5_000, fill: 7)
+        try makeFile("Pictures/a copy 1.psd", bytes: 5_000, fill: 7)
+        try makeFile("Pictures/a copy 2.psd", bytes: 5_000, fill: 7)
+
+        let findings = try DuplicateFilesScanner(
+            homeDirectory: home,
+            minimumBytes: 1_000,
+            sharesSpace: { $0.lastPathComponent.contains("copy") }
+        ).scan()
+
+        XCTAssertEqual(findings.count, 2)
+        let freed = findings.map { $0.freesBytes }.sorted()
+        XCTAssertEqual(freed.first, 0, "The second of the two frees nothing more")
+        XCTAssertEqual(freed.last, findings[0].sizeBytes, "Together they free the space once")
+        XCTAssertTrue(findings.allSatisfy { $0.explanation.contains("another copy") })
+    }
+
+    func testOrdinaryCopiesFreeTheirFullSizeAndTotalsCountWhatIsFreed() throws {
+        try makeFile("Pictures/b.psd", bytes: 5_000, fill: 7)
+        try makeFile("Pictures/b copy.psd", bytes: 5_000, fill: 7)
+
+        let plain = try DuplicateFilesScanner(homeDirectory: home, minimumBytes: 1_000, sharesSpace: { _ in false }).scan()
+        XCTAssertEqual(plain.map { $0.freesBytes }, plain.map { $0.sizeBytes })
+        XCTAssertFalse(plain[0].explanation.contains("share"))
+
+        let shared = ScanEngine(scanners: [
+            DuplicateFilesScanner(homeDirectory: home, minimumBytes: 1_000, sharesSpace: { _ in true })
+        ]).run()
+        XCTAssertEqual(shared.findingCount, 1)
+        XCTAssertEqual(shared.totalBytes, 0, "The total says what would be freed, which is nothing")
+    }
+
+    #if os(macOS)
+    func testARealCopyMadeOnThisMacIsRecognisedAsSharingItsSpace() throws {
+        // Copying a file on a Mac's disk keeps the contents once. This checks that macOS
+        // tells SiivOS so, which the whole feature rests on.
+        let original = try makeFile("Pictures/original.psd", bytes: 4_000_000, fill: 5)
+        let copy = home.appendingPathComponent("Pictures/original copy.psd")
+        try FileManager.default.copyItem(at: original, to: copy)
+
+        let findings = try DuplicateFilesScanner(homeDirectory: home).scan()
+
+        XCTAssertEqual(names(findings), ["original copy.psd"])
+        XCTAssertEqual(findings.first?.freesBytes, 0, "A copy made on this Mac shares its space with the original")
+    }
+    #endif
+
     func testFilesThatDifferOnlyAtTheEndAreNotDuplicates() throws {
         // Longer than the part that is compared first, so the full comparison is what tells them apart.
         try makeFile("Documents/a.bin", bytes: 200_000, fill: 3)

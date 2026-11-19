@@ -2,29 +2,56 @@ import AppKit
 import SiivOSCore
 import SwiftUI
 
-/// Finds clutter and lets the user choose what to remove.
+/// Finds clutter and lets the user choose what to remove, and shows where the space
+/// in the home folder goes.
 struct CleanupView: View {
     @ObservedObject var model: CleanupModel
+    @ObservedObject var diskMap: DiskMapModel
+    @State private var tab: Tab = .clutter
+
+    private enum Tab: Hashable {
+        case clutter
+        case map
+    }
 
     var body: some View {
-        content
-            .navigationTitle(tr("Cleanup"))
-            .sheet(item: $model.pendingPlan) { plan in
-                RemovalPlanSheet(
-                    plan: plan,
-                    onConfirm: { model.confirmPendingPlan() },
-                    onCancel: { model.pendingPlan = nil }
+        VStack(alignment: .leading, spacing: 0) {
+            SiivOSSegmentedControl(selection: $tab, options: [
+                (.clutter, tr("Clutter")),
+                (.map, tr("Disk Map"))
+            ])
+            .padding(.horizontal, 24)
+            .padding(.top, 20)
+            .padding(.bottom, 4)
+            .readableWidth()
+
+            if tab == .clutter {
+                content
+            } else {
+                DiskMapView(
+                    model: diskMap,
+                    clearableCacheBytes: model.report?.safeToRemoveBytes(inSection: "caches") ?? 0,
+                    reviewInClutter: { tab = .clutter }
                 )
             }
-            .alert(
-                "SiivOS",
-                isPresented: isShowingMessage,
-                presenting: model.message
-            ) { _ in
-                Button("OK") {}
-            } message: { text in
-                Text(text)
-            }
+        }
+        .navigationTitle(tr("Cleanup"))
+        .sheet(item: $model.pendingPlan) { plan in
+            RemovalPlanSheet(
+                plan: plan,
+                onConfirm: { model.confirmPendingPlan() },
+                onCancel: { model.pendingPlan = nil }
+            )
+        }
+        .alert(
+            "SiivOS",
+            isPresented: isShowingMessage,
+            presenting: model.message
+        ) { _ in
+            Button("OK") {}
+        } message: { text in
+            Text(text)
+        }
     }
 
     @ViewBuilder
@@ -143,6 +170,12 @@ private struct CleanupResultsView: View {
 
                 if let notice = model.lastRemoval {
                     RemovalBanner(model: model, notice: notice)
+                }
+
+                if let note = model.settingsNote {
+                    Label(note, systemImage: "slider.horizontal.3")
+                        .font(.callout)
+                        .foregroundStyle(.secondary)
                 }
 
                 CleanupPartView(
@@ -403,13 +436,21 @@ private struct FindingRow: View {
             SafetyLabel(safety: finding.safety)
                 // Resting the pointer on the label says why the item has it.
                 .help(finding.safetyReason)
-            Text(formatBytes(finding.sizeBytes))
+            Text(sizeText)
                 .foregroundStyle(.secondary)
                 .monospacedDigit()
                 // The same width on every row, so the labels line up in a column.
                 .frame(minWidth: 76, alignment: .trailing)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    /// The item's size, or what removing it would free when that is less: a copy that
+    /// shares its disk space with a file that stays frees next to nothing.
+    private var sizeText: String {
+        finding.freesBytes < finding.sizeBytes
+            ? tr("frees %1$@", formatBytes(finding.freesBytes))
+            : formatBytes(finding.sizeBytes)
     }
 
     private var isTicked: Binding<Bool> {

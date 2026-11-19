@@ -74,6 +74,23 @@ enum MainWindow {
         window.center()
     }
 
+    /// Brings the app's window to the front, opening a new one if it was closed, and
+    /// shows the given section if there is one.
+    static func show(_ section: AppSection?, openWindow: OpenWindowAction) {
+        if let section {
+            AppNavigation.shared.selection = section
+        }
+        NSApp.activate()
+        if let window = current, window.isVisible || window.isMiniaturized {
+            if window.isMiniaturized {
+                window.deminiaturize(nil)
+            }
+            window.makeKeyAndOrderFront(nil)
+        } else {
+            openWindow(id: sceneID)
+        }
+    }
+
     /// Remembers the window's size and place for the next time it opens.
     static func saveFrame(of window: NSWindow) {
         // A window that fills the screen has no size of its own worth remembering.
@@ -391,156 +408,7 @@ struct MenuBarPanel: View {
     /// Brings the app's window to the front, opening a new one if it was closed, and
     /// shows the given section if there is one.
     private func open(_ section: AppSection?) {
-        if let section {
-            AppNavigation.shared.selection = section
-        }
-        NSApp.activate()
-        if let window = MainWindow.current, window.isVisible || window.isMiniaturized {
-            if window.isMiniaturized {
-                window.deminiaturize(nil)
-            }
-            window.makeKeyAndOrderFront(nil)
-        } else {
-            openWindow(id: MainWindow.sceneID)
-        }
+        MainWindow.show(section, openWindow: openWindow)
         dismiss()
-    }
-}
-
-// MARK: - Settings
-
-/// The Settings window, opened from the SiivOS menu or with Command-comma.
-struct SettingsView: View {
-    @AppStorage(AppSettings.showsMenuBarKey) private var showsMenuBar = true
-    /// Whether the agent door is on. Kept in a file, not in the app's own settings,
-    /// because the command-line tool is a separate program that has to read it too.
-    @State private var agentDoorIsOn = AgentDoorSwitch.standard().isOn
-    /// Why the agent door could not be switched, if it could not.
-    @State private var agentDoorProblem: String?
-    /// Whether macOS lets SiivOS see every folder. Looked up when Settings is shown and
-    /// when SiivOS comes forward again, for example after a visit to System Settings.
-    @State private var hasFullDiskAccess = Permissions.hasFullDiskAccess()
-
-    var body: some View {
-        Form {
-            Section {
-                Toggle(tr("Show SiivOS in the menu bar"), isOn: $showsMenuBar)
-                Text(tr("With this on, SiivOS stays in the menu bar after you close its window, shows the health score there and takes a reading every six hours. To stop it, choose Quit SiivOS in the menu bar or press Command-Q."))
-                    .font(.callout)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            Section(tr("Permissions")) {
-                HStack {
-                    Text(tr("Full Disk Access"))
-                    Spacer()
-                    Text(hasFullDiskAccess ? tr("On") : tr("Off"))
-                        .foregroundStyle(.secondary)
-                }
-                Text(
-                    hasFullDiskAccess
-                        ? tr("macOS lets SiivOS see every folder, so it does not ask folder by folder.")
-                        : tr("Without it, macOS asks about one folder at a time, and some lists in SiivOS stay empty. Full Disk Access covers everything in one go. macOS only lets you turn it on yourself: open the page below and switch SiivOS on in the list. If SiivOS is not in the list, add it with the + button. macOS may then ask you to quit and reopen SiivOS.")
-                )
-                .font(.callout)
-                .foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
-                Button(tr("Open Full Disk Access Settings")) {
-                    if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_AllFiles") {
-                        NSWorkspace.shared.open(url)
-                    }
-                }
-                .buttonStyle(SiivOSButtonStyle(.small))
-            }
-            Section(tr("AI agents")) {
-                Toggle(tr("Let AI agents ask SiivOS questions"), isOn: agentDoor)
-                Text(tr("With this on, the command-line tool that comes with SiivOS answers questions from an AI agent you use, such as what is taking space or what has changed lately. The tool only reads. It cannot remove or change anything."))
-                    .font(.callout)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-                Text(tr("SiivOS itself sends nothing anywhere. An agent that runs on the internet, though, sends what it reads to its own service, including the names of your files and apps."))
-                    .font(.callout)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-                if let agentDoorProblem {
-                    Text(agentDoorProblem)
-                        .font(.callout)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-                if let path = toolPath {
-                    HStack(spacing: 10) {
-                        Text(path)
-                            .font(.system(.callout, design: .monospaced))
-                            .lineLimit(1)
-                            .truncationMode(.middle)
-                            .textSelection(.enabled)
-                            .help(path)
-                        Spacer()
-                        Button(tr("Copy Path")) {
-                            NSPasteboard.general.clearContents()
-                            NSPasteboard.general.setString(path, forType: .string)
-                        }
-                        .buttonStyle(SiivOSButtonStyle(.small))
-                    }
-                    Text(tr("This is where the tool is. Give the path to your agent, or try it in Terminal by typing the word help after it."))
-                        .font(.callout)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                    Text(tr("If your agent uses MCP servers, add SiivOS with this path as the command and the word mcp as its one argument."))
-                        .font(.callout)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                } else {
-                    Text(tr("The tool is put inside the app when SiivOS is built with Scripts/make-app.sh. This copy of SiivOS was started another way, so the tool is not in it."))
-                        .font(.callout)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-            }
-            Section(tr("Privacy")) {
-                Text(tr("Everything SiivOS does happens on this Mac. It collects nothing and sends nothing anywhere. The one time it uses the network is when you ask it, in Protection, to download ClamAV's virus definitions."))
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-        }
-        .formStyle(.grouped)
-        .tint(SiivOSTheme.prominent)
-        .frame(width: 520)
-        .fixedSize(horizontal: false, vertical: true)
-        .onAppear {
-            hasFullDiskAccess = Permissions.hasFullDiskAccess()
-        }
-        .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
-            hasFullDiskAccess = Permissions.hasFullDiskAccess()
-        }
-    }
-
-    /// Switches the agent door, and keeps the switch where it was if that fails.
-    private var agentDoor: Binding<Bool> {
-        Binding(
-            get: { agentDoorIsOn },
-            set: { isOn in
-                do {
-                    try AgentDoorSwitch.standard().set(isOn)
-                    agentDoorIsOn = isOn
-                    agentDoorProblem = nil
-                } catch {
-                    agentDoorProblem = tr("The setting could not be saved: %1$@", error.localizedDescription)
-                }
-            }
-        )
-    }
-
-    /// Where the command-line tool is: inside the app, or next to it when SiivOS was
-    /// built without an app around it. `nil` when it is in neither place.
-    private var toolPath: String? {
-        let name = AgentDoor.toolName
-        let places: [URL?] = [
-            Bundle.main.bundleURL.appendingPathComponent("Contents/Helpers/" + name),
-            Bundle.main.executableURL?.deletingLastPathComponent().appendingPathComponent(name)
-        ]
-        return places
-            .compactMap { $0 }
-            .first { FileManager.default.isExecutableFile(atPath: $0.path) }?
-            .path
     }
 }

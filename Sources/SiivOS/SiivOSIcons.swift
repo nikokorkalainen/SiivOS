@@ -20,6 +20,8 @@ enum SiivOSIcon: String, CaseIterable {
     case good
     case note
     case attention
+    /// Settings, pinned at the bottom of the sidebar.
+    case settings
 }
 
 /// Draws one icon from the SiivOS set.
@@ -210,6 +212,14 @@ struct SiivOSIconParts {
                 highlightFills: [circle(12, 16.2, 1.2)]
             )
 
+        case .settings:
+            let gear = gearPath()
+            return SiivOSIconParts(
+                fills: [gear],
+                strokes: [gear],
+                highlightStrokes: [circle(12, 12, 3)]
+            )
+
         case .history:
             var arc = Path()
             arc.addRelativeArc(center: CGPoint(x: 12, y: 12), radius: 7.5, startAngle: .degrees(180), delta: .degrees(-315))
@@ -222,6 +232,20 @@ struct SiivOSIconParts {
     }
 
     // MARK: Shape helpers
+
+    /// An eight-tooth gear centred on the 24 x 24 grid: teeth reach 9.4, the body 7.0.
+    private static func gearPath() -> Path {
+        var points: [(CGFloat, CGFloat)] = []
+        let shape: [(Double, Double)] = [(-16.5, 7.0), (-10.5, 9.4), (10.5, 9.4), (16.5, 7.0)]
+        for tooth in 0..<8 {
+            let middle = Double(tooth) * 45 - 90
+            for (offset, radius) in shape {
+                let angle = (middle + offset) * Double.pi / 180
+                points.append((CGFloat(12 + radius * cos(angle)), CGFloat(12 + radius * sin(angle))))
+            }
+        }
+        return polygon(points, closed: true)
+    }
 
     private static func rounded(_ x: CGFloat, _ y: CGFloat, _ width: CGFloat, _ height: CGFloat, _ radius: CGFloat) -> Path {
         Path(roundedRect: CGRect(x: x, y: y, width: width, height: height), cornerRadius: radius)
