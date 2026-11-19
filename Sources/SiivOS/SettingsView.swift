@@ -484,6 +484,19 @@ private struct PermissionsSettingsGroup: View {
                 }
                 .padding(.horizontal, 16)
                 .padding(.bottom, 14)
+
+                ThemedDivider()
+                // No On or Off here: macOS gives an app no way to find out whether it
+                // has this permission, and SiivOS does not guess.
+                SettingRow(
+                    tr("App Management"),
+                    notes: [tr("Lets SiivOS move an app out of the Applications folder when you uninstall it. macOS gives apps no way to see whether they have this permission, so SiivOS cannot show it here. If macOS stops an uninstall, open Privacy & Security, then App Management, and switch SiivOS on.")]
+                ) {
+                    Button(tr("Open Privacy & Security Settings")) {
+                        openAppManagementSettings()
+                    }
+                    .buttonStyle(SiivOSButtonStyle(.small))
+                }
             }
         }
         .onAppear {
@@ -491,6 +504,14 @@ private struct PermissionsSettingsGroup: View {
         }
         .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
             hasFullDiskAccess = Permissions.hasFullDiskAccess()
+        }
+    }
+
+    /// Asks for the App Management page. Where macOS does not know that page by this
+    /// name, it opens Privacy & Security, which is what the button promises.
+    private func openAppManagementSettings() {
+        if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_AppBundles") {
+            NSWorkspace.shared.open(url)
         }
     }
 
