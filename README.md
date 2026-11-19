@@ -190,6 +190,7 @@ The tests only touch temporary files that they create themselves, apart from a f
 - **In Terminal:** from the project folder, run `swift test`. This needs Xcode; with only the Command Line Tools it fails with an error about `XCTest`.
 - **In Xcode:** switch the scheme to **SiivOS-Package** and press Command-U.
 - **On Linux:** `./Scripts/check-engine-on-linux.sh` compiles and tests the engine, checks the app's syntax and checks that every text has a Finnish translation.
+- **On GitHub:** the same Linux check runs by itself on every push to a working branch. A pull request to `main` also builds the whole app and runs the tests on a Mac. See `.github/workflows/checks.yml`.
 
 ### Rules a change must follow
 

@@ -1,0 +1,56 @@
+# Checks every change automatically, so that a mistake is found before it reaches a Mac.
+#
+# Two jobs:
+#   - "Engine on Linux" runs the same script Claude runs before every push. It is quick
+#     and cheap, so it runs on every push to a working branch.
+#   - "App and tests on a Mac" builds the whole app and runs the tests on a real Mac. It is
+#     the only check that compiles the screens. On a private repository a minute on a Mac
+#     counts as ten minutes of the monthly allowance, so it runs for pull requests to main
+#     and when started by hand (Actions, Checks, Run workflow), not on every push.
+name: Checks
+
+on:
+  push:
+    branches: ["claude/**"]
+    # Changes to notes and design files cannot break the build.
+    paths-ignore: ["**.md", "docs/**", "design/**", "LICENSE"]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+# A newer push to the same branch makes an older run pointless.
+concurrency:
+  group: checks-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  linux:
+    name: Engine on Linux
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Keep the Swift toolchain between runs
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/siivos-swift
+          key: swift-6.1.2-ubuntu24.04
+      - name: Test the engine, check the app's syntax and the translations
+        run: ./Scripts/check-engine-on-linux.sh
+
+  mac:
+    name: App and tests on a Mac
+    if: github.event_name != 'push'
+    runs-on: macos-15
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - name: Say which Swift this is
+        run: swift --version
+      - name: Build the app and the command-line tool
+        run: swift build
+      - name: Run the engine's tests
+        run: swift test
