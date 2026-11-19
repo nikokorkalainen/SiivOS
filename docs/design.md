@@ -320,6 +320,121 @@ Settings only narrow what SiivOS lists. None of them makes it less careful, and 
 page suggests otherwise: no "safe mode", no warnings on the switches, and the folder note keeps
 saying that left-out folders are not touched.
 
+## Disk Map
+
+A redesign of `DiskMapView` after the first build (19 November). Mockups: "Disk Map" at the end of
+each row on the design canvas, drawn with the owner's real home folder.
+
+### What was wrong
+
+- Every block is the same green at a different strength, so the map reads as one slab and the
+  eye cannot tell a photo library from a cache.
+- Small blocks with no labels at the bottom right are noise; long names are cut to "iMyfo…ackup".
+- The folder name appears twice, and the list repeats the map with the same unreadable shades.
+
+### Page
+
+1. The **Clutter / Disk Map** switch stays where it is now: `SiivOSSegmentedControl` at the top
+   of Cleanup, above the page header, on the left.
+2. The page header as now: title **"Disk Map"**, subtitle "170,55 GB in your home folder" (or
+   "89,1 GB in Library" when looking into a folder). On the right, "Measured today at 9.02" in
+   secondary text and **Measure Again** as a standard button with the refresh icon.
+3. The breadcrumb under the header (home icon, then each folder; every part but the last is a
+   link back).
+4. A legend of the kinds below (small rounded squares with their names), 13 pt.
+5. The map, 380 pt tall, full content width.
+6. One line of secondary text: "Click a folder to look inside. Apps and photo, video and music
+   libraries count as one item and are never looked into." (the existing text, shortened).
+7. The list in one panel.
+
+### Colour by kind
+
+Each block and list row is coloured by what the folder holds, worked out from its name and place,
+so the map can be read at a glance. The same colours in dark and light mode:
+
+| Kind | Which folders | Fill | Text on the block |
+|------|---------------|------|-------------------|
+| App data | `~/Library` and anything inside it | `#23775A` | white |
+| Photos and media | Pictures, Movies, Music, and photo, video and music libraries | `#7FD0A8` | deep green `#062A20` |
+| Your documents | Desktop, Documents, and folders inside them | `#5BA8C4` | deep green |
+| Downloads | Downloads | `#D6B04F` | deep green |
+| Developer files | folders named like developer tools: `node_modules`, `.npm`, `.gradle`, `.cargo`, `DerivedData`, names ending in `-studio` or `sdk`, and any folder starting with a dot | `#9A8FD8` | deep green |
+| Other folders | everything else | `#8AA39A` | deep green |
+| Smaller items | the existing "N smaller items" group | `#3D5049` | white |
+
+Inside a folder, children inherit the parent's kind unless their own name says otherwise (for
+example `node_modules` inside Documents is Developer files).
+
+### Blocks
+
+- Rounded 8 pt, 3 pt gaps.
+- **Fill:** a soft gradient in the kind's colour, top-left light to bottom-right dark, with a
+  faint white sheen in the top-left corner. Edges: a 1 pt white line along the top at 30 %, a
+  1 pt black line along the bottom at 16 %, and a small shadow (black 22 %, radius 2, y 1).
+
+  | Kind | Top left | Middle | Bottom right |
+  |------|----------|--------|--------------|
+  | App data | `#2F9474` | `#23775A` | `#175640` |
+  | Photos and media | `#A0E3C1` | `#7FD0A8` | `#5FB48B` |
+  | Your documents | `#80C3D9` | `#5BA8C4` | `#438EAA` |
+  | Downloads | `#E8CA73` | `#D6B04F` | `#BB9538` |
+  | Developer files | `#B5ACE6` | `#9A8FD8` | `#8073C3` |
+  | Other folders | `#A6BBB3` | `#8AA39A` | `#718B82` |
+  | Smaller items | `#4B6159` | `#3D5049` | `#30413A` |
+
+  In SwiftUI: `LinearGradient(colors: [top, middle, bottom], startPoint: .topLeading, endPoint:
+  .bottomTrailing)`, a `RadialGradient` of white 20 % to clear over it at `.topLeading` (end
+  radius about 55 % of the block's longer side), then the edge lines as overlays.
+- **Kind symbol:** a line drawing of the kind in the bottom-right corner, in the block's text
+  colour at 16 % opacity, 2.4 pt stroke whatever its size. About a third of the block's shorter
+  side (Library 132 pt, Pictures 72 pt, Downloads 40 pt), and left out under 28 pt. Symbols:
+  App data `square.3.layers.3d`, Photos and media `photo`, Your documents `doc`, Downloads
+  `arrow.down.to.line`, Developer files `chevron.left.forwardslash.chevron.right`, Other folders
+  `folder` (SF Symbols, ultralight or light weight).
+- **Label:** the name in 14 pt semibold and the size in 12 pt under it, top left with 10 to 12 pt
+  padding. Only on blocks at least 92 pt wide and 46 pt tall; smaller blocks have no text, and the
+  name and size show in the info line under the map. Long names end in "…" at the end, not the
+  middle.
+- **Library** (when it is a block on the home folder map, and Cleanup has scanned) also says,
+  at the bottom of the block: "53,25 GB of it is app caches that Clutter can clear." with a small
+  **Review in Clutter** button that switches to Clutter. Use the caches total from the last scan;
+  leave the line out if there has been no scan.
+
+### Hover
+
+- **The block under the pointer** keeps full colour, brightens slightly (brightness +7 %), gets a
+  2 pt white ring inside its edge (78 %) and a soft shadow (black 32 %, radius 22, y 8), and is
+  drawn above its neighbours. Its kind symbol rises to 28 % opacity. Blocks that open show a
+  small round chevron badge in the top-right corner (22 pt, white 24 %).
+- **The other blocks** fade to 60 % opacity and lose a little colour (saturation 80 %), so the
+  hovered one stands out.
+- **Info line:** the hint under the map ("Click a folder to look inside…") is replaced while
+  hovering by one line: the kind's colour square, the name in semibold, the kind, then at the
+  right "89,1 GB, 52 % of your home folder" and "Click to look inside." (smaller items: "Click to
+  list them."). This is where small blocks without labels get their name. The hint comes back
+  when the pointer leaves the map.
+- **Map and list are linked:** hovering a list row highlights its block the same way and shows
+  its info line; hovering a block tints its list row (grey 12 %).
+- All changes fade over 0.14 s with ease-out; with Reduce Motion on they switch at once.
+- In SwiftUI: track `@State var hovered: DiskItem.ID?` with `.onHover` on each block and row, and
+  drive opacity, the ring and the info line from it. Use `.onContinuousHover` only if blocks are
+  drawn in one `Canvas`.
+
+### List
+
+One row per block, in the same order: the kind's colour square, the name (with a chevron if it
+can be opened) and the kind under it in 12 pt secondary text, a bar in the kind's colour, the
+percentage and the size, both right aligned with tabular digits. The smaller-items row reads
+"Folders under 1 GB, shown together" instead of a kind. Rows keep "Show in Finder" in their
+context menu.
+
+### New texts (Finnish needed)
+
+"%1$@ in your home folder" · "Measured today
+at %1$@" · the six kind names · "%1$@ of it is app caches that Clutter can clear." · "Review in
+Clutter" · "Folders under 1 GB, shown together" · "%1$@, %2$@ of your home folder" ·
+"Click to look inside." · "Click to list them."
+
 ## Before anything changes (sheet)
 
 Keep the existing `RemovalPlanSheet`, with shorter copy:
