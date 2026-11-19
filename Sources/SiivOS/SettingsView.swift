@@ -492,7 +492,7 @@ private struct PermissionsSettingsGroup: View {
                     tr("App Management"),
                     notes: [tr("Lets SiivOS move an app out of the Applications folder when you uninstall it. macOS gives apps no way to see whether they have this permission, so SiivOS cannot show it here. If macOS stops an uninstall, open Privacy & Security, then App Management, and switch SiivOS on.")]
                 ) {
-                    Button(tr("Open Privacy & Security Settings")) {
+                    Button(tr("Open App Management Settings")) {
                         openAppManagementSettings()
                     }
                     .buttonStyle(SiivOSButtonStyle(.small))
@@ -507,8 +507,9 @@ private struct PermissionsSettingsGroup: View {
         }
     }
 
-    /// Asks for the App Management page. Where macOS does not know that page by this
-    /// name, it opens Privacy & Security, which is what the button promises.
+    /// Opens the App Management page, as confirmed on macOS 15.8.3. Should a macOS not
+    /// know the page by this name, it opens Privacy & Security, and the row's note says
+    /// where to go from there.
     private func openAppManagementSettings() {
         if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_AppBundles") {
             NSWorkspace.shared.open(url)

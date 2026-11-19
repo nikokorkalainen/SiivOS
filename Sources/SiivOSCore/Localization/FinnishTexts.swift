@@ -332,6 +332,7 @@ enum FinnishTexts {
         "Open Full Disk Access Settings": "Avaa täyden levyn käyttöoikeuden asetukset",
         "App Management": "Appien hallinta",
         "Lets SiivOS move an app out of the Applications folder when you uninstall it. macOS gives apps no way to see whether they have this permission, so SiivOS cannot show it here. If macOS stops an uninstall, open Privacy & Security, then App Management, and switch SiivOS on.": "Tämän avulla SiivOS voi siirtää sovelluksen pois sovelluskansiosta, kun poistat sen. macOS ei anna sovellusten nähdä, onko niillä tämä käyttöoikeus, joten SiivOS ei voi näyttää sitä tässä. Jos macOS estää sovelluksen poistamisen, avaa Tietosuoja ja suojaus, sitten Appien hallinta, ja kytke SiivOS päälle.",
+        "Open App Management Settings": "Avaa Appien hallinnan asetukset",
         "AI agents": "Tekoälyagentit",
         "Let AI agents ask SiivOS questions": "Anna tekoälyagenttien kysyä SiivOSilta",
         "With this on, the command-line tool that comes with SiivOS answers questions from an AI agent you use, such as what is taking space or what has changed lately. The tool only reads. It cannot remove or change anything.": "Kun tämä on päällä, SiivOSin mukana tuleva komentorivityökalu vastaa käyttämäsi tekoälyagentin kysymyksiin, esimerkiksi siihen, mikä vie tilaa tai mikä on viime aikoina muuttunut. Työkalu vain lukee. Se ei voi poistaa tai muuttaa mitään.",
