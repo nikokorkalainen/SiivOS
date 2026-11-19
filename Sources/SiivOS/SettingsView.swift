@@ -148,6 +148,13 @@ private struct GeneralSettingsGroup: View {
                     .padding(.horizontal, 16)
                     .padding(.bottom, 14)
                 }
+                ThemedDivider()
+                SettingRow(tr("Welcome")) {
+                    Button(tr("Show Again")) {
+                        AppNavigation.shared.showsWelcome = true
+                    }
+                    .buttonStyle(SiivOSButtonStyle(.small))
+                }
             }
         }
         .onAppear {

@@ -55,6 +55,16 @@ struct ContentView: View {
         .onAppear {
             MainWindow.opener = openWindow
             holding.refresh()
+            // The first time SiivOS opens, say what it is. Not when it starts quietly
+            // at login: that window is about to close again.
+            if !Welcome.hasBeenSeen && !QuietStart.isUnderWay {
+                navigation.showsWelcome = true
+            }
+        }
+        .sheet(isPresented: $navigation.showsWelcome, onDismiss: { Welcome.markSeen() }) {
+            WelcomeView {
+                navigation.showsWelcome = false
+            }
         }
     }
 
