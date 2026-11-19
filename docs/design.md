@@ -508,20 +508,36 @@ The first thing anyone sees of SiivOS. It replaces today's sheet over the Overvi
 
 ### Motion
 
-One entrance per step, and nothing that loops.
+One entrance per step. The only thing that repeats is a small twinkle of the logo's glints.
 
-- **Step 1:** the mint glow grows in (1 s); the big glint sparkles in at 0.15 s, the small one
-  at 0.32 s (each 0.7 s: from scale 0 and turned -90 degrees to a slight overshoot, 1.18 and 8
-  degrees, then settling at 1 and 0); the logo's letters fade in at 0.45 s; then the heading,
-  the line under it, the panel and the footer rise 10 pt and fade in, 0.12 s apart from 0.6 s.
-  To do this, the logo's glints and letters must be separate shapes. Today `SiivOSLogoPaths`
-  joins each glint to its letters (`logoSiiv`, `logoOS`), so add `logoBigGlint` and
-  `logoSmallGlint` and letter-only paths in the logo's own coordinates, generated from the logo
-  file by `design/icon/make_wordmark.py` like the others.
+- **Step 1, the logo animation** (about 2.5 s in all):
+  1. 0 s: the mint glow grows from half size with a slight overshoot (1.2 s).
+  2. 0.2 s: the big glint sparkles in: from scale 0 and turned -135 degrees, to 1.22 and +10,
+     back to 0.94 and -3, settling at 1 and 0 (0.8 s). The small glint does the same at 0.42 s.
+  3. 0.62 s: a thin outline of the big glint (2.5 pt, the "OS" colour) grows from it to 2.6
+     times its size and fades out (0.9 s), like a ping of light.
+  4. 0.7 s: the letters wipe in from left to right while sliding 6 pt into place (0.75 s,
+     ease-out). In SwiftUI: a mask whose width animates from 0 to full.
+  5. 1.45 s: a soft mint band (`#5EE6A8`, 95 % in the middle fading to clear, slanted 18
+     degrees) sweeps across the letters once, inside their shape only (1.1 s).
+  6. 1.25 s onwards: the heading, the line under it, the panel and the footer rise 10 pt and
+     fade in, 0.12 s apart.
+  7. Afterwards, every 7 s, each glint twinkles once (shrinks to 0.82, turns 90 degrees and
+     springs back to 1, in about 0.8 s), the small one 0.35 s after the big one. Glints have
+     four arms, so a quarter turn ends where it started.
+
+  In SwiftUI: `KeyframeAnimator` (macOS 14) for the glints' scale and rotation and for the
+  ping, a `mask` with an animated width for the letters, and a `LinearGradient` rectangle moved
+  across, masked by the letter paths, for the shine. Start it in `onAppear`. To do this, the
+  logo's glints and letters must be separate shapes. Today `SiivOSLogoPaths` joins each glint
+  to its letters (`logoSiiv`, `logoOS`), so add `logoBigGlint` and `logoSmallGlint` and
+  letter-only paths in the logo's own coordinates, generated from the logo file by
+  `design/icon/make_wordmark.py` like the others.
 - **Step 2:** the picture, the texts and the steps rise in 0.1 s apart. In the picture, a
   pointer moves onto the SiivOS switch, presses (scale 0.88) and the switch slides on, over
   1.6 s from 0.5 s.
-- With Reduce Motion on, everything just fades in over 0.3 s and the switch is drawn on.
+- With Reduce Motion on, everything just fades in over 0.3 s: no sparkle, ping, wipe, shine or
+  twinkle, and the switch is drawn on.
 
 ### New texts (Finnish needed)
 
