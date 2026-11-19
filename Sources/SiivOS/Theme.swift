@@ -96,20 +96,33 @@ struct ProminentButton: View {
     private let title: String
     private let systemImage: String?
     private let isDestructive: Bool
+    private let minWidth: CGFloat?
     private let action: () -> Void
 
-    /// - Parameter isDestructive: Fills the button red, for confirming something that
-    ///   cannot be undone.
-    init(_ title: String, systemImage: String? = nil, isDestructive: Bool = false, action: @escaping () -> Void) {
+    /// - Parameters:
+    ///   - isDestructive: Fills the button red, for confirming something that cannot
+    ///     be undone.
+    ///   - minWidth: The least the whole button may be wide, for a button that would
+    ///     otherwise look small with a short title.
+    init(
+        _ title: String,
+        systemImage: String? = nil,
+        isDestructive: Bool = false,
+        minWidth: CGFloat? = nil,
+        action: @escaping () -> Void
+    ) {
         self.title = title
         self.systemImage = systemImage
         self.isDestructive = isDestructive
+        self.minWidth = minWidth
         self.action = action
     }
 
     var body: some View {
         Button(action: action) {
+            // The style adds 18 pt of padding on each side of the label.
             ButtonLabel(title: title, systemImage: systemImage)
+                .frame(minWidth: minWidth.map { max(0, $0 - 36) })
         }
         .buttonStyle(ProminentButtonStyle(isDestructive: isDestructive))
     }

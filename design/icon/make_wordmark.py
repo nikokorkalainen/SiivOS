@@ -58,6 +58,39 @@ def swift_body(paths, dx=0.0, dy=0.0) -> str:
     return "\n".join("        " + line for line in pen.lines)
 
 
+def subpaths(d: str) -> list:
+    """The closed outlines a shape is made of, each as a path of its own.
+
+    Every outline after the first has to start with an absolute move, or it could not be
+    drawn on its own.
+    """
+    parts = [part.strip() for part in re.split(r"(?<=[Zz])", d) if part.strip()]
+    assert all(part.startswith("M") for part in parts), "an outline starts with a relative move"
+    return parts
+
+
+def swift_path(paths, indent: str) -> str:
+    """A Swift expression that builds one `Path` from the given outlines."""
+    pen = SwiftPen()
+    for d in paths:
+        parse_path(d, pen)
+    body = "\n".join(indent + "    " + line for line in pen.lines)
+    # The closure says what it returns, so that Swift need not work it out for every
+    # entry of a long list.
+    return f"{{ () -> Path in\n{indent}    var path = Path()\n{body}\n{indent}    return path\n{indent}}}()"
+
+
+def swift_list(items, indent: str) -> str:
+    return "[\n" + ",\n".join(indent + "    " + item for item in items) + f"\n{indent}]"
+
+
+def center(d: str) -> str:
+    bounds = BoundsPen(None)
+    parse_path(d, bounds)
+    x0, y0, x1, y1 = bounds.bounds
+    return f"CGPoint(x: {num((x0 + x1) / 2)}, y: {num((y0 + y1) / 2)})"
+
+
 def main() -> None:
     svg = LOGO.read_text()
     width, height = [float(v) for v in re.search(r'viewBox="([^"]+)"', svg).group(1).split()[2:]]
@@ -69,6 +102,27 @@ def main() -> None:
     for _, d in letters:
         parse_path(d, bounds)
     x0, y0, x1, y1 = bounds.bounds
+
+    # The logo taken apart, for the welcome's animation: each glint, and each character of
+    # the name. The file draws "OS" as one shape, so that one is split into the O (its
+    # outer and inner edge) and the S.
+    (_, big_glint), (_, small_glint) = glints
+    plain = [d for _, d in letters]
+    assert len(plain) == 7, "expected S, i, dot, i, dot, v and OS"
+    o_outer, o_inner, last_s = subpaths(plain[6])
+    characters = [
+        [plain[0]],            # S
+        [plain[1], plain[2]],  # i with its dot
+        [plain[3], plain[4]],  # i with its dot
+        [plain[5]],            # v
+        [o_outer, o_inner],    # O
+        [last_s],              # S
+    ]
+    letters_swift = swift_list([swift_path(parts, "        ") for parts in characters], "    ")
+    outlines_swift = swift_list(
+        [swift_list([swift_path([part], "            ") for part in parts], "        ") for parts in characters],
+        "    ",
+    )
 
     logo_dark = swift_body([d for c, d in shapes if c == "st0"])
     logo_light = swift_body([d for c, d in shapes if c == "st1"])
@@ -161,6 +215,33 @@ enum SiivOSLogoPaths {{
 {name_light}
         return path
     }}()
+
+    // The logo taken apart, in the logo file's own coordinates, for the welcome's animation.
+
+    /// The big glint alone. It takes the colour of "Siiv".
+    static let logoBigGlint: Path = {swift_path([big_glint], "    ")}
+
+    /// The small glint alone. It takes the colour of "OS".
+    static let logoSmallGlint: Path = {swift_path([small_glint], "    ")}
+
+    /// The middle of each glint, which it turns and grows around.
+    static let logoBigGlintCenter = {center(big_glint)}
+    static let logoSmallGlintCenter = {center(small_glint)}
+
+    /// The ink box of the name where it sits in the logo.
+    static let logoNameBox = CGRect(x: {num(x0)}, y: {num(y0)}, width: {num(x1 - x0)}, height: {num(y1 - y0)})
+
+    /// How many of the characters are "Siiv". The rest are "OS".
+    static let logoSiivCount = 4
+
+    /// The characters of the name, each as one shape to fill: S, i, i, v, O, S. Each i has
+    /// its dot, and the O its hole.
+    static let logoLetters: [Path] = {letters_swift}
+
+    /// The same characters as the closed outlines they are made of, so that each outline
+    /// can be traced on its own: the stem and the dot of an i, the outer and inner edge of
+    /// the O.
+    static let logoLetterOutlines: [[Path]] = {outlines_swift}
 
     private static func adaptive(dark: NSColor, light: NSColor) -> Color {{
         Color(nsColor: NSColor(name: nil) {{ appearance in

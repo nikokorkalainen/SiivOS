@@ -151,7 +151,10 @@ private struct GeneralSettingsGroup: View {
                 ThemedDivider()
                 SettingRow(tr("Welcome")) {
                     Button(tr("Show Again")) {
-                        AppNavigation.shared.showsWelcome = true
+                        // The welcome takes the window over, and ends back here.
+                        withAnimation(.easeInOut(duration: 0.3)) {
+                            AppNavigation.shared.showsWelcome = true
+                        }
                     }
                     .buttonStyle(SiivOSButtonStyle(.small))
                 }

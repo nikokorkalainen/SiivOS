@@ -58,9 +58,10 @@ final class AppNavigation: ObservableObject {
     static let shared = AppNavigation()
 
     @Published var selection: AppSection = .overview
-    /// True while the welcome is shown over the window: the first time SiivOS opens,
-    /// and when it is asked for in Settings.
-    @Published var showsWelcome = false
+    /// True while the welcome fills the window: from the start the first time SiivOS
+    /// opens, so that the normal window is not seen for a moment first, and when it is
+    /// asked for in Settings.
+    @Published var showsWelcome = !Welcome.hasBeenSeen
 }
 
 /// Keeps hold of the app's window, so that the menu bar can bring it to the front, and
