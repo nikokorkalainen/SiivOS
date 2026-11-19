@@ -37,14 +37,26 @@ if [ ! -x "${TOOLCHAIN_DIR}/usr/bin/swift" ]; then
     URL="https://download.swift.org/swift-${SWIFT_VERSION}-release/${PLATFORM//./}/swift-${SWIFT_VERSION}-RELEASE/${TOOLCHAIN_NAME}.tar.gz"
     curl -fsS --retry 3 -o "${DOWNLOAD_DIR}/swift.tar.gz" "${URL}"
     curl -fsS --retry 3 -o "${DOWNLOAD_DIR}/swift.tar.gz.sig" "${URL}.sig"
-    curl -fsS --retry 3 -o "${DOWNLOAD_DIR}/keys.asc" "https://www.swift.org/keys/all-keys.asc"
+    # swift.org sends the keys file compressed whether asked to or not, so curl is told
+    # to unpack it. The toolchain itself is fetched as it is: its signature is for the
+    # file as sent.
+    curl -fsS --retry 3 --compressed -o "${DOWNLOAD_DIR}/keys.asc" "https://www.swift.org/keys/all-keys.asc"
 
     echo "Checking the download's signature..."
     mkdir -m 700 "${DOWNLOAD_DIR}/gnupg"
-    gpg --homedir "${DOWNLOAD_DIR}/gnupg" --quiet --import "${DOWNLOAD_DIR}/keys.asc" 2>/dev/null
-    if ! gpg --homedir "${DOWNLOAD_DIR}/gnupg" --verify \
-        "${DOWNLOAD_DIR}/swift.tar.gz.sig" "${DOWNLOAD_DIR}/swift.tar.gz" 2>&1 | grep -q "Good signature"; then
+    # Importing may grumble, for example when no key agent can start. What counts is the
+    # check below: it must end well and say the signature is good.
+    gpg --homedir "${DOWNLOAD_DIR}/gnupg" --batch --import "${DOWNLOAD_DIR}/keys.asc" \
+        > "${DOWNLOAD_DIR}/import.log" 2>&1 || true
+    if VERIFIED="$(LC_ALL=C gpg --homedir "${DOWNLOAD_DIR}/gnupg" --batch --verify \
+        "${DOWNLOAD_DIR}/swift.tar.gz.sig" "${DOWNLOAD_DIR}/swift.tar.gz" 2>&1)" \
+        && grep -q "Good signature" <<<"${VERIFIED}"; then
+        echo "The signature is good."
+    else
         echo "The Swift download did not pass its signature check. Nothing was installed." >&2
+        echo "What the check said:" >&2
+        tail -n 20 "${DOWNLOAD_DIR}/import.log" >&2 || true
+        echo "${VERIFIED:-}" >&2
         exit 1
     fi
 
