@@ -16,7 +16,7 @@ SiivOS is in English and Finnish and follows the language of your Mac. It needs 
 | Section | What you get |
 |---------|--------------|
 | **Overview** | Free space, what the last check found, the health score, and free space over time. |
-| **Cleanup** | Caches, logs, old downloads, large files, duplicate files, leftovers from apps you have removed, and data piled up by developer tools such as Xcode, npm and Docker. Every item is labelled Safe to remove or Check first. Data of macOS, password managers, iCloud and security software is never listed. A Disk Map shows where the space in your home folder goes. |
+| **Cleanup** | Caches, logs, old downloads, large files, duplicate files, leftovers from apps you have removed, and data piled up by developer tools such as Xcode, npm and Docker. Every item is labelled Safe to remove or Check first. Data of macOS, password managers, iCloud and security software is never listed. A Disk Map shows where the space in your home folder goes, and what has grown since you last measured. |
 | **Apps** | Every app with its size and last use. Uninstalling takes the app's leftovers with it. Background items can be reviewed and removed. |
 | **Performance** | Processor, memory, disk and battery right now, with a plain-language explanation when something is holding the Mac back. |
 | **Protection** | The protection built into macOS, what starts by itself, browser extensions, configuration profiles and app permissions, plus an optional malware scan with ClamAV. |
@@ -168,6 +168,7 @@ Everything stays on your Mac, in `~/Library/Application Support/SiivOS`:
 - `agent-door.json` remembers whether the tool for AI agents is switched on.
 - `cleanup-settings.json` holds your Cleanup settings: how old, how large, which checks run, and folders to leave out.
 - `holding-area-settings.json` holds your choices about the holding area.
+- `disk-map-history.json` holds the names and sizes of your largest folders from the last eight times you measured the Disk Map, so that it can say what has grown. Deleting it only means the next measuring has nothing to compare with.
 
 To remove SiivOS completely, first put back or delete what is in History, then quit SiivOS and delete the app and that folder.
 
