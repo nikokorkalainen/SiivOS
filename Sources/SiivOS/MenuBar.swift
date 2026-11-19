@@ -12,6 +12,46 @@ enum AppSettings {
     }
 }
 
+/// Whether SiivOS is starting at login and is about to close the window macOS opens for
+/// it. The Dock icon stays away during that time.
+enum QuietStart {
+    static var isUnderWay = false
+}
+
+/// Shows SiivOS in the Dock only while it has a window. With the menu bar icon on,
+/// closing the window leaves SiivOS running in the menu bar alone, and a Dock icon with
+/// no window behind it would only take up room. With the menu bar icon off, SiivOS is
+/// always in the Dock, as closing the window then quits it.
+@MainActor
+enum DockIcon {
+    /// Shows the Dock icon ahead of a window that is opening.
+    static func windowIsOpening() {
+        guard !QuietStart.isUnderWay else {
+            return
+        }
+        set(.regular)
+    }
+
+    /// Shows or hides the Dock icon to match what is open right now. A window that has
+    /// been put away in the Dock counts as open.
+    static func update() {
+        guard AppSettings.showsMenuBar, !QuietStart.isUnderWay else {
+            set(AppSettings.showsMenuBar ? .accessory : .regular)
+            return
+        }
+        let hasWindow = NSApp.windows.contains { window in
+            window.canBecomeMain && (window.isVisible || window.isMiniaturized)
+        }
+        set(hasWindow ? .regular : .accessory)
+    }
+
+    private static func set(_ policy: NSApplication.ActivationPolicy) {
+        if NSApp.activationPolicy() != policy {
+            NSApp.setActivationPolicy(policy)
+        }
+    }
+}
+
 /// Which section the window shows. Shared, so that the menu bar can open a section.
 @MainActor
 final class AppNavigation: ObservableObject {
@@ -80,6 +120,7 @@ enum MainWindow {
         if let section {
             AppNavigation.shared.selection = section
         }
+        DockIcon.windowIsOpening()
         NSApp.activate()
         if let window = current, window.isVisible || window.isMiniaturized {
             if window.isMiniaturized {
@@ -137,6 +178,7 @@ struct MainWindowTracker: NSViewRepresentable {
                 return
             }
             MainWindow.current = window
+            DockIcon.windowIsOpening()
 
             let center = NotificationCenter.default
             center.addObserver(self, selector: #selector(windowChanged(_:)), name: NSWindow.didMoveNotification, object: window)
@@ -174,6 +216,14 @@ struct MainWindowTracker: NSViewRepresentable {
                 return
             }
             remember()
+            if notification.name == NSWindow.willCloseNotification {
+                // The window is still open at this point, so look a moment later and
+                // take SiivOS out of the Dock if that was its last window.
+                Task { @MainActor in
+                    try? await Task.sleep(nanoseconds: 100_000_000)
+                    DockIcon.update()
+                }
+            }
         }
 
         private func remember() {

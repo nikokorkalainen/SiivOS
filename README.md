@@ -23,7 +23,7 @@ SiivOS is in English and Finnish and follows the language of your Mac. It needs 
 | **Health Timeline** | The health score with a reason for every point, charts over time, and the list of changes. |
 | **History** | Everything SiivOS has changed, with a way to put it back or delete it for good. |
 
-SiivOS also sits in the menu bar, where it shows the health score and marks its icon when something new starts by itself. This can be turned off in Settings.
+SiivOS also sits in the menu bar, where it shows the health score and marks its icon when something new starts by itself. It stays there after you close its window, and is in the Dock only while the window is open. This can be turned off in Settings.
 
 ## What it does not do
 

@@ -57,15 +57,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var quietStartTriesLeft = 0
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        // When run straight from Xcode or `swift run` there is no app bundle,
-        // so ask macOS to treat this as a normal windowed app with a Dock icon.
-        NSApp.setActivationPolicy(.regular)
-
         if Self.wasOpenedAtLogin && AppSettings.showsMenuBar {
-            // Opened by macOS at login, not by the user: stay in the menu bar and do not
-            // put a window in front of whatever they are doing.
+            // Opened by macOS at login, not by the user: stay in the menu bar, out of
+            // the Dock, and do not put a window in front of whatever they are doing.
+            QuietStart.isUnderWay = true
+            NSApp.setActivationPolicy(.accessory)
             startQuietly()
         } else {
+            // When run straight from Xcode or `swift run` there is no app bundle,
+            // so ask macOS to treat this as a normal windowed app with a Dock icon.
+            NSApp.setActivationPolicy(.regular)
             NSApp.activate()
         }
 
@@ -125,11 +126,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if !windows.isEmpty || quietStartTriesLeft <= 0 {
             quietStartTimer?.invalidate()
             quietStartTimer = nil
+            // From here on a window that opens brings the Dock icon with it.
+            QuietStart.isUnderWay = false
         }
     }
 
     /// With the menu bar icon on, closing the window leaves SiivOS running in the menu
-    /// bar. Without it, closing the window quits the app as before.
+    /// bar, and `DockIcon` takes it out of the Dock. Without it, closing the window
+    /// quits the app as before.
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
         !AppSettings.showsMenuBar
     }
