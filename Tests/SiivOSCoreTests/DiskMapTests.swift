@@ -66,6 +66,79 @@ final class DiskMapTests: TemporaryDirectoryTestCase {
         XCTAssertTrue(zip(map.children, map.children.dropFirst()).allSatisfy { $0.sizeBytes >= $1.sizeBytes })
     }
 
+    func testTheSmallerItemsCanBeLookedAtAsAFolderOfTheirOwn() throws {
+        for index in 0..<(DiskMap.largestListed * 2 + 6) {
+            try makeFile("Documents/file-\(index).bin", bytes: 100_000 * (index + 1))
+        }
+        let map = DiskMap.measure(home.appendingPathComponent("Documents"), levels: 1)
+        XCTAssertEqual(map.smallerItems.count, DiskMap.largestListed + 6)
+
+        let smaller = try XCTUnwrap(map.smallerItemsNode(named: "Smaller"))
+
+        XCTAssertEqual(smaller.name, "Smaller")
+        XCTAssertEqual(smaller.sizeBytes, map.otherBytes)
+        XCTAssertTrue(smaller.isOpened)
+        XCTAssertEqual(smaller.children.count, DiskMap.largestListed)
+        XCTAssertEqual(smaller.children.first?.url.lastPathComponent, "file-\(DiskMap.largestListed + 5).bin", "The largest of the small ones comes first")
+        XCTAssertEqual(smaller.otherCount, 6)
+        XCTAssertEqual(smaller.children.reduce(0) { $0 + $1.sizeBytes } + smaller.otherBytes, map.otherBytes)
+
+        // And what is left over after that can be looked at in the same way.
+        let smallest = try XCTUnwrap(smaller.smallerItemsNode(named: "Smallest"))
+        XCTAssertEqual(smallest.children.count, 6)
+        XCTAssertEqual(smallest.otherCount, 0)
+        XCTAssertNil(smallest.smallerItemsNode(named: "None"))
+    }
+
+    // MARK: - Kinds
+
+    func testFoldersAreSortedIntoKindsByNameAndPlace() {
+        let home = URL(fileURLWithPath: "/Users/someone")
+        func kind(_ path: String) -> DiskMapKind {
+            DiskMap.kind(of: home.appendingPathComponent(path), home: home)
+        }
+
+        XCTAssertEqual(kind("Library"), .appData)
+        XCTAssertEqual(kind("Library/Caches/com.example.app"), .appData, "Anything inside Library")
+        XCTAssertEqual(kind("Pictures"), .media)
+        XCTAssertEqual(kind("Movies/Holiday/film.mov"), .media)
+        XCTAssertEqual(kind("Music"), .media)
+        XCTAssertEqual(kind("Desktop/Work"), .documents)
+        XCTAssertEqual(kind("Documents"), .documents)
+        XCTAssertEqual(kind("Downloads/installer.dmg"), .downloads)
+        XCTAssertEqual(kind("Projects"), .other)
+        XCTAssertEqual(kind("Sites/old"), .other)
+    }
+
+    func testANameCanSayOtherwiseAndWhatIsInsideTakesAfterIt() {
+        let home = URL(fileURLWithPath: "/Users/someone")
+        func kind(_ path: String) -> DiskMapKind {
+            DiskMap.kind(of: home.appendingPathComponent(path), home: home)
+        }
+
+        XCTAssertEqual(kind("Documents/site/node_modules"), .developer)
+        XCTAssertEqual(kind("Documents/site/node_modules/react/index.js"), .developer, "Inside it too")
+        XCTAssertEqual(kind(".npm"), .developer)
+        XCTAssertEqual(kind(".gradle/caches"), .developer)
+        XCTAssertEqual(kind("Library/Developer/Xcode/DerivedData"), .developer)
+        XCTAssertEqual(kind("Library/Android/sdk"), .developer)
+        XCTAssertEqual(kind("tizen-studio"), .developer)
+        XCTAssertEqual(kind("Documents/Photos Library.photoslibrary"), .media, "A photo library is media wherever it is kept")
+        XCTAssertEqual(kind("Desktop/Lightroom Library.lrlibrary"), .media)
+        XCTAssertEqual(kind(".Trash"), .other, "The Trash is not a developer tool")
+        XCTAssertEqual(kind("Documents/report.final.pdf"), .documents, "An ordinary dot in a name says nothing")
+    }
+
+    func testEveryKindHasANameAndPlacesOutsideTheHomeFolderAreSortedByNameOnly() {
+        XCTAssertTrue(DiskMapKind.allCases.allSatisfy { !$0.title.isEmpty })
+        XCTAssertEqual(Set(DiskMapKind.allCases.map { $0.title }).count, DiskMapKind.allCases.count)
+
+        let home = URL(fileURLWithPath: "/Users/someone")
+        XCTAssertEqual(DiskMap.kind(of: URL(fileURLWithPath: "/Volumes/Backup/Pictures"), home: home), .other)
+        XCTAssertEqual(DiskMap.kind(of: URL(fileURLWithPath: "/Volumes/Backup/node_modules"), home: home), .developer)
+        XCTAssertEqual(DiskMap.kind(of: home, home: home), .other)
+    }
+
     func testMeasuringReportsProgressAndCanBeStopped() throws {
         // Names with no special meaning to a Mac, so they read the same in any language.
         try makeFile("Alpha/Inside/film.mov", bytes: 100_000)

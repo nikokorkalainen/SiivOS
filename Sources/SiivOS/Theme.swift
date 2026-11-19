@@ -188,6 +188,8 @@ struct FactRow: View {
 struct MeterBar: View {
     /// How full the bar is, from 0 to 1.
     let fraction: Double
+    /// The colour of the filled part. The theme's tint unless another is given.
+    var color: Color = .siivosTint
 
     var body: some View {
         GeometryReader { proxy in
@@ -195,7 +197,7 @@ struct MeterBar: View {
                 Capsule()
                     .fill(SiivOSTheme.divider)
                 Capsule()
-                    .fill(Color.siivosTint)
+                    .fill(color)
                     .frame(width: proxy.size.width * CGFloat(min(1, max(0, fraction))))
             }
         }

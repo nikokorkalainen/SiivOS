@@ -19,6 +19,9 @@ public struct DiskMapNode: Equatable, Identifiable, Sendable {
     public let otherBytes: Int64
     /// How many things that is.
     public let otherCount: Int
+    /// The largest of those small things, largest first, so that they can be listed
+    /// when asked for. Not all of them when there are very many.
+    public let smallerItems: [DiskMapNode]
 
     public var id: URL { url }
 
@@ -30,7 +33,8 @@ public struct DiskMapNode: Equatable, Identifiable, Sendable {
         isOpened: Bool = false,
         children: [DiskMapNode] = [],
         otherBytes: Int64 = 0,
-        otherCount: Int = 0
+        otherCount: Int = 0,
+        smallerItems: [DiskMapNode] = []
     ) {
         self.url = url
         self.name = name
@@ -40,6 +44,58 @@ public struct DiskMapNode: Equatable, Identifiable, Sendable {
         self.children = children
         self.otherBytes = otherBytes
         self.otherCount = otherCount
+        self.smallerItems = smallerItems
+    }
+
+    /// The folder's small things as a folder of their own, so that they can be looked
+    /// at like any other: the largest of them listed, the rest added up again.
+    /// `nil` when there are none to list.
+    public func smallerItemsNode(named name: String) -> DiskMapNode? {
+        guard !smallerItems.isEmpty else {
+            return nil
+        }
+        let listed = Array(smallerItems.prefix(DiskMap.largestListed))
+        let listedBytes = listed.reduce(Int64(0)) { $0 + $1.sizeBytes }
+        return DiskMapNode(
+            url: url,
+            name: name,
+            sizeBytes: otherBytes,
+            canBeOpened: true,
+            isOpened: true,
+            children: listed,
+            otherBytes: max(0, otherBytes - listedBytes),
+            otherCount: max(0, otherCount - listed.count),
+            smallerItems: Array(smallerItems.dropFirst(DiskMap.largestListed))
+        )
+    }
+}
+
+/// What a folder mostly holds, worked out from its name and where it is. The map
+/// colours its blocks by this, so that it can be read at a glance.
+public enum DiskMapKind: String, CaseIterable, Sendable {
+    /// `~/Library` and anything inside it.
+    case appData
+    /// Pictures, Movies, Music, and photo, video and music libraries.
+    case media
+    /// Desktop, Documents, and folders inside them.
+    case documents
+    case downloads
+    /// Folders named like developer tools, and folders whose name starts with a dot.
+    case developer
+    case other
+    /// The group that stands for everything too small to list.
+    case smallerItems
+
+    public var title: String {
+        switch self {
+        case .appData: return tr("App data")
+        case .media: return tr("Photos and media")
+        case .documents: return tr("Your documents")
+        case .downloads: return tr("Downloads")
+        case .developer: return tr("Developer files")
+        case .other: return tr("Other folders")
+        case .smallerItems: return tr("Smaller items")
+        }
     }
 }
 
@@ -47,6 +103,64 @@ public struct DiskMapNode: Equatable, Identifiable, Sendable {
 public enum DiskMap {
     /// How many of a folder's largest items are listed. The rest are added up.
     public static let largestListed = 24
+    /// How many of the items that are added up are still remembered, so that they can
+    /// be listed when asked for.
+    public static let smallerItemsKept = 240
+
+    /// What the item at this place mostly holds.
+    ///
+    /// The folder directly in the home folder decides first: Library is app data,
+    /// Pictures, Movies and Music are media, Desktop and Documents are documents. What
+    /// is inside takes after it, unless its own name says otherwise: a `node_modules`
+    /// folder inside Documents is developer files, and so is everything in it.
+    public static func kind(of url: URL, home: URL) -> DiskMapKind {
+        let item = url.standardizedFileURL.pathComponents
+        let base = home.standardizedFileURL.pathComponents
+        var names = item
+        var kind = DiskMapKind.other
+        if item.count > base.count, Array(item.prefix(base.count)) == base {
+            names = Array(item.dropFirst(base.count))
+            switch names[0].lowercased() {
+            case "library": kind = .appData
+            case "pictures", "movies", "music": kind = .media
+            case "desktop", "documents": kind = .documents
+            case "downloads": kind = .downloads
+            default: break
+            }
+        }
+        for name in names {
+            if let own = kindSaid(byName: name) {
+                kind = own
+            }
+        }
+        return kind
+    }
+
+    /// The endings of photo, video and music libraries.
+    private static let mediaLibraryEndings: Set<String> = [
+        "photoslibrary", "photolibrary", "migratedphotolibrary", "aplibrary",
+        "lrlibrary", "lrdata", "lrcat-data",
+        "fcpbundle", "imovielibrary", "tvlibrary", "musiclibrary", "theater", "logicx", "band"
+    ]
+
+    /// What a name says by itself, or `nil` when it says nothing.
+    private static func kindSaid(byName name: String) -> DiskMapKind? {
+        let lowered = name.lowercased()
+        if let dot = lowered.lastIndex(of: "."), mediaLibraryEndings.contains(String(lowered[lowered.index(after: dot)...])) {
+            return .media
+        }
+        // The Trash has a name that starts with a dot, but it is nobody's developer tool.
+        if lowered == ".trash" {
+            return nil
+        }
+        if ["node_modules", "deriveddata"].contains(lowered)
+            || lowered.hasSuffix("-studio")
+            || lowered.hasSuffix("sdk")
+            || (lowered.hasPrefix(".") && lowered.count > 1) {
+            return .developer
+        }
+        return nil
+    }
 
     /// Measures a folder and what is inside it.
     ///
@@ -127,7 +241,8 @@ public enum DiskMap {
             isOpened: true,
             children: listed,
             otherBytes: others.reduce(0) { $0 + $1.sizeBytes },
-            otherCount: others.count
+            otherCount: others.count,
+            smallerItems: Array(others.prefix(smallerItemsKept))
         )
     }
 
