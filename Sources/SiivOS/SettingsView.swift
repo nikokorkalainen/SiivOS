@@ -108,7 +108,7 @@ private struct GeneralSettingsGroup: View {
             SettingsPanel {
                 SettingRow(
                     tr("Show SiivOS in the menu bar"),
-                    notes: [tr("With this on, SiivOS stays in the menu bar after you close its window, shows the health score there and takes a reading every six hours. To stop it, choose Quit SiivOS in the menu bar or press Command-Q.")]
+                    notes: [tr("With this on, SiivOS stays in the menu bar after you close its window, shows the health score there and takes a reading every six hours. It is in the Dock only while its window is open. To stop it, choose Quit SiivOS in the menu bar or press Command-Q.")]
                 ) {
                     SettingSwitch(title: tr("Show SiivOS in the menu bar"), isOn: $showsMenuBar)
                 }
