@@ -25,7 +25,11 @@ final class HoldingStatus: ObservableObject {
 
 /// A file size written out for people, for example "1,2 GB".
 func formatBytes(_ value: Int64) -> String {
-    ByteCountFormatter.string(fromByteCount: value, countStyle: .file)
+    let formatter = ByteCountFormatter()
+    formatter.countStyle = .file
+    // "0 KB", not "Zero KB".
+    formatter.allowsNonnumericFormatting = false
+    return formatter.string(fromByteCount: value)
 }
 
 /// Turns a list of failures into one message, or `nil` when there were none.

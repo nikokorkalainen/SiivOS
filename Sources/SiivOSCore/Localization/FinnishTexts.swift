@@ -94,6 +94,7 @@ enum FinnishTexts {
         "This check could not finish: %1$@": "Tätä tarkistusta ei voitu tehdä loppuun: %1$@",
         "Nothing found.": "Mitään ei löytynyt.",
         "Showing the %1$@ largest of %2$@ items.": "Näytetään %1$@ suurinta kohdetta %2$@ kohteesta.",
+        "frees %1$@": "vapauttaa %1$@",
         "What SiivOS never lists here": "Mitä SiivOS ei koskaan näytä tässä",
         "Removed items wait in the holding area. You can put them back from History.": "Poistetut kohteet odottavat välivarastossa. Voit palauttaa ne Historia-näkymästä.",
         "Remove Ticked Items…": "Poista valitut kohteet…",
@@ -558,8 +559,10 @@ enum FinnishTexts {
         "Files of %1$@ or more in your Desktop, Documents, Downloads, Movies, Music and Pictures folders.": "Vähintään %1$@ kokoisia tiedostoja Työpöytä-, Dokumentit-, Lataukset-, Elokuvat-, Musiikki- ja Kuvat-kansioissasi.",
         "Last changed %1$@.": "Muutettu viimeksi %1$@.",
         "A large file.": "Suuri tiedosto.",
-        "Extra copies of files with exactly the same contents, in your Desktop, Documents, Downloads, Movies, Music and Pictures folders. One copy of each is always kept and is not listed here. If the copies were made on this Mac they may share disk space, so less may be freed than shown.": "Ylimääräisiä kopioita tiedostoista, joiden sisältö on täsmälleen sama, Työpöytä-, Dokumentit-, Lataukset-, Elokuvat-, Musiikki- ja Kuvat-kansioissasi. Jokaisesta säilytetään aina yksi kopio, eikä sitä näytetä tässä. Jos kopiot on tehty tällä Macilla, ne voivat jakaa levytilaa, jolloin tilaa voi vapautua näytettyä vähemmän.",
+        "Extra copies of files with exactly the same contents, in your Desktop, Documents, Downloads, Movies, Music and Pictures folders. One copy of each is always kept and is not listed here. macOS stores some copies only once; such a copy is listed, but counted as freeing nothing.": "Ylimääräisiä kopioita tiedostoista, joiden sisältö on täsmälleen sama, Työpöytä-, Dokumentit-, Lataukset-, Elokuvat-, Musiikki- ja Kuvat-kansioissasi. Jokaisesta säilytetään aina yksi kopio, eikä sitä näytetä tässä. macOS tallentaa osan kopioista vain kerran; sellainen kopio näytetään, mutta sen poistamisen ei lasketa vapauttavan tilaa.",
         "Identical to %1$@, which is kept.": "Sama sisältö kuin tiedostolla %1$@, joka säilytetään.",
+        "Identical to %1$@, which is kept. The two share their disk space, so removing this copy frees next to nothing.": "Täsmälleen sama kuin %1$@, joka säilytetään. Ne jakavat saman levytilan, joten tämän kopion poistaminen ei vapauta juuri mitään.",
+        "Identical to %1$@, which is kept. It shares its disk space with another copy, so removing it alone may free nothing.": "Täsmälleen sama kuin %1$@, joka säilytetään. Se jakaa levytilansa toisen kopion kanssa, joten pelkästään sen poistaminen ei välttämättä vapauta mitään.",
         "An exact copy of another file, but it may sit where you or an app expect to find it.": "Täsmälleen sama kuin toinen tiedosto, mutta se voi olla paikassa, josta sinä tai jokin sovellus odottaa löytävänsä sen.",
     ]
 }

@@ -22,6 +22,10 @@ public struct Finding: Equatable, Identifiable, Sendable {
     public let url: URL
     /// Space the item takes on disk, in bytes.
     public let sizeBytes: Int64
+    /// Space that removing the item would give back, in bytes. Usually the same as its
+    /// size. It is less for a copy that shares its disk space with a file that stays:
+    /// macOS stores such copies once, so removing one frees next to nothing.
+    public let freesBytes: Int64
     /// Plain-language description of what the item is and why removing it is safe.
     public let explanation: String
     /// Whether the item is safe to remove or should be looked at first.
@@ -43,7 +47,8 @@ public struct Finding: Equatable, Identifiable, Sendable {
         safety: Safety,
         safetyReason: String,
         heldBackReason: String? = nil,
-        displayName: String? = nil
+        displayName: String? = nil,
+        freesBytes: Int64? = nil
     ) {
         self.id = id
         self.url = url
@@ -53,6 +58,7 @@ public struct Finding: Equatable, Identifiable, Sendable {
         self.safetyReason = safetyReason
         self.heldBackReason = heldBackReason
         self.displayName = displayName
+        self.freesBytes = freesBytes ?? sizeBytes
     }
 }
 
@@ -83,8 +89,9 @@ public struct ScanReport: Sendable {
         /// Why the scanner could not finish, if it failed.
         public let failure: String?
 
+        /// What removing everything in the group would give back.
         public var totalBytes: Int64 {
-            findings.reduce(0) { $0 + $1.sizeBytes }
+            findings.reduce(0) { $0 + $1.freesBytes }
         }
     }
 
@@ -108,7 +115,7 @@ public struct ScanReport: Sendable {
             for finding in section.findings
             where finding.safety == .safeToRemove && finding.heldBackReason == nil {
                 if counted.insert(finding.url).inserted {
-                    total += finding.sizeBytes
+                    total += finding.freesBytes
                 }
             }
         }

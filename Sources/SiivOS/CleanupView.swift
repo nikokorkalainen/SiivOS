@@ -409,13 +409,21 @@ private struct FindingRow: View {
             SafetyLabel(safety: finding.safety)
                 // Resting the pointer on the label says why the item has it.
                 .help(finding.safetyReason)
-            Text(formatBytes(finding.sizeBytes))
+            Text(sizeText)
                 .foregroundStyle(.secondary)
                 .monospacedDigit()
                 // The same width on every row, so the labels line up in a column.
                 .frame(minWidth: 76, alignment: .trailing)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    /// The item's size, or what removing it would free when that is less: a copy that
+    /// shares its disk space with a file that stays frees next to nothing.
+    private var sizeText: String {
+        finding.freesBytes < finding.sizeBytes
+            ? tr("frees %1$@", formatBytes(finding.freesBytes))
+            : formatBytes(finding.sizeBytes)
     }
 
     private var isTicked: Binding<Bool> {

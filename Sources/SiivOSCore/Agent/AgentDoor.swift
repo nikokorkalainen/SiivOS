@@ -467,6 +467,9 @@ public struct AgentDoor: Sendable {
             let path: String
             let sizeBytes: Int64
             let size: String
+            /// What removing the item would give back. Less than its size for a copy
+            /// that shares its disk space with a file that stays. Totals count this.
+            let freesBytes: Int64
             /// "safeToRemove" or "checkFirst".
             let label: String
             let labelReason: String
@@ -517,6 +520,7 @@ public struct AgentDoor: Sendable {
                             path: finding.url.path,
                             sizeBytes: finding.sizeBytes,
                             size: Self.readable(finding.sizeBytes),
+                            freesBytes: finding.freesBytes,
                             label: finding.safety.rawValue,
                             labelReason: finding.safetyReason,
                             explanation: finding.explanation,

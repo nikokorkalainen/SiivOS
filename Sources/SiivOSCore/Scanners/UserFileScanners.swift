@@ -115,25 +115,44 @@ public struct DuplicateFilesScanner: SystemScanner {
     public let id = "duplicates"
     public var title: String { tr("Duplicate files") }
     public var summary: String {
-        tr("Extra copies of files with exactly the same contents, in your Desktop, Documents, Downloads, Movies, Music and Pictures folders. One copy of each is always kept and is not listed here. If the copies were made on this Mac they may share disk space, so less may be freed than shown.")
+        tr("Extra copies of files with exactly the same contents, in your Desktop, Documents, Downloads, Movies, Music and Pictures folders. One copy of each is always kept and is not listed here. macOS stores some copies only once; such a copy is listed, but counted as freeing nothing.")
     }
 
     private let roots: [URL]
     private let minimumBytes: Int64
     private let foldersLeftOut: [URL]
+    private let sharesSpace: @Sendable (URL) -> Bool
 
     /// - Parameters:
     ///   - minimumBytes: Smaller files are not compared, to keep the scan quick.
     ///   - foldersLeftOut: Folders that are not looked into at all. A file with a copy in
     ///     such a folder is not a duplicate as far as this scanner can see.
+    ///   - sharesSpace: Says whether a file shares its disk space with another file.
+    ///     Left out, macOS is asked. Tests pass their own.
     public init(
         homeDirectory: URL = URL(fileURLWithPath: NSHomeDirectory()),
         minimumBytes: Int64 = 1_000_000,
-        foldersLeftOut: [URL] = []
+        foldersLeftOut: [URL] = [],
+        sharesSpace: @escaping @Sendable (URL) -> Bool = { DuplicateFilesScanner.sharesDiskSpace($0) }
     ) {
         self.roots = ScanSupport.userFolders(inHome: homeDirectory)
         self.minimumBytes = minimumBytes
         self.foldersLeftOut = foldersLeftOut
+        self.sharesSpace = sharesSpace
+    }
+
+    /// True when macOS says the file shares its space on disk with another file.
+    ///
+    /// When a file is copied on a Mac, the disk usually keeps the contents once and lets
+    /// both files point at them, until one of them is changed. Removing one of two such
+    /// files frees next to nothing. macOS calls this a hint, so SiivOS words what it
+    /// shows with care. Only reads.
+    public static func sharesDiskSpace(_ url: URL) -> Bool {
+        #if os(macOS)
+        return (try? url.resourceValues(forKeys: [.mayShareFileContentKey]))?.mayShareFileContent ?? false
+        #else
+        return false
+        #endif
     }
 
     public func scan() throws -> [Finding] {
@@ -148,14 +167,31 @@ public struct DuplicateFilesScanner: SystemScanner {
             for (start, candidates) in sameStart where start != nil && candidates.count > 1 {
                 for group in Self.groupsOfIdenticalFiles(candidates, fileManager: fileManager) {
                     let kept = group[0]
+                    // Copies that share their disk space take it up only once between
+                    // them. If the kept copy is one of them, that space stays in use
+                    // whatever is removed. If not, it is counted for the first of them.
+                    let keptShares = sharesSpace(kept.url)
+                    var sharedSpaceIsCounted = keptShares
                     for extra in group.dropFirst() {
+                        var frees = extra.diskBytes
+                        var explanation = tr("Identical to %1$@, which is kept.", kept.url.path)
+                        if sharesSpace(extra.url) {
+                            if sharedSpaceIsCounted {
+                                frees = 0
+                            }
+                            sharedSpaceIsCounted = true
+                            explanation = keptShares
+                                ? tr("Identical to %1$@, which is kept. The two share their disk space, so removing this copy frees next to nothing.", kept.url.path)
+                                : tr("Identical to %1$@, which is kept. It shares its disk space with another copy, so removing it alone may free nothing.", kept.url.path)
+                        }
                         findings.append(
                             Finding(
                                 url: extra.url,
                                 sizeBytes: extra.diskBytes,
-                                explanation: tr("Identical to %1$@, which is kept.", kept.url.path),
+                                explanation: explanation,
                                 safety: .checkFirst,
-                                safetyReason: tr("An exact copy of another file, but it may sit where you or an app expect to find it.")
+                                safetyReason: tr("An exact copy of another file, but it may sit where you or an app expect to find it."),
+                                freesBytes: frees
                             )
                         )
                     }

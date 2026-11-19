@@ -176,7 +176,7 @@ final class CleanupModel: ObservableObject {
         for section in report.sections {
             for finding in section.findings where selection.contains(finding.url) {
                 if counted.insert(finding.url).inserted {
-                    total += finding.sizeBytes
+                    total += finding.freesBytes
                 }
             }
         }
