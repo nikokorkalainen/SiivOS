@@ -368,15 +368,58 @@ example `node_modules` inside Documents is Developer files).
 
 ### Blocks
 
-- Rounded 7 pt, 3 pt gaps, flat fills (no gradient, no shading by size).
-- Label: the name in 14 pt semibold and the size in 12 pt under it, top left with 10 to 12 pt
+- Rounded 8 pt, 3 pt gaps.
+- **Fill:** a soft gradient in the kind's colour, top-left light to bottom-right dark, with a
+  faint white sheen in the top-left corner. Edges: a 1 pt white line along the top at 30 %, a
+  1 pt black line along the bottom at 16 %, and a small shadow (black 22 %, radius 2, y 1).
+
+  | Kind | Top left | Middle | Bottom right |
+  |------|----------|--------|--------------|
+  | App data | `#2F9474` | `#23775A` | `#175640` |
+  | Photos and media | `#A0E3C1` | `#7FD0A8` | `#5FB48B` |
+  | Your documents | `#80C3D9` | `#5BA8C4` | `#438EAA` |
+  | Downloads | `#E8CA73` | `#D6B04F` | `#BB9538` |
+  | Developer files | `#B5ACE6` | `#9A8FD8` | `#8073C3` |
+  | Other folders | `#A6BBB3` | `#8AA39A` | `#718B82` |
+  | Smaller items | `#4B6159` | `#3D5049` | `#30413A` |
+
+  In SwiftUI: `LinearGradient(colors: [top, middle, bottom], startPoint: .topLeading, endPoint:
+  .bottomTrailing)`, a `RadialGradient` of white 20 % to clear over it at `.topLeading` (end
+  radius about 55 % of the block's longer side), then the edge lines as overlays.
+- **Kind symbol:** a line drawing of the kind in the bottom-right corner, in the block's text
+  colour at 16 % opacity, 2.4 pt stroke whatever its size. About a third of the block's shorter
+  side (Library 132 pt, Pictures 72 pt, Downloads 40 pt), and left out under 28 pt. Symbols:
+  App data `square.3.layers.3d`, Photos and media `photo`, Your documents `doc`, Downloads
+  `arrow.down.to.line`, Developer files `chevron.left.forwardslash.chevron.right`, Other folders
+  `folder` (SF Symbols, ultralight or light weight).
+- **Label:** the name in 14 pt semibold and the size in 12 pt under it, top left with 10 to 12 pt
   padding. Only on blocks at least 92 pt wide and 46 pt tall; smaller blocks have no text, and the
-  name and size show in the tooltip. Long names end in "…" at the end, not the middle.
-- A block that can be opened shows a pointer cursor and lightens slightly on hover.
+  name and size show in the info line under the map. Long names end in "…" at the end, not the
+  middle.
 - **Library** (when it is a block on the home folder map, and Cleanup has scanned) also says,
   at the bottom of the block: "53,25 GB of it is app caches that Clutter can clear." with a small
   **Review in Clutter** button that switches to Clutter. Use the caches total from the last scan;
   leave the line out if there has been no scan.
+
+### Hover
+
+- **The block under the pointer** keeps full colour, brightens slightly (brightness +7 %), gets a
+  2 pt white ring inside its edge (78 %) and a soft shadow (black 32 %, radius 22, y 8), and is
+  drawn above its neighbours. Its kind symbol rises to 28 % opacity. Blocks that open show a
+  small round chevron badge in the top-right corner (22 pt, white 24 %).
+- **The other blocks** fade to 60 % opacity and lose a little colour (saturation 80 %), so the
+  hovered one stands out.
+- **Info line:** the hint under the map ("Click a folder to look inside…") is replaced while
+  hovering by one line: the kind's colour square, the name in semibold, the kind, then at the
+  right "89,1 GB, 52 % of your home folder" and "Click to look inside." (smaller items: "Click to
+  list them."). This is where small blocks without labels get their name. The hint comes back
+  when the pointer leaves the map.
+- **Map and list are linked:** hovering a list row highlights its block the same way and shows
+  its info line; hovering a block tints its list row (grey 12 %).
+- All changes fade over 0.14 s with ease-out; with Reduce Motion on they switch at once.
+- In SwiftUI: track `@State var hovered: DiskItem.ID?` with `.onHover` on each block and row, and
+  drive opacity, the ring and the info line from it. Use `.onContinuousHover` only if blocks are
+  drawn in one `Canvas`.
 
 ### List
 
@@ -390,7 +433,8 @@ context menu.
 
 "Find what can go, and see where the space goes." · "%1$@ in your home folder" · "Measured today
 at %1$@" · the six kind names · "%1$@ of it is app caches that Clutter can clear." · "Review in
-Clutter" · "Folders under 1 GB, shown together".
+Clutter" · "Folders under 1 GB, shown together" · "%1$@, %2$@ of your home folder" ·
+"Click to look inside." · "Click to list them."
 
 ## Before anything changes (sheet)
 
