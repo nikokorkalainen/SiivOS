@@ -330,23 +330,22 @@ each row on the design canvas, drawn with the owner's real home folder.
 - Every block is the same green at a different strength, so the map reads as one slab and the
   eye cannot tell a photo library from a cache.
 - Small blocks with no labels at the bottom right are noise; long names are cut to "iMyfo…ackup".
-- The switch sits above the page title, the folder name appears twice, and the list repeats the
-  map with the same unreadable shades.
+- The folder name appears twice, and the list repeats the map with the same unreadable shades.
 
 ### Page
 
-1. Same top as the other screens: page title **"Cleanup"** with the subtitle "Find what can go,
-   and see where the space goes.", then `SiivOSSegmentedControl` with **Clutter** and
-   **Disk Map** under it, on the left. (Clutter's page gets the same title and switch.)
-2. A row with, on the left, the breadcrumb (home icon, then each folder; every part but the
-   last is a link back) and under it one sentence in 24 pt semibold, "170,55 GB in your home
-   folder" (or "89,1 GB in Library" when looking into a folder). On the right, "Measured today
-   at 9.02" in secondary text and **Measure Again** as a standard button with the refresh icon.
-3. A legend of the kinds below (small rounded squares with their names), 13 pt.
-4. The map, 380 pt tall, full content width.
-5. One line of secondary text: "Click a folder to look inside. Apps and photo, video and music
+1. The **Clutter / Disk Map** switch stays where it is now: `SiivOSSegmentedControl` at the top
+   of Cleanup, above the page header, on the left.
+2. The page header as now: title **"Disk Map"**, subtitle "170,55 GB in your home folder" (or
+   "89,1 GB in Library" when looking into a folder). On the right, "Measured today at 9.02" in
+   secondary text and **Measure Again** as a standard button with the refresh icon.
+3. The breadcrumb under the header (home icon, then each folder; every part but the last is a
+   link back).
+4. A legend of the kinds below (small rounded squares with their names), 13 pt.
+5. The map, 380 pt tall, full content width.
+6. One line of secondary text: "Click a folder to look inside. Apps and photo, video and music
    libraries count as one item and are never looked into." (the existing text, shortened).
-6. The list in one panel.
+7. The list in one panel.
 
 ### Colour by kind
 
@@ -431,7 +430,7 @@ context menu.
 
 ### New texts (Finnish needed)
 
-"Find what can go, and see where the space goes." · "%1$@ in your home folder" · "Measured today
+"%1$@ in your home folder" · "Measured today
 at %1$@" · the six kind names · "%1$@ of it is app caches that Clutter can clear." · "Review in
 Clutter" · "Folders under 1 GB, shown together" · "%1$@, %2$@ of your home folder" ·
 "Click to look inside." · "Click to list them."
