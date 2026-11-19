@@ -72,7 +72,7 @@ Decided against: cleaning cloud storage and updating other apps (both need netwo
 Kept short on purpose. A setting is only added when people would reasonably want different behaviour.
 
 - **Cleanup (built):** how old a download must be to count as old, how big a file must be to count as large, which checks to run, and folders to leave out of every scan.
-- **Holding area (built, agreed with the owner on 19 November 2026, waiting for the owner to try it):** delete held items for good after they have waited 30 days, 90 days or 1 year, never unless a time is chosen; and point the holding area out, on the Overview and in History, when it grows past a chosen size (10 GB to start with). Settings says what will be deleted before it happens, and History says afterwards what was.
+- **Holding area (built, agreed with the owner on 19 November 2026; all 213 engine tests pass on the Mac, the screens are not yet confirmed):** delete held items for good after they have waited 30 days, 90 days or 1 year, never unless a time is chosen; and point the holding area out, on the Overview and in History, when it grows past a chosen size (10 GB to start with). Settings says what will be deleted before it happens, and History says afterwards what was.
 - **Permissions:** whether SiivOS has Full Disk Access and App Management, with buttons that open the right page in System Settings.
 - **Privacy:** a plain statement of what SiivOS does and does not send anywhere. Anything that would use the network, such as malware definition updates in Phase 6, is listed here and is off until turned on.
 - **Menu bar (built in Phase 8):** show SiivOS in the menu bar, on unless turned off. With it on, closing the window leaves SiivOS running there.
