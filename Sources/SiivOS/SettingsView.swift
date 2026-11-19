@@ -96,6 +96,11 @@ private struct SettingSwitch: View {
 
 private struct GeneralSettingsGroup: View {
     @AppStorage(AppSettings.showsMenuBarKey) private var showsMenuBar = true
+    /// What macOS says about opening SiivOS at login. Looked up when the screen is shown
+    /// and when SiivOS comes forward again, since it can also be changed in System Settings.
+    @State private var loginItem = LoginItem.status
+    /// Why opening at login could not be changed, if it could not.
+    @State private var loginProblem: String?
 
     var body: some View {
         SettingsGroup(tr("General")) {
@@ -106,8 +111,65 @@ private struct GeneralSettingsGroup: View {
                 ) {
                     SettingSwitch(title: tr("Show SiivOS in the menu bar"), isOn: $showsMenuBar)
                 }
+                ThemedDivider()
+                SettingRow(tr("Open SiivOS at login"), notes: loginNotes) {
+                    SettingSwitch(title: tr("Open SiivOS at login"), isOn: opensAtLogin)
+                        .disabled(loginItem == .unavailable)
+                }
+                if loginItem == .needsApproval {
+                    Button(tr("Open Login Items Settings")) {
+                        if let url = URL(string: "x-apple.systempreferences:com.apple.LoginItems-Settings.extension") {
+                            NSWorkspace.shared.open(url)
+                        }
+                    }
+                    .buttonStyle(SiivOSButtonStyle(.small))
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, 14)
+                }
+                if let loginProblem {
+                    SettingErrorLine(reason: loginProblem)
+                        .padding(.horizontal, 16)
+                        .padding(.bottom, 14)
+                }
             }
         }
+        .onAppear {
+            loginItem = LoginItem.status
+        }
+        .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
+            loginItem = LoginItem.status
+        }
+    }
+
+    /// What the switch does, and anything the user has to know about its state right now.
+    private var loginNotes: [String] {
+        var notes = [tr("SiivOS starts by itself when you log in to this Mac. If it is shown in the menu bar, it starts there quietly, without opening its window.")]
+        switch loginItem {
+        case .needsApproval:
+            notes.append(tr("macOS wants you to allow this first: open Login Items in System Settings and switch SiivOS on there."))
+        case .unavailable:
+            notes.append(tr("This works in the app built with Scripts/make-app.sh. This copy of SiivOS was started another way, so macOS cannot open it at login."))
+        case .on, .off:
+            break
+        }
+        return notes
+    }
+
+    /// Asks macOS to open SiivOS at login, or to stop. The switch then shows what macOS
+    /// says, which is the truth even if the change did not go through.
+    private var opensAtLogin: Binding<Bool> {
+        Binding(
+            get: { loginItem == .on || loginItem == .needsApproval },
+            set: { isOn in
+                do {
+                    try LoginItem.set(isOn)
+                    loginProblem = nil
+                } catch {
+                    loginProblem = error.localizedDescription
+                }
+                loginItem = LoginItem.status
+            }
+        )
     }
 }
 

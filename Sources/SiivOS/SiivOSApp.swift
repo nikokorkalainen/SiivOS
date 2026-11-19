@@ -53,12 +53,21 @@ struct SettingsCommands: Commands {
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private var readingTimer: Timer?
+    private var quietStartTimer: Timer?
+    private var quietStartTriesLeft = 0
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         // When run straight from Xcode or `swift run` there is no app bundle,
         // so ask macOS to treat this as a normal windowed app with a Dock icon.
         NSApp.setActivationPolicy(.regular)
-        NSApp.activate()
+
+        if Self.wasOpenedAtLogin && AppSettings.showsMenuBar {
+            // Opened by macOS at login, not by the user: stay in the menu bar and do not
+            // put a window in front of whatever they are doing.
+            startQuietly()
+        } else {
+            NSApp.activate()
+        }
 
         // Take a health reading now unless there is a recent one, and look again every
         // half hour for as long as SiivOS runs, which with the menu bar icon can be all
@@ -70,6 +79,48 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             Task { @MainActor in
                 TimelineModel.shared.updateIfDue()
             }
+        }
+    }
+
+    /// True when macOS opened SiivOS because the user logged in, and not because they
+    /// opened it themselves. macOS says so in the message it starts the app with.
+    private static var wasOpenedAtLogin: Bool {
+        guard let event = NSAppleEventManager.shared().currentAppleEvent else {
+            return false
+        }
+        // The four-letter codes macOS uses: "oapp" (open application), "prdt" (the
+        // reason) and "lgit" (launched as a login item).
+        let openApplication: UInt32 = 0x6F61_7070
+        let reason: UInt32 = 0x7072_6474
+        let loginItem: UInt32 = 0x6C67_6974
+        return event.eventID == openApplication
+            && event.paramDescriptor(forKeyword: reason)?.enumCodeValue == loginItem
+    }
+
+    /// Closes the window SiivOS opens when it starts, leaving it in the menu bar. The
+    /// window appears a moment after launch, so this looks for it a few times and stops
+    /// as soon as it has closed it, or after two seconds.
+    private func startQuietly() {
+        quietStartTriesLeft = 40
+        quietStartTimer = Timer.scheduledTimer(
+            timeInterval: 0.05,
+            target: self,
+            selector: #selector(closeWindowOpenedAtStart),
+            userInfo: nil,
+            repeats: true
+        )
+    }
+
+    @MainActor
+    @objc private func closeWindowOpenedAtStart() {
+        quietStartTriesLeft -= 1
+        let windows = NSApp.windows.filter { $0.canBecomeMain && $0.isVisible }
+        for window in windows {
+            window.close()
+        }
+        if !windows.isEmpty || quietStartTriesLeft <= 0 {
+            quietStartTimer?.invalidate()
+            quietStartTimer = nil
         }
     }
 

@@ -83,3 +83,23 @@ final class PermissionsTests: TemporaryDirectoryTestCase {
         XCTAssertTrue(Permissions.hasFullDiskAccess(homeDirectory: home))
     }
 }
+
+final class LoginItemTests: XCTestCase {
+    override func setUp() {
+        super.setUp()
+        L10n.overrideLanguage = .english
+    }
+
+    func testSomethingThatIsNotAnAppCanNeverBeSetToOpenAtLogin() {
+        // The tests are run by a tool, not by an app. Nothing may be added to this Mac's
+        // login items from here, whatever is asked.
+        XCTAssertFalse(LoginItem.isRunningAsApp)
+        XCTAssertEqual(LoginItem.status, .unavailable)
+        XCTAssertThrowsError(try LoginItem.set(true)) { error in
+            XCTAssertTrue(error.localizedDescription.contains("make-app.sh"))
+        }
+        XCTAssertThrowsError(try LoginItem.set(false))
+        XCTAssertEqual(LoginItem.status, .unavailable)
+    }
+}
+
