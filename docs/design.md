@@ -435,6 +435,126 @@ at %1$@" · the six kind names · "%1$@ of it is app caches that Clutter can cle
 Clutter" · "Folders under 1 GB, shown together" · "%1$@, %2$@ of your home folder" ·
 "Click to look inside." · "Click to list them."
 
+## Welcome
+
+The first thing anyone sees of SiivOS. It replaces today's sheet over the Overview.
+
+### What was wrong
+
+- A grey sheet over a dimmed app: the first look at SiivOS is the app half hidden behind a box
+  in the old grey, not the green design.
+- Everything at once: the promise, three principles and a long permission paragraph in one
+  dense column, with the logo and "Welcome to SiivOS" both saying the name.
+- The permission has no picture of what to do, so "switch SiivOS on in the list" is guesswork.
+
+### Shape
+
+- **Full window, not a sheet.** On first launch the welcome fills the window: the window
+  background (green gradient in dark mode, the light window colour in light mode), no sidebar,
+  no toolbar. The traffic lights stay. When it ends, the normal window with the sidebar takes
+  over on Overview. Opened again from Settings, it shows the same way and ends back in Settings.
+- **Two steps**, because there are two jobs: what SiivOS is (step 1), and the one optional
+  permission (step 2). Step dots at the bottom left: the current step is a 22 x 7 pt pill in
+  the accent icon colour, the other a 7 pt dot in the plain-button outline colour.
+- Content is a centred column, 600 pt wide at most, centred vertically; the footer is pinned to
+  the bottom (padding 22 pt top, 30 pt bottom, 40 pt sides). Nothing is cut off in Finnish:
+  texts wrap, the column grows, and the footer wraps its contents if needed.
+
+### Step 1: what SiivOS is
+
+1. The logo (`SiivOSLogo`) at 84 pt tall, centred, with a soft mint glow behind it: an
+   ellipse about 360 x 220 pt, mint `#5EE6A8` at 20 % in the middle fading to clear.
+2. Heading, 30 pt bold, centred: "Free up space and keep this Mac running well". The logo says
+   the name, so the heading says the promise.
+3. Under it, 16 pt secondary, centred: "SiivOS also shows what is slowing this Mac down and
+   keeps an eye on what changes on it."
+4. 32 pt below, one grouped panel (radius 14) with three rows, each a 40 pt icon from the
+   SiivOS set, a 15 pt semibold title and 13.5 pt secondary text, separated by dividers that
+   start under the text:
+   - History icon, "You decide, and you can undo", "Nothing is removed before you see what will
+     happen. What you remove waits in a holding area, and History puts it back with one click."
+   - Cleanup icon, "Honest labels", "Everything Cleanup finds is marked Safe to remove or Check
+     first, with the reason. No scare numbers."
+   - Protection icon, "It stays on this Mac", "No account, no tracking, no ads. SiivOS sends
+     nothing anywhere, and goes online only if you ask it to download virus definitions."
+5. Footer: step dots left, **Continue** right (prominent, at least 140 pt wide, Return key).
+
+### Step 2: Full Disk Access
+
+1. **A picture of what to do**: a small panel (360 pt wide, radius 14, grouped-box fill, soft
+   shadow) drawn like the Full Disk Access list in System Settings. A header with the
+   protection icon at 16 pt and "Full Disk Access"; two blank rows (grey icon square, grey text
+   bar, grey switch) around the SiivOS row. The SiivOS row is tinted mint (10 % fill, 30 %
+   outline), shows the app icon at 26 pt and "SiivOS" in semibold, and its switch turns on as a
+   pointer clicks it (see Motion). This is a drawing in SwiftUI shapes, not a screenshot of
+   System Settings, and it holds no other apps' names or icons.
+2. Heading, 28 pt bold: "One permission, if you want it".
+3. 15 pt secondary: "With Full Disk Access, SiivOS can look through every folder in one go
+   instead of macOS asking about one at a time, and show which apps hold which permissions."
+   Then 13.5 pt tertiary: "It does not make SiivOS less careful: you still see everything before
+   anything is removed."
+4. **While it is off:**
+   - Three numbered steps, left aligned in a centred block (numbers in 22 pt circles): "Open
+     Full Disk Access in System Settings." · "Switch SiivOS on. If it is not in the list, add
+     it with the + button." · "Come back here. macOS may ask you to reopen SiivOS."
+   - **Open Full Disk Access Settings** as the prominent button, with the status beside it:
+     amber dot and "Not on yet".
+   - Footer, right: "You can turn it on later in Settings." in secondary text, **Back** as a
+     borderless button, and **Get Started** as a standard (not prominent) button.
+5. **When it is on** (checked again whenever SiivOS comes forward, as now): the steps and the
+   button give way to a banner (the banner colours) with the Good icon at 28 pt, "Full Disk
+   Access is on" in semibold and "SiivOS can see every folder, so macOS will not ask folder by
+   folder." under it. The footer note goes, and **Get Started** becomes prominent (Return key).
+
+### Motion
+
+One entrance per step. The only thing that repeats is a small twinkle of the logo's glints.
+
+- **Step 1, the logo animation** (about 3.5 s in all):
+  1. 0 s: the mint glow grows from half size with a slight overshoot (1.2 s).
+  2. 0.2 s: the big glint sparkles in: from scale 0 and turned -135 degrees, to 1.22 and +10,
+     back to 0.94 and -3, settling at 1 and 0 (0.8 s). The small glint does the same at 0.42 s.
+  3. 0.62 s: a thin outline of the big glint (2.5 pt, the "OS" colour) grows from it to 2.6
+     times its size and fades out (0.9 s), like a ping of light.
+  4. 0.7 s: the letters are drawn along their own outlines, one character after another, in
+     the order S, i, i, v, O, S, 0.12 s apart. Each outline is traced as a thin line (about
+     1.5 pt, the letter's colour) from its start point all the way round in 0.95 s
+     (ease-in-out); the O's outer and inner edge are traced together. When a character's
+     outline is closed (0.65 s after it starts), its fill fades in over 0.45 s, and the
+     outline line fades away 1.3 s after it started, leaving the exact logo shape. The last
+     letter is filled at about 2.1 s.
+  5. 2.35 s: a soft mint band (`#5EE6A8`, 95 % in the middle fading to clear, slanted 18
+     degrees) sweeps across the letters once, inside their shape only (1.1 s).
+  6. 1.9 s onwards: the heading, the line under it, the panel and the footer rise 10 pt and
+     fade in, 0.12 s apart.
+  7. Afterwards, every 7 s, each glint twinkles once (shrinks to 0.82, turns 90 degrees and
+     springs back to 1, in about 0.8 s), the small one 0.35 s after the big one. Glints have
+     four arms, so a quarter turn ends where it started.
+
+  In SwiftUI: `KeyframeAnimator` (macOS 14) for the glints' scale and rotation and for the
+  ping; for each letter, its outline path drawn with `.trim(from: 0, to: progress)` and
+  `.stroke(...)`, with the filled path over it fading in; and a `LinearGradient` rectangle moved
+  across, masked by the letter paths, for the shine. Start it in `onAppear`. To do this, the
+  logo's glints and letters must be separate shapes. Today `SiivOSLogoPaths` joins each glint
+  to its letters (`logoSiiv`, `logoOS`), so add `logoBigGlint` and `logoSmallGlint` and one
+  path per character (S, i, i, v, O, S; each i with its dot) in the logo's own coordinates,
+  generated from the logo file by `design/icon/make_wordmark.py` like the others. The logo
+  file has "OS" as one shape, so split it into the O (both edges) and the S.
+- **Step 2:** the picture, the texts and the steps rise in 0.1 s apart. In the picture, a
+  pointer moves onto the SiivOS switch, presses (scale 0.88) and the switch slides on, over
+  1.6 s from 0.5 s.
+- With Reduce Motion on, everything just fades in over 0.3 s: no sparkle, ping, outline drawing,
+  shine or twinkle, and the switch is drawn on.
+
+### New texts (Finnish needed)
+
+"Free up space and keep this Mac running well" · "SiivOS also shows what is slowing this Mac
+down and keeps an eye on what changes on it." · the three rows' changed texts above · "Continue"
+· "One permission, if you want it" · the two step 2 paragraphs · the three numbered steps · "Not
+on yet" · "You can turn it on later in Settings." · "Back" · "Full Disk Access is on" · "SiivOS
+can see every folder, so macOS will not ask folder by folder." · "Step %1$@ of %2$@" (for
+VoiceOver on the step dots).
+
 ## Before anything changes (sheet)
 
 Keep the existing `RemovalPlanSheet`, with shorter copy:
