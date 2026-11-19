@@ -33,7 +33,7 @@ public enum LoginItem {
     }
 
     /// True when SiivOS is running as an app that macOS can open again by itself.
-    static var isRunningAsApp: Bool {
+    public static var isRunningAsApp: Bool {
         Bundle.main.bundleURL.pathExtension.lowercased() == "app"
     }
 

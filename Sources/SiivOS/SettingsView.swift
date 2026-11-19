@@ -102,6 +102,7 @@ private struct GeneralSettingsGroup: View {
     @State private var loginItem = LoginItem.status
     /// Why opening at login could not be changed, if it could not.
     @State private var loginProblem: String?
+    @ObservedObject private var notifier = ChangeNotifier.shared
 
     var body: some View {
         SettingsGroup(tr("General")) {
@@ -132,14 +133,55 @@ private struct GeneralSettingsGroup: View {
                         .padding(.horizontal, 16)
                         .padding(.bottom, 14)
                 }
+                ThemedDivider()
+                SettingRow(tr("Notify me about changes worth a look"), notes: notificationNotes) {
+                    SettingSwitch(title: tr("Notify me about changes worth a look"), isOn: notifiesAboutChanges)
+                        .disabled(notifier.permission == .unavailable)
+                }
+                if notifier.isOn && notifier.permission == .denied {
+                    Button(tr("Open Notifications Settings")) {
+                        if let url = URL(string: "x-apple.systempreferences:com.apple.Notifications-Settings.extension") {
+                            NSWorkspace.shared.open(url)
+                        }
+                    }
+                    .buttonStyle(SiivOSButtonStyle(.small))
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, 14)
+                }
             }
         }
         .onAppear {
             loginItem = LoginItem.status
+            notifier.refreshPermission()
         }
         .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
             loginItem = LoginItem.status
+            notifier.refreshPermission()
         }
+    }
+
+    /// What the notifications are about, and anything standing in their way right now.
+    private var notificationNotes: [String] {
+        var notes = [
+            tr("SiivOS shows a notification when it notices something new that starts by itself, a new configuration profile, or one of macOS's protections turned off. A click on it opens the Health Timeline. The notification is made on this Mac and sent nowhere."),
+            tr("SiivOS only notices while it is running: it looks for new background items every half hour, and for the rest when it takes a reading. With the menu bar icon and Open SiivOS at login it runs all day.")
+        ]
+        switch notifier.permission {
+        case .denied where notifier.isOn:
+            notes.append(tr("macOS is not letting SiivOS show notifications. Open Notifications in System Settings and allow SiivOS there."))
+        case .unavailable:
+            notes.append(tr("This works in the app built with Scripts/make-app.sh. This copy of SiivOS was started another way, so it cannot show notifications."))
+        default:
+            break
+        }
+        return notes
+    }
+
+    private var notifiesAboutChanges: Binding<Bool> {
+        Binding(
+            get: { notifier.isOn },
+            set: { isOn in notifier.setOn(isOn) }
+        )
     }
 
     /// What the switch does, and anything the user has to know about its state right now.

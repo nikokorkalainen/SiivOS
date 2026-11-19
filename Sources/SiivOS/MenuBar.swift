@@ -69,6 +69,10 @@ enum MainWindow {
 
     static weak var current: NSWindow?
 
+    /// The way to open the window from code that is not part of a screen, such as a
+    /// click on a notification. Screens hand it over when they appear.
+    static var opener: OpenWindowAction?
+
     /// The size the window opens in the first time, before it has been resized. The
     /// width gives the content its full readable width next to the open sidebar
     /// (240 + 1 + 24 + 900 + 24 = 1189), so the Overview shows three cards in a row.
@@ -276,10 +280,20 @@ enum MenuBarIcon {
 /// What the menu bar shows: the glints, with a dot when there is something to look at.
 struct MenuBarLabel: View {
     @ObservedObject private var timeline = TimelineModel.shared
+    @Environment(\.openWindow) private var openWindow
 
     var body: some View {
+        // The label is there for as long as the menu bar icon is, so it can hand over
+        // the way to open the window even when no window or panel has been shown yet.
+        let _ = rememberOpener()
         Image(nsImage: timeline.unseenNoteworthy.isEmpty ? MenuBarIcon.plain : MenuBarIcon.withNote)
             .accessibilityLabel("SiivOS")
+    }
+
+    private func rememberOpener() {
+        if MainWindow.opener == nil {
+            MainWindow.opener = openWindow
+        }
     }
 }
 
@@ -354,6 +368,7 @@ struct MenuBarPanel: View {
         .frame(width: 310)
         .tint(SiivOSTheme.prominent)
         .onAppear {
+            MainWindow.opener = openWindow
             model.refresh()
         }
         // The panel can stay alive while it is closed, so also refresh when its window

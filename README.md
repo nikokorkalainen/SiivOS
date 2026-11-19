@@ -25,6 +25,8 @@ SiivOS is in English and Finnish and follows the language of your Mac. It needs 
 
 SiivOS also sits in the menu bar, where it shows the health score and marks its icon when something new starts by itself. It stays there after you close its window, and is in the Dock only while the window is open. This can be turned off in Settings.
 
+If you turn it on in Settings, SiivOS also shows a notification when it notices something new that starts by itself, a new configuration profile, or one of macOS's protections turned off. It looks for new background items every half hour while it is running. The notification is made on your Mac and sent nowhere.
+
 ## What it does not do
 
 - It does not delete anything without showing you first. It only empties the holding area by itself if you choose a waiting time in Settings, and then only of what has waited that long.

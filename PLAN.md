@@ -67,6 +67,19 @@ Ideas taken from the comparison above and from the owner. Each is built as part 
 
 Decided against: cleaning cloud storage and updating other apps (both need network access, against the privacy principle), clearing browser history, and finding blurry or similar photos (little benefit for the effort).
 
+### After the plan
+
+With every phase done, the owner chose these six on 19 November 2026 from Claude's suggestions. They are built one at a time, in this order, each confirmed on the Mac before the next starts.
+
+| # | What | Status |
+|---|------|--------|
+| 1 | A notification when the Health Timeline notices a change worth a second glance: something new that starts by itself, a new configuration profile, or one of macOS's protections turned off. Off unless turned on in Settings. Made on this Mac with macOS's own notifications, sent nowhere. A click opens the Health Timeline. So that a new background item is noticed within half an hour and not only at the next six-hourly reading, SiivOS lists the background items every half hour, which is quick, and takes a reading early when one is new | Built, waiting for the owner to try it. Works only in the app built with `Scripts/make-app.sh` |
+| 2 | "What grew" in the Disk Map: remember the last measuring and show which folders have grown since | Not started |
+| 3 | A first-run welcome: what SiivOS does, that nothing is removed without asking, and the Full Disk Access step | Not started |
+| 4 | Automatic tests on GitHub for every change | Not started |
+| 5 | Screenshots in the README, taken by the owner on the Mac | Not started |
+| 6 | A download without a paid Apple Developer account: the build script makes a ZIP for a GitHub release. macOS warns about unsigned apps, and the README has to say how to allow it | Not started |
+
 ### Proposed settings
 
 Kept short on purpose. A setting is only added when people would reasonably want different behaviour.

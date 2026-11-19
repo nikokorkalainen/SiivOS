@@ -23,6 +23,7 @@ struct ContentView: View {
     /// Whether the sidebar shows icons only. Kept in view state so that changing it can
     /// animate, and saved so that it is remembered between launches.
     @State private var sidebarIsCompact = UserDefaults.standard.bool(forKey: ContentView.compactSidebarKey)
+    @Environment(\.openWindow) private var openWindow
 
     private static let compactSidebarKey = "sidebarShowsIconsOnly"
 
@@ -52,6 +53,7 @@ struct ContentView: View {
             UserDefaults.standard.set(isCompact, forKey: Self.compactSidebarKey)
         }
         .onAppear {
+            MainWindow.opener = openWindow
             holding.refresh()
         }
     }

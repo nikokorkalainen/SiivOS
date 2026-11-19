@@ -206,6 +206,78 @@ final class HealthTests: TemporaryDirectoryTestCase {
         XCTAssertTrue(HealthHistory().noteworthyEvents(after: nil).isEmpty)
     }
 
+    // MARK: - Notices
+
+    func testOneChangeWorthALookIsToldInItsOwnWords() {
+        let history = HealthHistory(events: [
+            HealthEvent(date: hours(1), kind: .backgroundItemAdded, subject: "com.old.agent"),
+            HealthEvent(date: hours(5), kind: .appAdded, subject: "Notes"),
+            HealthEvent(date: hours(5), kind: .backgroundItemAdded, subject: "com.new.agent")
+        ])
+
+        let notice = ChangeNotices.notice(for: history, after: hours(2))
+
+        XCTAssertEqual(notice?.title, "New background item: com.new.agent")
+        XCTAssertEqual(notice?.body, "It starts by itself from now on. If you do not recognise it, look at it in Protection.")
+        XCTAssertEqual(notice?.coversUpTo, hours(5))
+    }
+
+    func testSeveralChangesAreCountedAndTheNewestNamed() {
+        let history = HealthHistory(events: [
+            HealthEvent(date: hours(1), kind: .backgroundItemAdded, subject: "com.first.agent"),
+            HealthEvent(date: hours(2), kind: .profileAdded, subject: "Company Wi-Fi"),
+            HealthEvent(date: hours(3), kind: .backgroundItemAdded, subject: "com.third.agent"),
+            HealthEvent(date: hours(4), kind: .backgroundItemAdded, subject: "com.fourth.agent"),
+            HealthEvent(date: hours(4), kind: .appRemoved, subject: "Notes")
+        ])
+
+        let all = ChangeNotices.notice(for: history, after: hours(0))
+        XCTAssertEqual(all?.title, "4 changes worth a look on this Mac")
+        XCTAssertEqual(all?.body, [
+            "New background item: com.fourth.agent",
+            "New background item: com.third.agent",
+            "Configuration profile installed: Company Wi-Fi",
+            "And 1 more."
+        ].joined(separator: "\n"))
+        XCTAssertEqual(all?.coversUpTo, hours(4))
+
+        let two = ChangeNotices.notice(for: history, after: hours(2))
+        XCTAssertEqual(two?.title, "2 changes worth a look on this Mac")
+        XCTAssertEqual(two?.body, "New background item: com.fourth.agent\nNew background item: com.third.agent")
+    }
+
+    func testNothingIsToldTwiceAndOrdinaryChangesAreNotToldAtAll() {
+        let history = HealthHistory(events: [
+            HealthEvent(date: hours(1), kind: .backgroundItemAdded, subject: "com.new.agent"),
+            HealthEvent(date: hours(2), kind: .appAdded, subject: "Notes"),
+            HealthEvent(date: hours(2), kind: .freeSpaceWentDown, amountBytes: 9_000_000_000),
+            HealthEvent(date: hours(2), kind: .backgroundItemRemoved, subject: "com.new.agent")
+        ])
+
+        let first = ChangeNotices.notice(for: history, after: hours(0))
+        XCTAssertEqual(first?.coversUpTo, hours(1))
+        XCTAssertNil(ChangeNotices.notice(for: history, after: hours(1)), "Told about once, and nothing since is worth a notice")
+        XCTAssertNil(ChangeNotices.notice(for: HealthHistory(), after: hours(0)))
+    }
+
+    func testANewBackgroundItemIsSpottedBetweenReadings() throws {
+        let agents = root.appendingPathComponent("Library/LaunchAgents", isDirectory: true)
+        try writePlist(["Label": "com.known.agent"], to: agents.appendingPathComponent("com.known.agent.plist"))
+        let atReading = BackgroundItems.find(in: [(agents, .user)])
+        let known = inventory(backgroundItems: atReading.map { Entry(key: $0.url.path, name: $0.label) })
+        let history = HealthTimeline.record(observation(known), into: HealthHistory(), now: start)
+
+        XCTAssertFalse(HealthTimeline.hasNewBackgroundItems(atReading, since: history))
+        XCTAssertFalse(HealthTimeline.hasNewBackgroundItems([], since: history), "One that has gone is not a new one")
+
+        try writePlist(["Label": "com.new.agent"], to: agents.appendingPathComponent("com.new.agent.plist"))
+        let later = BackgroundItems.find(in: [(agents, .user)])
+        XCTAssertEqual(later.count, 2)
+        XCTAssertTrue(HealthTimeline.hasNewBackgroundItems(later, since: history))
+
+        XCTAssertFalse(HealthTimeline.hasNewBackgroundItems(later, since: HealthHistory()), "Nothing to compare with before the first reading")
+    }
+
     func testChangesReadInFinnishWhenTheAppIsShownInFinnish() {
         L10n.overrideLanguage = .finnish
         defer { L10n.overrideLanguage = .english }
