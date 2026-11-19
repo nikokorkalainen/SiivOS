@@ -58,6 +58,13 @@ struct WelcomeView: View {
 
             permission
 
+            // The extras are only pointed to. Each one is explained where it is turned
+            // on, which matters most for the tool for AI agents.
+            Text(tr("More in Settings, all off until you turn them on: notifications about changes, opening SiivOS at login, and a tool that lets an AI agent you use ask SiivOS questions."))
+                .font(.callout)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+
             HStack {
                 Spacer()
                 ProminentButton(tr("Get Started"), action: onDone)
