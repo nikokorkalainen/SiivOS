@@ -16,7 +16,8 @@ enum Welcome {
 }
 
 /// Shown once, the first time SiivOS opens: what it does, what it never does without
-/// asking, and the one permission that makes it more useful. It changes nothing, and
+/// asking, that an AI agent can ask it questions, and the one permission that makes it
+/// more useful. It changes nothing, and
 /// can be opened again from Settings.
 struct WelcomeView: View {
     let onDone: () -> Void
@@ -26,19 +27,19 @@ struct WelcomeView: View {
     @State private var hasFullDiskAccess = Permissions.hasFullDiskAccess()
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 22) {
+        VStack(alignment: .leading, spacing: 20) {
             VStack(alignment: .leading, spacing: 12) {
                 SiivOSLogo()
                     .frame(height: 39)
                 Text(tr("Welcome to SiivOS"))
                     .font(.title2)
                     .bold()
-                Text(tr("SiivOS frees up space, shows what is slowing this Mac down and keeps an eye on what changes on it. Three things to know before you start:"))
+                Text(tr("SiivOS frees up space, shows what is slowing this Mac down and keeps an eye on what changes on it. Four things to know before you start:"))
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
 
-            VStack(alignment: .leading, spacing: 16) {
+            VStack(alignment: .leading, spacing: 14) {
                 point(
                     .history,
                     tr("You decide, and you can undo"),
@@ -54,16 +55,16 @@ struct WelcomeView: View {
                     tr("It stays on this Mac"),
                     tr("No account, no tracking, no ads. SiivOS sends nothing anywhere, and uses the network only if you ask it to download virus definitions.")
                 )
+                // Said in full, trade-off included, because it stands right under the
+                // promise that everything stays on this Mac.
+                point(
+                    .settings,
+                    tr("Works with your AI agent"),
+                    tr("An AI agent you already use, such as Claude, can ask SiivOS what it has found. The tool for this only reads, and it is off until you turn it on in Settings. An agent on the internet sends what it reads to its own service.")
+                )
             }
 
             permission
-
-            // The extras are only pointed to. Each one is explained where it is turned
-            // on, which matters most for the tool for AI agents.
-            Text(tr("More in Settings, all off until you turn them on: notifications about changes, opening SiivOS at login, and a tool that lets an AI agent you use ask SiivOS questions."))
-                .font(.callout)
-                .foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
 
             HStack {
                 Spacer()
@@ -72,7 +73,9 @@ struct WelcomeView: View {
             }
         }
         .padding(24)
-        .frame(width: 580)
+        // Wide enough that the four points and the permission keep the sheet from
+        // growing taller than a small MacBook's screen.
+        .frame(width: 640)
         .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
             hasFullDiskAccess = Permissions.hasFullDiskAccess()
         }
