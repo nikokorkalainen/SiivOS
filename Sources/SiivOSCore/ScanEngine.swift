@@ -122,6 +122,17 @@ public struct ScanReport: Sendable {
         return total
     }
 
+    /// What one group holds that is labelled safe to remove and can be removed right
+    /// now. Zero when the group was not part of the scan.
+    public func safeToRemoveBytes(inSection id: String) -> Int64 {
+        guard let section = sections.first(where: { $0.id == id }) else {
+            return 0
+        }
+        return section.findings
+            .filter { $0.safety == .safeToRemove && $0.heldBackReason == nil }
+            .reduce(0) { $0 + $1.freesBytes }
+    }
+
     /// The same report without the findings whose items are no longer where they were,
     /// for use after some of them have been removed. Read-only.
     public func removingFindingsNoLongerOnDisk(fileManager: FileManager = .default) -> ScanReport {

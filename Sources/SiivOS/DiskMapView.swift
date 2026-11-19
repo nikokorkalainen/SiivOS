@@ -7,6 +7,11 @@ import SwiftUI
 /// folder looks into it. Nothing here removes or changes anything.
 struct DiskMapView: View {
     @ObservedObject var model: DiskMapModel
+    /// What the last Clutter scan found in app caches that can be removed right now.
+    /// Zero when there has been no scan.
+    let clearableCacheBytes: Int64
+    /// Switches Cleanup to its Clutter view.
+    let reviewInClutter: () -> Void
 
     var body: some View {
         if model.isMeasuring {
@@ -19,7 +24,12 @@ struct DiskMapView: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else if let folder = model.current {
-            DiskMapResultsView(model: model, folder: folder)
+            DiskMapResultsView(
+                model: model,
+                folder: folder,
+                clearableCacheBytes: clearableCacheBytes,
+                reviewInClutter: reviewInClutter
+            )
         } else {
             startScreen
         }
@@ -113,13 +123,70 @@ private struct MapEntry: Identifiable {
     let opens: DiskMapNode?
     /// The item itself, for Show in Finder. `nil` for the smaller-items group.
     let node: DiskMapNode?
+    /// The line under the name in the list: the kind, or what the smaller-items group is.
+    let detail: String
+    /// Something more to say at the bottom of the block, with a button. Only the
+    /// Library block has one.
+    var note: BlockNote?
 
     var look: KindLook { KindLook.of(kind) }
+}
+
+/// A sentence at the bottom of a block, with a small button under it.
+private struct BlockNote {
+    let text: String
+    let buttonTitle: String
+    let action: () -> Void
+}
+
+/// Puts views next to each other and starts a new row when the width runs out.
+private struct WrappingRow: Layout {
+    var spacing: CGFloat = 16
+    var rowSpacing: CGFloat = 6
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let result = arrange(subviews, width: proposal.width ?? .infinity)
+        return CGSize(width: result.width, height: result.height)
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        let result = arrange(subviews, width: bounds.width)
+        for (index, origin) in result.origins.enumerated() {
+            subviews[index].place(
+                at: CGPoint(x: bounds.minX + origin.x, y: bounds.minY + origin.y),
+                proposal: .unspecified
+            )
+        }
+    }
+
+    /// Where each view goes, and how much room they take together.
+    private func arrange(_ subviews: Subviews, width: CGFloat) -> (origins: [CGPoint], width: CGFloat, height: CGFloat) {
+        var origins: [CGPoint] = []
+        var x: CGFloat = 0
+        var y: CGFloat = 0
+        var rowHeight: CGFloat = 0
+        var widest: CGFloat = 0
+        for subview in subviews {
+            let size = subview.sizeThatFits(.unspecified)
+            if x > 0, x + size.width > width {
+                x = 0
+                y += rowHeight + rowSpacing
+                rowHeight = 0
+            }
+            origins.append(CGPoint(x: x, y: y))
+            rowHeight = max(rowHeight, size.height)
+            widest = max(widest, x + size.width)
+            x += size.width + spacing
+        }
+        return (origins, widest, y + rowHeight)
+    }
 }
 
 private struct DiskMapResultsView: View {
     @ObservedObject var model: DiskMapModel
     let folder: DiskMapNode
+    let clearableCacheBytes: Int64
+    let reviewInClutter: () -> Void
 
     /// The entry under the pointer, on the map or in the list. The two are linked: a
     /// block highlights its row, and a row its block.
@@ -130,12 +197,20 @@ private struct DiskMapResultsView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 18) {
                 PageHeader(title: tr("Disk Map"), subtitle: subtitle) {
-                    Button {
-                        model.measureHome()
-                    } label: {
-                        ButtonLabel(title: tr("Measure Again"), systemImage: "arrow.clockwise")
+                    HStack(alignment: .firstTextBaseline, spacing: 12) {
+                        if let measuredText {
+                            Text(measuredText)
+                                .font(.callout)
+                                .foregroundStyle(.secondary)
+                                .lineLimit(1)
+                        }
+                        Button {
+                            model.measureHome()
+                        } label: {
+                            ButtonLabel(title: tr("Measure Again"), systemImage: "arrow.clockwise")
+                        }
+                        .buttonStyle(SiivOSButtonStyle(.standard))
                     }
-                    .buttonStyle(SiivOSButtonStyle(.standard))
                 }
 
                 breadcrumb
@@ -144,6 +219,8 @@ private struct DiskMapResultsView: View {
                     Text(tr("This folder is empty, or macOS did not let SiivOS look into it."))
                         .foregroundStyle(.secondary)
                 } else {
+                    legend
+
                     MapBlocks(entries: entries, hovered: hovered, setHovered: setHovered) { node in
                         open(node)
                     }
@@ -165,6 +242,56 @@ private struct DiskMapResultsView: View {
         tr("%1$@ in %2$@", formatBytes(folder.sizeBytes), folder.name)
     }
 
+    /// When the home folder was measured: the time alone for today, the day as well
+    /// when the app has been left open since an earlier day.
+    private var measuredText: String? {
+        guard let date = model.measuredAt else {
+            return nil
+        }
+        if Calendar.current.isDateInToday(date) {
+            return tr("Measured today at %1$@", date.formatted(date: .omitted, time: .shortened))
+        }
+        return tr("Measured %1$@", date.formatted(date: .abbreviated, time: .shortened))
+    }
+
+    /// The kinds on the map right now, each with its colour, in a fixed order.
+    private var legend: some View {
+        let shown = Set(entries.map { $0.kind })
+        return WrappingRow {
+            ForEach(DiskMapKind.allCases.filter { shown.contains($0) }, id: \.self) { kind in
+                HStack(spacing: 6) {
+                    RoundedRectangle(cornerRadius: 3, style: .continuous)
+                        .fill(KindLook.of(kind).middle)
+                        .frame(width: 11, height: 11)
+                    Text(kind.title)
+                        .font(.system(size: 13))
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                }
+                .fixedSize()
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .accessibilityHidden(true)
+    }
+
+    /// What the Library block says about app caches, when Clutter has scanned and found
+    /// some that can be cleared. Only on the map of the home folder.
+    private func libraryNote(for item: DiskMapNode, home: URL) -> BlockNote? {
+        guard isHome,
+              clearableCacheBytes > 0,
+              clearableCacheBytes <= item.sizeBytes,
+              item.url.standardizedFileURL.path == home.appendingPathComponent("Library").standardizedFileURL.path
+        else {
+            return nil
+        }
+        return BlockNote(
+            text: tr("%1$@ of it is app caches that Clutter can clear.", formatBytes(clearableCacheBytes)),
+            buttonTitle: tr("Review in Clutter"),
+            action: reviewInClutter
+        )
+    }
+
     /// True when the folder shown is the home folder itself.
     private var isHome: Bool {
         model.path.count == 1
@@ -175,14 +302,17 @@ private struct DiskMapResultsView: View {
         let home = URL(fileURLWithPath: NSHomeDirectory())
         var result: [MapEntry] = []
         for child in folder.children where child.sizeBytes > 0 {
+            let kind = DiskMap.kind(of: child.url, home: home)
             result.append(
                 MapEntry(
                     id: child.url.path,
                     name: child.name,
                     sizeBytes: child.sizeBytes,
-                    kind: DiskMap.kind(of: child.url, home: home),
+                    kind: kind,
                     opens: child.canBeOpened ? child : nil,
-                    node: child
+                    node: child,
+                    detail: kind.title,
+                    note: libraryNote(for: child, home: home)
                 )
             )
         }
@@ -197,7 +327,8 @@ private struct DiskMapResultsView: View {
                     sizeBytes: folder.otherBytes,
                     kind: .smallerItems,
                     opens: folder.smallerItemsNode(named: name),
-                    node: nil
+                    node: nil,
+                    detail: tr("Too small to show on their own, added together")
                 )
             )
         }
@@ -458,6 +589,31 @@ private struct MapBlock: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        // The note sits on top of the block, not inside its button, so that the note's
+        // own button takes its clicks. A click on the sentence still opens the block.
+        .overlay(alignment: .bottomLeading) {
+            if let note = entry.note, width >= 240, height >= 150 {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(note.text)
+                        .font(.system(size: 12))
+                        .foregroundStyle(entry.look.text.opacity(0.9))
+                        .fixedSize(horizontal: false, vertical: true)
+                        .allowsHitTesting(false)
+                    Button(action: note.action) {
+                        Text(note.buttonTitle)
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundStyle(entry.look.text)
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 4)
+                            .background(Color.white.opacity(0.22), in: Capsule())
+                            .contentShape(Capsule())
+                    }
+                    .buttonStyle(.plain)
+                }
+                .padding(11)
+                .frame(maxWidth: min(width, 340), alignment: .leading)
+            }
+        }
         // The hover is kept gentle: a slight lift and brightening for the block under
         // the pointer, and only a slight step back for the others.
         .shadow(
@@ -481,8 +637,8 @@ private struct MapBlock: View {
     }
 }
 
-/// One line of the list under the map: a square in the kind's colour, the name, a bar
-/// for its share of the folder, and the size. It is tinted while its block is under
+/// One line of the list under the map: a square in the kind's colour, the name with the
+/// kind under it, a bar for its share of the folder, and the size. It is tinted while its block is under
 /// the pointer, and the pointer over the row highlights the block.
 private struct MapRow: View {
     let entry: MapEntry
@@ -498,13 +654,21 @@ private struct MapRow: View {
                 RoundedRectangle(cornerRadius: 3, style: .continuous)
                     .fill(entry.look.middle)
                     .frame(width: 12, height: 12)
-                Text(entry.name)
-                    .lineLimit(1)
-                    .truncationMode(.middle)
-                if entry.opens != nil {
-                    Image(systemName: "chevron.right")
-                        .font(.system(size: 10, weight: .semibold))
+                VStack(alignment: .leading, spacing: 2) {
+                    HStack(spacing: 6) {
+                        Text(entry.name)
+                            .lineLimit(1)
+                            .truncationMode(.middle)
+                        if entry.opens != nil {
+                            Image(systemName: "chevron.right")
+                                .font(.system(size: 10, weight: .semibold))
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    Text(entry.detail)
+                        .font(.system(size: 12))
                         .foregroundStyle(.secondary)
+                        .lineLimit(1)
                 }
                 Spacer(minLength: 12)
                 MeterBar(fraction: share, color: entry.look.middle)

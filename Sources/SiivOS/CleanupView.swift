@@ -28,7 +28,11 @@ struct CleanupView: View {
             if tab == .clutter {
                 content
             } else {
-                DiskMapView(model: diskMap)
+                DiskMapView(
+                    model: diskMap,
+                    clearableCacheBytes: model.report?.safeToRemoveBytes(inSection: "caches") ?? 0,
+                    reviewInClutter: { tab = .clutter }
+                )
             }
         }
         .navigationTitle(tr("Cleanup"))
