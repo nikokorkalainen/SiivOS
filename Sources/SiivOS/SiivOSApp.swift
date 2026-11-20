@@ -57,6 +57,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var quietStartTriesLeft = 0
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        // Before anything else, so that a click on a notification that started SiivOS
+        // reaches it.
+        ChangeNotifications.start()
+
         if Self.wasOpenedAtLogin && AppSettings.showsMenuBar {
             // Opened by macOS at login, not by the user: stay in the menu bar, out of
             // the Dock, and do not put a window in front of whatever they are doing.

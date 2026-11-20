@@ -75,12 +75,33 @@ final class TimelineModel: ObservableObject {
         history.readings.last?.diskTotalBytes
     }
 
-    /// Takes a reading when the app opens, unless there is a recent one.
+    /// Takes a reading when the app opens and every six hours after that. Called every
+    /// half hour: while the last reading is recent, it only looks for a background item
+    /// that was not there at that reading, and takes a reading early if it finds one.
     func updateIfDue() {
         if let last = history.readings.last, Date().timeIntervalSince(last.date) < Self.automaticInterval {
+            updateIfSomethingNewStartsByItself()
             return
         }
         update()
+    }
+
+    /// Lists the background items, which is quick, and takes a reading if one of them is
+    /// new. The reading is what records the change and says more about the item.
+    private func updateIfSomethingNewStartsByItself() {
+        guard !isUpdating else { return }
+        let history = self.history
+        Task {
+            let hasNew = await Task.detached(priority: .utility) {
+                HealthTimeline.hasNewBackgroundItems(
+                    BackgroundItems.find(in: BackgroundItems.standardDirectories()),
+                    since: history
+                )
+            }.value
+            if hasNew {
+                self.update()
+            }
+        }
     }
 
     /// Called when the Health Timeline is shown: makes sure there is a score with its
@@ -112,6 +133,7 @@ final class TimelineModel: ObservableObject {
             self.score = outcome.0
             if let updated = outcome.1 {
                 self.history = updated
+                ChangeNotifier.shared.tellAboutChanges(in: updated)
             }
             if let problem = outcome.2 {
                 self.message = tr("The reading could not be saved: %1$@", problem)

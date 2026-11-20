@@ -2,6 +2,135 @@ import XCTest
 @testable import SiivOSCore
 
 final class DiskMapTests: TemporaryDirectoryTestCase {
+    // MARK: - What grew
+
+    private func item(_ path: String, _ size: Int64, opened children: [DiskMapNode]? = nil, otherCount: Int = 0) -> DiskMapNode {
+        DiskMapNode(
+            url: URL(fileURLWithPath: path),
+            name: URL(fileURLWithPath: path).lastPathComponent,
+            sizeBytes: size,
+            canBeOpened: children != nil,
+            isOpened: children != nil,
+            children: children ?? [],
+            otherCount: otherCount
+        )
+    }
+
+    private func folder(_ size: Int64, _ children: [DiskMapNode], smaller: [DiskMapNode] = [], otherCount: Int? = nil) -> DiskMapNode {
+        DiskMapNode(
+            url: URL(fileURLWithPath: "/Users/x"),
+            name: "x",
+            sizeBytes: size,
+            canBeOpened: true,
+            isOpened: true,
+            children: children,
+            otherBytes: smaller.reduce(0) { $0 + $1.sizeBytes },
+            otherCount: otherCount ?? smaller.count,
+            smallerItems: smaller
+        )
+    }
+
+    private let morning = Date(timeIntervalSince1970: 1_800_000_000)
+    private func hoursLater(_ hours: Double) -> Date { morning.addingTimeInterval(hours * 3_600) }
+
+    func testALaterMeasuringSaysWhatGrewShrankAndIsNew() {
+        let before = folder(9_000, [
+            item("/Users/x/Library", 5_000, opened: [item("/Users/x/Library/Caches", 3_000)]),
+            item("/Users/x/Movies", 3_000),
+            item("/Users/x/Hidden", 0)
+        ], smaller: [item("/Users/x/notes.txt", 10)])
+        let snapshot = DiskMapSnapshot(of: before, date: morning)
+
+        let library = item("/Users/x/Library", 7_500, opened: [
+            item("/Users/x/Library/Caches", 5_000),
+            item("/Users/x/Library/Logs", 400)
+        ])
+        let after = folder(12_000, [
+            library,
+            item("/Users/x/Movies", 2_000),
+            item("/Users/x/Hidden", 800),
+            item("/Users/x/Downloads", 1_200),
+            item("/Users/x/notes.txt", 10)
+        ])
+
+        XCTAssertEqual(snapshot.change(of: after), 3_000)
+        XCTAssertEqual(snapshot.change(of: after.children[0], in: after), .changed(2_500))
+        XCTAssertEqual(snapshot.change(of: after.children[1], in: after), .changed(-1_000))
+        XCTAssertNil(snapshot.change(of: after.children[2], in: after), "Nothing of it could be seen before, so its size now is not growth")
+        XCTAssertEqual(snapshot.change(of: after.children[3], in: after), .new, "Everything in the folder was noted down, so this was not there")
+        XCTAssertEqual(snapshot.change(of: after.children[4], in: after), .changed(0), "Small items directly in the folder are noted down too")
+
+        XCTAssertEqual(snapshot.change(of: library.children[0], in: library), .changed(2_000), "One level further down as well")
+        XCTAssertEqual(snapshot.change(of: library.children[1], in: library), .new)
+        XCTAssertEqual(snapshot.change(of: library), 2_500)
+    }
+
+    func testAnItemThatMayHaveBeenTooSmallToNoteDownIsNotCalledNew() {
+        // More small items than were kept, at both levels.
+        let before = folder(9_000, [
+            item("/Users/x/Library", 5_000, opened: [item("/Users/x/Library/Caches", 3_000)], otherCount: 40)
+        ], smaller: [item("/Users/x/a", 10)], otherCount: 500)
+        let snapshot = DiskMapSnapshot(of: before, date: morning)
+        XCTAssertTrue(snapshot.completeFolders.isEmpty)
+
+        let library = item("/Users/x/Library", 5_000, opened: [item("/Users/x/Library/Logs", 900)])
+        let after = folder(9_500, [library, item("/Users/x/b", 400)])
+
+        XCTAssertNil(snapshot.change(of: after.children[1], in: after))
+        XCTAssertNil(snapshot.change(of: library.children[0], in: library))
+        XCTAssertNil(snapshot.change(of: item("/Users/elsewhere", 5, opened: [])), "A folder that was not measured then")
+    }
+
+    func testANewMeasuringIsComparedWithOneFromAtLeastHalfADayAgo() {
+        func snapshot(_ hours: Double) -> DiskMapSnapshot {
+            DiskMapSnapshot(of: folder(1_000, []), date: hoursLater(hours))
+        }
+        var history = DiskMapHistory()
+        XCTAssertNil(history.baseline(now: morning))
+
+        history.add(snapshot(0))
+        XCTAssertEqual(history.baseline(now: hoursLater(6))?.date, hoursLater(0), "Nothing older yet, so the first one")
+
+        history.add(snapshot(6))
+        history.add(snapshot(7))
+        XCTAssertEqual(history.snapshots.map { $0.date }, [hoursLater(0), hoursLater(7)], "Measuring again soon replaces the last, not the one to compare with")
+
+        XCTAssertEqual(history.baseline(now: hoursLater(8))?.date, hoursLater(0))
+        XCTAssertEqual(history.baseline(now: hoursLater(30))?.date, hoursLater(7), "The newest that is half a day old")
+
+        history.add(snapshot(30))
+        XCTAssertEqual(history.snapshots.count, 3)
+        XCTAssertEqual(history.baseline(now: hoursLater(31))?.date, hoursLater(7), "Not the one just taken")
+
+        for day in 2...20 {
+            history.add(snapshot(Double(day) * 24))
+        }
+        XCTAssertEqual(history.snapshots.count, DiskMapHistory.kept)
+        XCTAssertEqual(history.snapshots.last?.date, hoursLater(480))
+    }
+
+    func testMeasuringsAreKeptBetweenLaunchesAndADamagedFileStartsAfresh() throws {
+        try makeFile("Movies/film.mov", bytes: 3_000_000)
+        try makeFile("Documents/letter.txt", bytes: 200_000)
+        let map = DiskMap.measure(home, levels: 2)
+        let store = DiskMapHistoryStore(dataDirectory: root.appendingPathComponent("Data"))
+        XCTAssertTrue(store.load().snapshots.isEmpty)
+
+        var history = DiskMapHistory()
+        history.add(DiskMapSnapshot(of: map, date: morning))
+        try store.save(history)
+
+        let loaded = store.load()
+        XCTAssertEqual(loaded, history)
+        let snapshot = try XCTUnwrap(loaded.baseline(now: hoursLater(24)))
+        XCTAssertEqual(snapshot.change(of: map), 0)
+        XCTAssertEqual(snapshot.change(of: map.children[0], in: map), .changed(0))
+        XCTAssertTrue(snapshot.completeFolders.contains(map.url.path))
+
+        try "not json".write(to: store.fileURL, atomically: true, encoding: .utf8)
+        XCTAssertTrue(store.load().snapshots.isEmpty)
+    }
+
     // MARK: - Measuring
 
     func testAFolderIsMeasuredWithItsLargestThingsFirst() throws {

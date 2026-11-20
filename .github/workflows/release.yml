@@ -1,0 +1,59 @@
+# Builds SiivOS on one of GitHub's Macs and packs it for download. Started by hand only:
+# Actions, Release, Run workflow, then type the version number.
+#
+# The result is a DRAFT release with the ZIP attached. Nothing is public until the draft
+# is opened under Releases and published. With "Make a draft release" unticked, the ZIP
+# is only built and kept with the run for a week, which is a way to try the build.
+#
+# The app is not signed with an Apple Developer ID. The release notes say how to open it.
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version number, such as 0.1.0"
+        required: true
+        type: string
+      make_release:
+        description: "Make a draft release with the ZIP attached"
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    name: Build and pack
+    runs-on: macos-15
+    timeout-minutes: 30
+    permissions:
+      # Needed to make the draft release. Nothing else is written.
+      contents: write
+    env:
+      VERSION: ${{ inputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run the engine's tests
+        run: swift test
+      - name: Build for both kinds of Mac and pack the ZIP
+        run: bash Scripts/make-release.sh "${VERSION}"
+      - name: Keep the ZIP with this run
+        uses: actions/upload-artifact@v4
+        with:
+          name: SiivOS-${{ inputs.version }}
+          path: |
+            dist/SiivOS-*.zip
+            dist/release-notes.md
+          retention-days: 7
+      - name: Make a draft release
+        if: inputs.make_release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "v${VERSION}" "dist/SiivOS-${VERSION}.zip" \
+            --draft \
+            --target "${GITHUB_SHA}" \
+            --title "SiivOS ${VERSION}" \
+            --notes-file dist/release-notes.md

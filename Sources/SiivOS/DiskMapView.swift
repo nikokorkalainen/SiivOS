@@ -125,6 +125,9 @@ private struct MapEntry: Identifiable {
     let node: DiskMapNode?
     /// The line under the name in the list: the kind, or what the smaller-items group is.
     let detail: String
+    /// How the item has changed since an earlier measuring, such as "+6,2 GB", when
+    /// that is known and large enough to be worth showing.
+    var changeText: String?
     /// Something more to say at the bottom of the block, with a button. Only the
     /// Library block has one.
     var note: BlockNote?
@@ -214,6 +217,11 @@ private struct DiskMapResultsView: View {
                 }
 
                 breadcrumb
+
+                if let sinceText {
+                    Text(sinceText)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
 
                 if entries.isEmpty {
                     Text(tr("This folder is empty, or macOS did not let SiivOS look into it."))
@@ -312,6 +320,7 @@ private struct DiskMapResultsView: View {
                     opens: child.canBeOpened ? child : nil,
                     node: child,
                     detail: kind.title,
+                    changeText: changeText(for: child),
                     note: libraryNote(for: child, home: home)
                 )
             )
@@ -338,6 +347,78 @@ private struct DiskMapResultsView: View {
     private func open(_ node: DiskMapNode) {
         hovered = nil
         model.enter(node)
+    }
+
+    // MARK: What grew
+
+    /// By how many bytes an item is larger than at the earlier measuring, when that is
+    /// known and worth showing. An item that was not there then counts with all of its
+    /// size; one that is smaller now counts as a negative amount.
+    private func growth(of item: DiskMapNode) -> Int64? {
+        guard let change = model.baseline?.change(of: item, in: folder) else {
+            return nil
+        }
+        let bytes: Int64
+        switch change {
+        case .new:
+            bytes = item.sizeBytes
+        case .changed(let amount):
+            bytes = amount
+        }
+        return abs(bytes) >= DiskMapHistory.changeWorthShowing ? bytes : nil
+    }
+
+    /// The change as it is shown on a block and in the list: "+6,2 GB" or "−1,1 GB".
+    private func changeText(for item: DiskMapNode) -> String? {
+        guard let bytes = growth(of: item) else {
+            return nil
+        }
+        return bytes > 0 ? "+" + formatBytes(bytes) : "−" + formatBytes(-bytes)
+    }
+
+    /// True when the list of a folder's smaller items is shown. It stands in the same
+    /// place as the folder itself, so the folder's own change is not this list's.
+    private var isSmallerItemsList: Bool {
+        model.path.count >= 2 && model.path[model.path.count - 2].url == folder.url
+    }
+
+    /// One or two sentences on what has changed since an earlier measuring: how much
+    /// the folder has grown or shrunk, and which items grew most. `nil` when there is
+    /// nothing to compare with.
+    private var sinceText: String? {
+        guard let baseline = model.baseline else {
+            // After the very first measuring, say what this place will show next time.
+            return isHome && model.wasNotedDown
+                ? tr("The next time you measure, SiivOS shows here what has grown since today.")
+                : nil
+        }
+        guard !isSmallerItemsList, let total = baseline.change(of: folder) else {
+            return nil
+        }
+        let when = baseline.date.formatted(date: .abbreviated, time: .shortened)
+        var sentences: [String] = []
+        if total >= DiskMapHistory.changeWorthShowing {
+            sentences.append(tr("%1$@ has grown by %2$@ since %3$@.", folder.name, formatBytes(total), when))
+        } else if total <= -DiskMapHistory.changeWorthShowing {
+            sentences.append(tr("%1$@ has shrunk by %2$@ since %3$@.", folder.name, formatBytes(-total), when))
+        } else {
+            sentences.append(tr("%1$@ is about the same size as on %2$@.", folder.name, when))
+        }
+
+        let grown = folder.children
+            .compactMap { item -> (name: String, bytes: Int64)? in
+                guard let bytes = growth(of: item), bytes > 0 else {
+                    return nil
+                }
+                return (item.name, bytes)
+            }
+            .sorted { $0.bytes > $1.bytes }
+            .prefix(3)
+            .map { $0.name + " (+" + formatBytes($0.bytes) + ")" }
+        if !grown.isEmpty {
+            sentences.append(tr("Grew most: %1$@.", grown.joined(separator: ", ")))
+        }
+        return sentences.joined(separator: " ")
     }
 
     /// Follows the pointer: an entry is hovered when the pointer comes over it, and
@@ -510,6 +591,16 @@ private struct MapBlock: View {
     /// that would make it too small to read.
     private var symbolSize: CGFloat { min(width, height) / 3 }
 
+    /// The size, followed where there is room by how it has changed since an earlier
+    /// measuring.
+    private var sizeLine: String {
+        let size = formatBytes(entry.sizeBytes)
+        guard let change = entry.changeText, width >= 170 else {
+            return size
+        }
+        return size + " · " + change
+    }
+
     var body: some View {
         Button {
             if let node = entry.opens {
@@ -560,8 +651,9 @@ private struct MapBlock: View {
                             .font(.system(size: 14, weight: .semibold))
                             .lineLimit(1)
                             .truncationMode(.tail)
-                        Text(formatBytes(entry.sizeBytes))
+                        Text(sizeLine)
                             .font(.system(size: 12))
+                            .lineLimit(1)
                             .opacity(0.85)
                     }
                     .foregroundStyle(entry.look.text)
@@ -665,7 +757,7 @@ private struct MapRow: View {
                                 .foregroundStyle(.secondary)
                         }
                     }
-                    Text(entry.detail)
+                    Text(entry.changeText.map { entry.detail + " · " + $0 } ?? entry.detail)
                         .font(.system(size: 12))
                         .foregroundStyle(.secondary)
                         .lineLimit(1)

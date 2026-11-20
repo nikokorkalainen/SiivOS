@@ -20,7 +20,9 @@ private final class StopFlag: @unchecked Sendable {
     }
 }
 
-/// Connects the Disk Map to the engine that measures folders. Measuring only reads.
+/// Connects the Disk Map to the engine that measures folders. Measuring only reads the
+/// Mac; the one thing written is SiivOS's own note of the sizes, so that the next
+/// measuring can say what has grown.
 @MainActor
 final class DiskMapModel: ObservableObject {
     /// The way from the home folder down to the folder being shown. Empty before the
@@ -31,6 +33,11 @@ final class DiskMapModel: ObservableObject {
     @Published private(set) var measuringName = ""
     /// When the home folder was last measured.
     @Published private(set) var measuredAt: Date?
+    /// An earlier measuring to compare this one with, or `nil` when there is none.
+    @Published private(set) var baseline: DiskMapSnapshot?
+    /// True when this measuring was noted down, so that a later one can be compared
+    /// with it. A measuring that was stopped early is not.
+    @Published private(set) var wasNotedDown = false
 
     private var stopFlag: StopFlag?
 
@@ -75,8 +82,9 @@ final class DiskMapModel: ObservableObject {
         stopFlag = flag
 
         Task {
-            let node = await Task.detached(priority: .userInitiated) {
-                DiskMap.measure(
+            let isHome = index == 0
+            let result = await Task.detached(priority: .userInitiated) { () -> (DiskMapNode, DiskMapSnapshot?, Bool) in
+                let node = DiskMap.measure(
                     folder,
                     levels: 2,
                     isCancelled: { flag.value },
@@ -86,10 +94,25 @@ final class DiskMapModel: ObservableObject {
                         }
                     }
                 )
+                // Only a whole measuring of the home folder is compared and noted down.
+                // One that was stopped early would make everything look smaller.
+                guard isHome, !flag.value else {
+                    return (node, nil, false)
+                }
+                let store = DiskMapHistoryStore.standard()
+                var history = store.load()
+                let now = Date()
+                let baseline = history.baseline(now: now)
+                history.add(DiskMapSnapshot(of: node, date: now))
+                let wasSaved = (try? store.save(history)) != nil
+                return (node, baseline, wasSaved)
             }.value
+            let node = result.0
             self.path = Array(self.path.prefix(index)) + [node]
-            if index == 0 {
+            if isHome {
                 self.measuredAt = Date()
+                self.baseline = result.1
+                self.wasNotedDown = result.2
             }
             self.isMeasuring = false
             self.stopFlag = nil

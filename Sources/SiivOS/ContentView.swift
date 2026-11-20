@@ -23,10 +23,49 @@ struct ContentView: View {
     /// Whether the sidebar shows icons only. Kept in view state so that changing it can
     /// animate, and saved so that it is remembered between launches.
     @State private var sidebarIsCompact = UserDefaults.standard.bool(forKey: ContentView.compactSidebarKey)
+    @Environment(\.openWindow) private var openWindow
 
     private static let compactSidebarKey = "sidebarShowsIconsOnly"
 
     var body: some View {
+        // The welcome takes the whole window, without the sidebar. When it ends, the
+        // normal window takes over.
+        Group {
+            if navigation.showsWelcome {
+                WelcomeView {
+                    endWelcome()
+                }
+                .transition(.opacity)
+            } else {
+                columns
+                    .transition(.opacity)
+            }
+        }
+        // Lets the menu bar find this window and bring it to the front.
+        .background(MainWindowTracker())
+        .tint(SiivOSTheme.prominent)
+        .onChange(of: sidebarIsCompact) { _, isCompact in
+            UserDefaults.standard.set(isCompact, forKey: Self.compactSidebarKey)
+        }
+        .onAppear {
+            MainWindow.opener = openWindow
+            holding.refresh()
+        }
+    }
+
+    /// Ends the welcome. The first time, the normal window opens on the Overview; opened
+    /// again from Settings, it goes back to Settings, where the window still is.
+    private func endWelcome() {
+        if !Welcome.hasBeenSeen {
+            navigation.selection = .overview
+        }
+        Welcome.markSeen()
+        withAnimation(.easeInOut(duration: 0.3)) {
+            navigation.showsWelcome = false
+        }
+    }
+
+    private var columns: some View {
         // The app lays the two columns out itself. The standard split view ignores a new
         // sidebar width once it is open, so it could not collapse the sidebar to icons,
         // and it offers a way to hide the sidebar, which SiivOS does not want.
@@ -44,15 +83,6 @@ struct ContentView: View {
             detail(for: navigation.selection)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .background(SiivOSWindowBackground())
-        }
-        // Lets the menu bar find this window and bring it to the front.
-        .background(MainWindowTracker())
-        .tint(SiivOSTheme.prominent)
-        .onChange(of: sidebarIsCompact) { _, isCompact in
-            UserDefaults.standard.set(isCompact, forKey: Self.compactSidebarKey)
-        }
-        .onAppear {
-            holding.refresh()
         }
     }
 

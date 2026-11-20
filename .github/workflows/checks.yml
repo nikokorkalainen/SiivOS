@@ -1,0 +1,83 @@
+# Checks every change automatically, so that a mistake is found before it reaches a Mac.
+#
+# Two jobs:
+#   - "Engine on Linux" runs the same script Claude runs before every push. It is quick
+#     and cheap, so it runs on every push to a working branch.
+#   - "App and tests on a Mac" builds the whole app and runs the tests on a real Mac. It is
+#     the only check that compiles the screens. On a private repository a minute on a Mac
+#     counts as ten minutes of the monthly allowance, so it runs for pull requests to main
+#     and when started by hand (Actions, Checks, Run workflow), not on every push.
+#
+# Started by hand with "Also pack the download" ticked, a third job builds the download
+# ZIP the way the Release workflow does and keeps it with the run for three days. It
+# makes no release. It is there to try the packing, which costs more Mac minutes.
+name: Checks
+
+on:
+  push:
+    branches: ["claude/**"]
+    # Changes to notes and design files cannot break the build.
+    paths-ignore: ["**.md", "docs/**", "design/**", "LICENSE"]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      pack:
+        description: "Also pack the download, to try the packing"
+        type: boolean
+        default: false
+
+# A newer push to the same branch makes an older run pointless.
+concurrency:
+  group: checks-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  linux:
+    name: Engine on Linux
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Keep the Swift toolchain between runs
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/siivos-swift
+          key: swift-6.1.2-ubuntu24.04
+      - name: Test the engine, check the app's syntax and the translations
+        run: ./Scripts/check-engine-on-linux.sh
+
+  mac:
+    name: App and tests on a Mac
+    if: github.event_name != 'push'
+    runs-on: macos-15
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - name: Say which Swift this is
+        run: swift --version
+      - name: Build the app and the command-line tool
+        run: swift build
+      - name: Run the engine's tests
+        run: swift test
+
+  pack:
+    name: Pack the download
+    if: github.event_name == 'workflow_dispatch' && inputs.pack
+    runs-on: macos-15
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build for both kinds of Mac and pack the ZIP
+        run: bash Scripts/make-release.sh 0.0.0
+      - name: Keep the ZIP with this run
+        uses: actions/upload-artifact@v4
+        with:
+          name: SiivOS-trial-build
+          path: |
+            dist/SiivOS-*.zip
+            dist/release-notes.md
+          retention-days: 3

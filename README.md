@@ -4,6 +4,10 @@ A Mac app that cleans up clutter, manages and uninstalls apps, shows what is slo
 
 SiivOS is in English and Finnish and follows the language of your Mac. It needs macOS 14 or newer.
 
+<p align="center">
+  <img src="docs/screenshots/overview.webp" width="820" alt="The SiivOS Overview: free space on the disk, what the last check found in each section, and free space over time">
+</p>
+
 ## What makes it different
 
 - **Explain and undo.** Before anything is removed, SiivOS shows what will happen in plain words. Removed items go to a holding area, not straight to deletion, and a whole change, such as an uninstall, can be put back in one click from History.
@@ -16,7 +20,7 @@ SiivOS is in English and Finnish and follows the language of your Mac. It needs 
 | Section | What you get |
 |---------|--------------|
 | **Overview** | Free space, what the last check found, the health score, and free space over time. |
-| **Cleanup** | Caches, logs, old downloads, large files, duplicate files, leftovers from apps you have removed, and data piled up by developer tools such as Xcode, npm and Docker. Every item is labelled Safe to remove or Check first. Data of macOS, password managers, iCloud and security software is never listed. A Disk Map shows where the space in your home folder goes. |
+| **Cleanup** | Caches, logs, old downloads, large files, duplicate files, leftovers from apps you have removed, and data piled up by developer tools such as Xcode, npm and Docker. Every item is labelled Safe to remove or Check first. Data of macOS, password managers, iCloud and security software is never listed. A Disk Map shows where the space in your home folder goes, and what has grown since you last measured. |
 | **Apps** | Every app with its size and last use. Uninstalling takes the app's leftovers with it. Background items can be reviewed and removed. |
 | **Performance** | Processor, memory, disk and battery right now, with a plain-language explanation when something is holding the Mac back. |
 | **Protection** | The protection built into macOS, what starts by itself, browser extensions, configuration profiles and app permissions, plus an optional malware scan with ClamAV. |
@@ -24,6 +28,17 @@ SiivOS is in English and Finnish and follows the language of your Mac. It needs 
 | **History** | Everything SiivOS has changed, with a way to put it back or delete it for good. |
 
 SiivOS also sits in the menu bar, where it shows the health score and marks its icon when something new starts by itself. It stays there after you close its window, and is in the Dock only while the window is open. This can be turned off in Settings.
+
+If you turn it on in Settings, SiivOS also shows a notification when it notices something new that starts by itself, a new configuration profile, or one of macOS's protections turned off. It looks for new background items every half hour while it is running. The notification is made on your Mac and sent nowhere.
+
+## A look inside
+
+| | |
+|---|---|
+| <img src="docs/screenshots/cleanup.webp" width="420" alt="Cleanup: groups of clutter with their sizes, each item labelled Safe to remove"> | <img src="docs/screenshots/disk-map.webp" width="420" alt="The Disk Map: the home folder drawn as blocks sized by the space they take, coloured by what they hold"> |
+| **Cleanup.** Every item is labelled Safe to remove or Check first, and nothing changes until you confirm. | **Disk Map.** Where the space in your home folder goes, and what has grown since you last measured. |
+| <img src="docs/screenshots/health-timeline.webp" width="420" alt="The Health Timeline: a score of 100 with the reason for every point, and charts of the score and free space over time"> | <img src="docs/screenshots/welcome.webp" width="420" alt="The welcome: the SiivOS logo, the promise, and three things to know"> |
+| **Health Timeline.** A score that shows its reasons, with charts over time. | **Welcome.** What you see the first time SiivOS opens. |
 
 ## What it does not do
 
@@ -34,11 +49,28 @@ SiivOS also sits in the menu bar, where it shows the health score and marks its 
 
 ## Getting SiivOS
 
-There is no ready-made download yet. A signed download needs a paid Apple Developer account, so for now you build SiivOS yourself. It takes a few minutes and you do not need to know how to program.
+There are two ways: download a ready-made build, or build SiivOS yourself.
 
-You need Apple's developer tools: either the Command Line Tools (small, no sign-in needed) or Xcode (large, with a visual editor).
+### Download a ready-made build
 
-### Build with the Command Line Tools
+Ready-made builds are on the [Releases page](https://github.com/nikokorkalainen/SiivOS/releases). If that page is empty, none has been published yet, and you build SiivOS yourself as described further down.
+
+1. Download `SiivOS-x.y.z.zip` from the newest release and double-click it to unpack it.
+2. Drag **SiivOS** into your **Applications** folder.
+3. Open it. macOS shows **"SiivOS" Not Opened** and says that Apple could not verify it is free of malware. This is expected: Apple only checks apps signed with a Developer ID, which needs a paid account that SiivOS does not have. Click **Done**, not Move to Trash.
+4. Allow it once:
+   - **macOS 15 or newer:** open **System Settings**, **Privacy & Security**, scroll down to **Security**, and click **Open Anyway** next to the message about SiivOS. Confirm with your password or Touch ID.
+   - **macOS 14:** hold Control and click SiivOS in Applications, choose **Open**, then **Open** again.
+
+After that SiivOS opens like any other app. The builds run on Macs with Apple chips and with Intel.
+
+By allowing it you are trusting the build instead of Apple's check. Each release lists the SHA-256 of its ZIP so that you can compare, and the builds are made from this source code by the `Release` workflow in `.github/workflows/`. If you would rather not allow an unsigned app, build it yourself.
+
+### Build it yourself
+
+It takes a few minutes and you do not need to know how to program. You need Apple's developer tools: either the Command Line Tools (small, no sign-in needed) or Xcode (large, with a visual editor).
+
+#### Build with the Command Line Tools
 
 All commands are typed into Terminal (press Command-Space, type "Terminal", press Return).
 
@@ -66,7 +98,7 @@ All commands are typed into Terminal (press Command-Space, type "Terminal", pres
 
 To get a newer version later, download the ZIP again and repeat steps 2 to 5.
 
-### Build with Xcode
+#### Build with Xcode
 
 1. **Install Xcode** from the App Store. If the App Store says your macOS is too old, download an older Xcode from [developer.apple.com/download/all](https://developer.apple.com/download/all) (free, sign in with your Apple ID).
 2. **Open Xcode once.** Accept the licence and let it install the macOS components it asks for.
@@ -166,6 +198,7 @@ Everything stays on your Mac, in `~/Library/Application Support/SiivOS`:
 - `agent-door.json` remembers whether the tool for AI agents is switched on.
 - `cleanup-settings.json` holds your Cleanup settings: how old, how large, which checks run, and folders to leave out.
 - `holding-area-settings.json` holds your choices about the holding area.
+- `disk-map-history.json` holds the names and sizes of your largest folders from the last eight times you measured the Disk Map, so that it can say what has grown. Deleting it only means the next measuring has nothing to compare with.
 
 To remove SiivOS completely, first put back or delete what is in History, then quit SiivOS and delete the app and that folder.
 
@@ -177,6 +210,7 @@ SiivOS is a Swift package with no third-party dependencies.
 - `Sources/SiivOS/` is the app: the SwiftUI interface only. It calls into the engine.
 - `Sources/SiivOSCLI/` is the `siivos-cli` tool for AI agents: a few lines that pass the question to the engine.
 - `Tests/SiivOSCoreTests/` holds the engine's tests.
+- `Scripts/` holds the build scripts: `make-app.sh` builds the app for your own Mac, and `make-release.sh` builds it for both kinds of Mac and packs the ZIP for a release.
 - `docs/design.md` describes how the screens look and behave.
 - `PLAN.md` holds the plan, the principles and what is done.
 
@@ -187,6 +221,7 @@ The tests only touch temporary files that they create themselves, apart from a f
 - **In Terminal:** from the project folder, run `swift test`. This needs Xcode; with only the Command Line Tools it fails with an error about `XCTest`.
 - **In Xcode:** switch the scheme to **SiivOS-Package** and press Command-U.
 - **On Linux:** `./Scripts/check-engine-on-linux.sh` compiles and tests the engine, checks the app's syntax and checks that every text has a Finnish translation.
+- **On GitHub:** the same Linux check runs by itself on every push to a working branch. A pull request to `main` also builds the whole app and runs the tests on a Mac. See `.github/workflows/checks.yml`.
 
 ### Rules a change must follow
 
