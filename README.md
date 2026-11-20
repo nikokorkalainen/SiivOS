@@ -4,6 +4,10 @@ A Mac app that cleans up clutter, manages and uninstalls apps, shows what is slo
 
 SiivOS is in English and Finnish and follows the language of your Mac. It needs macOS 14 or newer.
 
+<p align="center">
+  <img src="docs/screenshots/overview.webp" width="820" alt="The SiivOS Overview: free space on the disk, what the last check found in each section, and free space over time">
+</p>
+
 ## What makes it different
 
 - **Explain and undo.** Before anything is removed, SiivOS shows what will happen in plain words. Removed items go to a holding area, not straight to deletion, and a whole change, such as an uninstall, can be put back in one click from History.
@@ -26,6 +30,15 @@ SiivOS is in English and Finnish and follows the language of your Mac. It needs 
 SiivOS also sits in the menu bar, where it shows the health score and marks its icon when something new starts by itself. It stays there after you close its window, and is in the Dock only while the window is open. This can be turned off in Settings.
 
 If you turn it on in Settings, SiivOS also shows a notification when it notices something new that starts by itself, a new configuration profile, or one of macOS's protections turned off. It looks for new background items every half hour while it is running. The notification is made on your Mac and sent nowhere.
+
+## A look inside
+
+| | |
+|---|---|
+| <img src="docs/screenshots/cleanup.webp" width="420" alt="Cleanup: groups of clutter with their sizes, each item labelled Safe to remove"> | <img src="docs/screenshots/disk-map.webp" width="420" alt="The Disk Map: the home folder drawn as blocks sized by the space they take, coloured by what they hold"> |
+| **Cleanup.** Every item is labelled Safe to remove or Check first, and nothing changes until you confirm. | **Disk Map.** Where the space in your home folder goes, and what has grown since you last measured. |
+| <img src="docs/screenshots/health-timeline.webp" width="420" alt="The Health Timeline: a score of 100 with the reason for every point, and charts of the score and free space over time"> | <img src="docs/screenshots/welcome.webp" width="420" alt="The welcome: the SiivOS logo, the promise, and three things to know"> |
+| **Health Timeline.** A score that shows its reasons, with charts over time. | **Welcome.** What you see the first time SiivOS opens. |
 
 ## What it does not do
 
