@@ -3,21 +3,31 @@
 # Optional: for day-to-day development, just press Run in Xcode instead.
 #
 # Usage (from the project folder):  ./Scripts/make-app.sh
+#
+# Scripts/make-release.sh uses this too, with two things set:
+#   SIIVOS_VERSION    the version number the app carries, in place of the one below
+#   SIIVOS_UNIVERSAL  1 to build for both kinds of Mac (Apple chips and Intel) in one app.
+#                     That needs Xcode itself, not only its command-line tools.
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
 
 APP_NAME="SiivOS"
 BUNDLE_ID="io.github.nikokorkalainen.SiivOS"
-VERSION="0.1.0"
+VERSION="${SIIVOS_VERSION:-0.1.0}"
 APP_DIR="dist/${APP_NAME}.app"
 CLI_NAME="siivos-cli"
 
-echo "Building ${APP_NAME}..."
-swift build -c release --product "${APP_NAME}"
+BUILD_FLAGS=(-c release)
+if [ "${SIIVOS_UNIVERSAL:-0}" = "1" ]; then
+    BUILD_FLAGS+=(--arch arm64 --arch x86_64)
+fi
+
+echo "Building ${APP_NAME} ${VERSION}..."
+swift build "${BUILD_FLAGS[@]}" --product "${APP_NAME}"
 # The agent door: a read-only command-line tool for AI agents, kept inside the app.
-swift build -c release --product "${CLI_NAME}"
-BIN_DIR="$(swift build -c release --show-bin-path)"
+swift build "${BUILD_FLAGS[@]}" --product "${CLI_NAME}"
+BIN_DIR="$(swift build "${BUILD_FLAGS[@]}" --show-bin-path)"
 
 rm -rf "${APP_DIR}"
 mkdir -p "${APP_DIR}/Contents/MacOS" "${APP_DIR}/Contents/Resources"

@@ -49,11 +49,28 @@ If you turn it on in Settings, SiivOS also shows a notification when it notices 
 
 ## Getting SiivOS
 
-There is no ready-made download yet. A signed download needs a paid Apple Developer account, so for now you build SiivOS yourself. It takes a few minutes and you do not need to know how to program.
+There are two ways: download a ready-made build, or build SiivOS yourself.
 
-You need Apple's developer tools: either the Command Line Tools (small, no sign-in needed) or Xcode (large, with a visual editor).
+### Download a ready-made build
 
-### Build with the Command Line Tools
+Ready-made builds are on the [Releases page](https://github.com/nikokorkalainen/SiivOS/releases). If that page is empty, none has been published yet, and you build SiivOS yourself as described further down.
+
+1. Download `SiivOS-x.y.z.zip` from the newest release and double-click it to unpack it.
+2. Drag **SiivOS** into your **Applications** folder.
+3. Open it. macOS will say it could not check SiivOS and will not open it. This is expected. Apple only checks apps signed with a Developer ID, which needs a paid account that SiivOS does not have.
+4. Allow it once:
+   - **macOS 15 or newer:** open **System Settings**, **Privacy & Security**, scroll down to **Security**, and click **Open Anyway** next to the message about SiivOS. Confirm with your password or Touch ID.
+   - **macOS 14:** hold Control and click SiivOS in Applications, choose **Open**, then **Open** again.
+
+After that SiivOS opens like any other app. The builds run on Macs with Apple chips and with Intel.
+
+By allowing it you are trusting the build instead of Apple's check. Each release lists the SHA-256 of its ZIP so that you can compare, and the builds are made from this source code by the `Release` workflow in `.github/workflows/`. If you would rather not allow an unsigned app, build it yourself.
+
+### Build it yourself
+
+It takes a few minutes and you do not need to know how to program. You need Apple's developer tools: either the Command Line Tools (small, no sign-in needed) or Xcode (large, with a visual editor).
+
+#### Build with the Command Line Tools
 
 All commands are typed into Terminal (press Command-Space, type "Terminal", press Return).
 
@@ -81,7 +98,7 @@ All commands are typed into Terminal (press Command-Space, type "Terminal", pres
 
 To get a newer version later, download the ZIP again and repeat steps 2 to 5.
 
-### Build with Xcode
+#### Build with Xcode
 
 1. **Install Xcode** from the App Store. If the App Store says your macOS is too old, download an older Xcode from [developer.apple.com/download/all](https://developer.apple.com/download/all) (free, sign in with your Apple ID).
 2. **Open Xcode once.** Accept the licence and let it install the macOS components it asks for.
@@ -193,6 +210,7 @@ SiivOS is a Swift package with no third-party dependencies.
 - `Sources/SiivOS/` is the app: the SwiftUI interface only. It calls into the engine.
 - `Sources/SiivOSCLI/` is the `siivos-cli` tool for AI agents: a few lines that pass the question to the engine.
 - `Tests/SiivOSCoreTests/` holds the engine's tests.
+- `Scripts/` holds the build scripts: `make-app.sh` builds the app for your own Mac, and `make-release.sh` builds it for both kinds of Mac and packs the ZIP for a release.
 - `docs/design.md` describes how the screens look and behave.
 - `PLAN.md` holds the plan, the principles and what is done.
 
