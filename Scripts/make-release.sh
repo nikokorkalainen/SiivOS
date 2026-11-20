@@ -50,7 +50,7 @@ cat > "${NOTES}" <<NOTES
 
 1. Download \`SiivOS-${VERSION}.zip\` below and double-click it to unpack it.
 2. Drag **SiivOS** into your **Applications** folder.
-3. Open it. macOS will say it could not check SiivOS and will not open it. That is expected: SiivOS is not signed with a paid Apple Developer ID.
+3. Open it. macOS shows **"SiivOS" Not Opened** and says that Apple could not verify it is free of malware. That is expected: SiivOS is not signed with a paid Apple Developer ID. Click **Done**, not Move to Trash.
 4. Allow it once:
    - **macOS 15 or newer:** open **System Settings**, **Privacy & Security**, scroll down to **Security**, and click **Open Anyway** next to the message about SiivOS. Confirm with your password or Touch ID.
    - **macOS 14:** hold Control and click SiivOS in Applications, choose **Open**, then **Open** again.
